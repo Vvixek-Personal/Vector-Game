@@ -1,0 +1,8 @@
+{
+  "name": "Vector Game",
+  "description": "A simple arrow game with room to breathe. Choose your mode, play with a friend, and beat your personal best.",
+  "requestFramePermissions": [
+    "fullscreen"
+  ],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,39 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Test document used for verifying firestore connection
+    match /test/{docId} {
+      allow read: if true;
+    }
+
+    // Public Operative user profiles
+    match /users/{userId} {
+      allow get, list: if true;
+      allow create: if isOwner(userId)
+        && request.resource.data.userId == userId;
+      allow update: if isOwner(userId)
+        && request.resource.data.userId == userId;
+      allow delete: if false;
+    }
+
+    // Real data leaderboard entries across all modes and overall
+    match /leaderboard/{entryId} {
+      allow get, list: if true;
+      allow create, update: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.score is number
+        && request.resource.data.score >= 0
+        && request.resource.data.mode is string;
+      allow delete: if false;
+    }
+  }
+}

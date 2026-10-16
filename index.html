@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vector Game</title>
+    <meta
+      name="description"
+      content="A simple arrow game with room to breathe. Choose your mode, play with a friend, and beat your personal best."
+    />
+    <meta property="og:title" content="Vector Game" />
+    <meta
+      property="og:description"
+      content="A simple arrow game with room to breathe. Choose your mode, play with a friend, and beat your personal best."
+    />
+    <meta name="theme-color" content="#121418" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.jpg" />
+    <script>
+      try {
+        var s = JSON.parse(localStorage.getItem("vector.settings.v1") || "{}");
+        if (s.uiMode) document.documentElement.setAttribute("data-theme", s.uiMode);
+        if (s.colorway) document.documentElement.setAttribute("data-color", s.colorway);
+        if (s.textSize) document.documentElement.setAttribute("data-text-size", s.textSize);
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
