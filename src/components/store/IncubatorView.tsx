@@ -7,7 +7,6 @@ import {
   speedUpPod,
   hatchPod,
   addEggToInventory,
-  getDailyIncubatorAtmosphere,
   type EggType,
   type IncubatorState,
   type HatchReward,
@@ -128,29 +127,6 @@ export const IncubatorView: React.FC<Props> = ({
         <p className="text-slate-400 text-xs sm:text-sm max-w-md mx-auto mt-1">
           Hatch bio-mechanical eggs to synthesize Sparks, Diamonds, and ultra-rare Anime PFPs!
         </p>
-
-        {/* Daily Atmosphere Modifier Card */}
-        {(() => {
-          const atmo = getDailyIncubatorAtmosphere();
-          return (
-            <div className="mt-4 p-3 rounded-2xl bg-gradient-to-r from-emerald-950/40 via-purple-950/30 to-amber-950/40 border border-white/10 text-left max-w-xl mx-auto flex items-center justify-between gap-3 shadow-lg">
-              <div className="flex items-center gap-3">
-                <span className="text-2xl p-2 rounded-xl bg-white/5 border border-white/10">⚡</span>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-black uppercase tracking-wider text-amber-300">
-                      Today's Atmosphere: {atmo.name}
-                    </span>
-                    <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-emerald-400/20 text-emerald-300 font-bold">
-                      Daily Boost
-                    </span>
-                  </div>
-                  <p className="text-xs text-white/70 mt-0.5">{atmo.tagline}</p>
-                </div>
-              </div>
-            </div>
-          );
-        })()}
       </div>
 
       {/* Pod Chambers Row */}

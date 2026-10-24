@@ -66,7 +66,6 @@ export interface Profile {
   charges: { shield: number; surge: number; saver: number };
   useGooglePfp?: boolean;
   audioPackId?: string;
-  bonusXp?: number;
 }
 
 export type BannerPattern = "waves" | "grid" | "orbits" | "rays" | "dots" | "plain";
@@ -152,17 +151,6 @@ export const FRAMES: FrameDef[] = [
   { id: "obsidian", name: "Obsidian", css: "0 0 0 4px #0b0b0b, 0 0 0 6px #fbbf24", rule: () => shopOnly() },
   { id: "crown", name: "Crown", css: "0 0 0 3px #fbbf24, 0 0 0 8px #f472b6, 0 0 28px #fbbf24", rule: () => shopOnly() },
   { id: "hyper", name: "Hyperdrive", css: "0 0 0 2px #06b6d4, 0 0 0 5px #ec4899, 0 0 16px #06b6d4", rule: () => shopOnly() },
-  { id: "thunder-aura", name: "Thunder Arc", css: "0 0 0 3px #38bdf8, 0 0 24px 6px #0284c7, 0 0 0 6px #e0f2fe", rule: () => shopOnly() },
-  { id: "sakura-flurry", name: "Sakura Flurry", css: "0 0 0 3px #f472b6, 0 0 20px 4px #ec4899, 0 0 0 6px #fbcfe8", rule: () => shopOnly() },
-  { id: "boss-breaker", name: "Raid Annihilator", css: "0 0 0 3px #f43f5e, 0 0 24px 6px #e11d48, 0 0 0 6px #ffd166", rule: () => shopOnly() },
-  { id: "ghost-rival", name: "Spectral Phantom", css: "0 0 0 3px #06b6d4, 0 0 22px 5px #38bdf8, 0 0 0 6px #ffffff22", rule: () => shopOnly() },
-  { id: "nebula-vortex", name: "Nebula Vortex", css: "0 0 0 3px #8b5cf6, 0 0 26px 7px #ec4899, 0 0 0 6px #c084fc", rule: () => shopOnly() },
-  { id: "dragon", name: "Dragon Ring", css: "0 0 0 3px #f59e0b, 0 0 18px 4px #ef4444, 0 0 0 6px #b45309", rule: () => shopOnly() },
-  { id: "quantum-orbit", name: "Quantum Orbit", css: "0 0 0 3px #a855f7, 0 0 20px 4px #06b6d4, 0 0 0 6px #6366f1", rule: () => shopOnly() },
-  { id: "neon-matrix", name: "Matrix Pulse", css: "0 0 0 3px #10b981, 0 0 22px 5px #059669", rule: () => shopOnly() },
-  { id: "celestial", name: "Celestial Corona", css: "0 0 0 3px #38bdf8, 0 0 0 6px #818cf8, 0 0 28px 6px #38bdf8aa", rule: () => shopOnly() },
-  { id: "valkyrie", name: "Valkyrie Halo", css: "0 0 0 3px #38bdf8, 0 0 24px 6px #0284c7, 0 0 0 6px #ffffff44", rule: () => shopOnly() },
-  { id: "starlight", name: "Starlight", css: "0 0 0 3px #38bdf8, 0 0 20px 4px #818cf8", rule: () => shopOnly() },
 ];
 
 export const TITLES: TitleDef[] = [
@@ -183,18 +171,6 @@ export const TITLES: TitleDef[] = [
   { id: "sovereign", name: "Sovereign", rule: () => shopOnly() },
   { id: "myth", name: "Myth", rule: () => shopOnly() },
   { id: "combo-master", name: "Combo Master", rule: () => shopOnly() },
-  { id: "storm-bringer", name: "Storm Bringer", rule: () => shopOnly() },
-  { id: "infinite-vector", name: "Infinite Vector", rule: () => shopOnly() },
-  { id: "boss-breaker", name: "Raid Breaker", rule: () => shopOnly() },
-  { id: "rival-ghost", name: "Phantom Pacer", rule: () => shopOnly() },
-  { id: "apex-gladiator", name: "Apex Gladiator", rule: () => shopOnly() },
-  { id: "tournament-king", name: "Tournament King", rule: () => shopOnly() },
-  { id: "hatch-master", name: "Hatch Master", rule: () => shopOnly() },
-  { id: "time-bender", name: "Time Bender", rule: () => shopOnly() },
-  { id: "bounty-hunter", name: "Bounty Hunter", rule: () => shopOnly() },
-  { id: "godspeed", name: "Godspeed", rule: () => shopOnly() },
-  { id: "hyperdrive", name: "Hyperdrive", rule: () => shopOnly() },
-  { id: "eternal", name: "Eternal Flow", rule: () => shopOnly() },
 ];
 
 export const PERKS: PerkDef[] = [

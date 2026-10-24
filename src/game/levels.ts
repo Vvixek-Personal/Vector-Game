@@ -19,16 +19,9 @@ export function xpForLevel(level: number): number {
   return 100000 * level; // 100,000 XP per level as requested
 }
 
-// Player's lifetime XP calculated from total score, runs, and streaks (plus bonus/mission XP)
-export function xpForStats(stats: Stats, bonusXp = 0): number {
-  return Math.max(0, (stats.totalScore ?? 0) + (stats.runs ?? 0) * 50 + (stats.bestStreak ?? 0) * 10 + (bonusXp ?? 0));
-}
-
-export function addPlayerXp(profile: Profile, xp: number): Profile {
-  return {
-    ...profile,
-    bonusXp: (profile.bonusXp || 0) + Math.max(0, xp),
-  };
+// Player's lifetime XP calculated from total score, runs, and streaks
+export function xpForStats(stats: Stats): number {
+  return Math.max(0, (stats.totalScore ?? 0) + (stats.runs ?? 0) * 50 + (stats.bestStreak ?? 0) * 10);
 }
 
 // 50 Handcrafted Level Rewards matching real STORE_ITEMS
@@ -84,7 +77,7 @@ export interface PlayerLevelProgress {
 }
 
 export function getPlayerLevelProgress(stats: Stats, profile: Profile): PlayerLevelProgress {
-  const currentXp = xpForStats(stats, profile?.bonusXp || 0);
+  const currentXp = xpForStats(stats);
   const maxLevel = 100;
 
   let currentLevel = 0;

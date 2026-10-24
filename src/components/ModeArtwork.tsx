@@ -18,14 +18,6 @@ export default function ModeArtwork({ mode }: { mode: GameMode }) {
       {mode === "zen" && <><path d="M153 62a59 59 0 1 0 32 84 57 57 0 0 1-32-84Z" fill="currentColor" opacity=".8" /><path d="m177 64 3 8 8 3-8 3-3 8-3-8-8-3 8-3Z" fill="currentColor" /></>}
       {mode === "versus" && <><path d={ARROW} fill="currentColor" transform="translate(116 89) rotate(0) scale(.63)" /><path d={ARROW} fill="currentColor" opacity=".5" transform="translate(144 141) rotate(180) scale(.63)" /></>}
       {mode === "daily" && <g stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><rect x="80" y="72" width="100" height="95" rx="13" /><path d="M105 62v21m50-21v21m-75 13h100" opacity=".5" /><path d="m106 131 16 16 33-34" /></g>}
-      {mode === "weekly" && (
-        <g stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M90 70h80v35a40 40 0 0 1-80 0V70Z" fill="currentColor" fillOpacity=".15" />
-          <path d="M90 80H70a16 16 0 0 0 16 16h4m70-16h20a16 16 0 0 1-16 16h-4" opacity=".6" />
-          <path d="M130 145v25m-25 0h50" />
-          <circle cx="130" cy="98" r="6" fill="currentColor" />
-        </g>
-      )}
     </svg>
   );
 }

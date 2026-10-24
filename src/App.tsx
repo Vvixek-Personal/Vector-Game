@@ -12,7 +12,6 @@ import StatsScreen from "./components/screens/StatsScreen";
 import SettingsScreen from "./components/screens/SettingsScreen";
 import ProfileScreen from "./components/screens/ProfileScreen";
 import LeaderboardScreen from "./components/screens/LeaderboardScreen";
-import MissionsScreen from "./components/screens/MissionsScreen";
 import { GameOverOverlay, PauseOverlay, TutorialOverlay, PrepOverlay } from "./components/overlays/Overlays";
 import { ModifiersModal } from "./components/ModifiersModal";
 import { type GameModifiers, loadModifiers, getModifierMultiplier } from "./game/modifiers";
@@ -483,15 +482,17 @@ export default function App() {
                       }}
                     />
                   ) : screen === "missions" ? (
-                    <MissionsScreen
+                    <ProfileScreen
+                      key="missions"
+                      initialTab="tasks"
                       profile={profile}
-                      onUpdateProfile={updateProfile}
+                      onProfile={updateProfile}
                       stats={stats}
-                      onUpdateStats={setStats}
-                      onPlay={() => {
-                        setScreen("home");
-                        play();
-                      }}
+                      onStats={setStats}
+                      name={name}
+                      onNameChange={setName}
+                      onBack={() => setScreen("home")}
+                      onOpenStore={() => setScreen("store")}
                     />
                   ) : screen === "profile" ? (
                     <ProfileScreen
@@ -583,7 +584,6 @@ export default function App() {
           <GameOverOverlay
             summary={summary}
             stats={stats}
-            profile={profile}
             onAgain={start}
             onHome={goHome}
             onShare={share}

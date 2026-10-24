@@ -7,7 +7,6 @@ import { Fx } from "./fx";
 import { playHaptic } from "./haptics";
 import { bestScore, resolveKeyMap, type Settings, type ThemeId } from "./storage";
 import { type GameModifiers, getModifierMultiplier } from "./modifiers";
-import { loadMissions, updateMissionsProgress } from "./missions";
 import {
   ALL_DIRS,
   BASE_SCORE,
@@ -206,12 +205,6 @@ export class Engine {
   private reactions: number[] = [];
   private fastest = 9999;
 
-  // Boss Sequence Encounters & Rival Pace
-  private bossRaid: { active: boolean; needed: number; remaining: number; targetName: string } | null = null;
-  private bossRaidsCleared = 0;
-  private overdriveCount = 0;
-  private hitsSinceBoss = 0;
-
   // focus slow-mo
   private focusCharges = FOCUS_CHARGES;
   private focusActive = false;
@@ -322,11 +315,6 @@ export class Engine {
     this.correctCount = 0;
     this.reactions = [];
     this.fastest = 9999;
-    this.bossRaid = null;
-    this.bossRaidsCleared = 0;
-    this.overdriveCount = 0;
-    this.hitsSinceBoss = 0;
-    this.sound.setStreak(0);
     this.total = this.def.total ?? 0;
     this.waveStep = 0;
     this.waves = 0;
@@ -715,11 +703,9 @@ export class Engine {
     const wasOver = this.overdrive;
     this.overdrive = this.streak >= OVERDRIVE_STREAK;
     if (this.overdrive && !wasOver) {
-      this.overdriveCount++;
       this.sound.overdriveEnter();
       this.fx.float("OVERDRIVE ×2", "#ffd166", this.cx, this.cy - this.arrowSize() * 2.1, 24);
     }
-    this.sound.setStreak(this.streak);
 
     const rating = reactionRating(reactionMs);
     const diag = dirsForAngle(this.requiredDir).length === 2 ? DIAG_MULT : 1;
@@ -727,33 +713,6 @@ export class Engine {
     const modMult = getModifierMultiplier(this.modifiers);
     const pts = Math.round((BASE_SCORE * diag * markMult * this.combo * (this.overdrive ? 2 : 1) + rating.bonus) * modMult);
     this.score += pts;
-
-    // Boss Sequence Encounter Mechanics
-    this.hitsSinceBoss++;
-    if (!this.bossRaid && this.hitsSinceBoss >= 15 && this.streak >= 4) {
-      this.hitsSinceBoss = 0;
-      const bossHp = 4 + Math.min(4, Math.floor(this.correctCount / 25));
-      const bossNames = ["CHRONOS NEXUS", "VOID WYRM", "ASTRAL PHANTOM", "MECHA TITAN", "SOLAR OVERLORD"];
-      const targetName = bossNames[this.bossRaidsCleared % bossNames.length];
-      this.bossRaid = { active: true, needed: bossHp, remaining: bossHp, targetName };
-      this.sound.bossRaidStart();
-      this.fx.float(`⚠️ RAID: ${targetName}!`, "#f43f5e", this.cx, this.cy - this.arrowSize() * 2.2, 24);
-      this.haptic("overdrive");
-    } else if (this.bossRaid?.active) {
-      this.bossRaid.remaining--;
-      if (this.bossRaid.remaining <= 0) {
-        this.bossRaid = null;
-        this.bossRaidsCleared++;
-        this.sound.bossRaidSuccess();
-        const raidBonus = Math.round(600 * modMult);
-        this.score += raidBonus;
-        this.fx.confettiBurst(this.cx, this.cy, this.arrowSize() * 1.5);
-        this.fx.float(`💥 BOSS ANNIHILATED! +${raidBonus}`, "#ffd166", this.cx, this.cy - this.arrowSize() * 2.2, 24);
-        this.haptic("combo");
-      } else {
-        this.fx.float(`BOSS HP -1 (${this.bossRaid.remaining}/${this.bossRaid.needed})`, "#f43f5e", this.cx, this.cy - this.arrowSize() * 1.7, 18);
-      }
-    }
 
     this.fx.hit(this.cx, this.cy, this.arrowSize(), this.visualDir, rgba(this.accent));
     this.fx.float(
@@ -801,10 +760,6 @@ export class Engine {
     this.streak = 0;
     this.combo = 1;
     this.overdrive = false;
-    this.sound.setStreak(0);
-    if (this.bossRaid?.active) {
-      this.bossRaid.remaining = Math.min(this.bossRaid.needed, this.bossRaid.remaining + 1);
-    }
     this.fx.miss(this.cx, this.cy, this.arrowSize());
     this.fx.shakeBy(this.settings.reducedMotion || this.settings.screenShake === false ? 0 : 14);
     if (kind === "wrong") {
@@ -1120,21 +1075,7 @@ export class Engine {
       playSeconds: Math.round(this.runClock),
       rank,
       modifierMultiplier: getModifierMultiplier(this.modifiers),
-      bossRaidsCleared: this.bossRaidsCleared,
     };
-
-    try {
-      const missions = loadMissions();
-      updateMissionsProgress(missions, {
-        runs: 1,
-        score: this.score,
-        streak: this.bestStreak,
-        perfectHits: this.reactions.filter((r) => r < 340).length,
-        bossRaids: this.bossRaidsCleared,
-        overdriveCount: this.overdriveCount,
-      });
-    } catch {}
-
     this.events.onPhase("over");
     this.events.onOver(summary);
   }
@@ -1142,12 +1083,6 @@ export class Engine {
   // ---------------------------------------------------------- hud
 
   private emitHud() {
-    const pbPaceDelta = this.best > 0
-      ? (this.score > this.best
-          ? this.score - this.best
-          : Math.round(this.score - this.best * Math.min(1, this.correctCount / Math.max(1, Math.round(this.best / 24)))))
-      : undefined;
-
     const hud: HudState = {
       score: this.score,
       streak: this.streak,
@@ -1176,8 +1111,6 @@ export class Engine {
       focusAvailable: this.focusAvailable(),
       modifiers: this.modifiers,
       modifierMultiplier: getModifierMultiplier(this.modifiers),
-      pbPaceDelta,
-      bossRaid: this.bossRaid ? { ...this.bossRaid } : null,
     };
     this.events.onHud(hud);
   }

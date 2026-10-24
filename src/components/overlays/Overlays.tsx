@@ -8,7 +8,6 @@ import type { Profile } from "../../game/profile";
 import { STORE_ITEMS } from "../../game/catalog";
 import { uiConfirm, uiTap } from "../../game/haptics";
 import Avatar from "../Avatar";
-import { getPlayerLevelProgress } from "../../game/levels";
 
 const Shell = ({ children }: { children: React.ReactNode }) => (
   <motion.div
@@ -140,7 +139,6 @@ export function PauseOverlay({
 export function GameOverOverlay({
   summary,
   stats,
-  profile,
   onAgain,
   onHome,
   onShare,
@@ -148,7 +146,6 @@ export function GameOverOverlay({
 }: {
   summary: GameSummary;
   stats?: Stats;
-  profile?: Profile;
   onAgain: () => void;
   onHome: () => void;
   onShare: () => void;
@@ -156,7 +153,6 @@ export function GameOverOverlay({
 }) {
   const def = MODES[summary.mode];
   const versus = summary.versus;
-  const levelProgress = stats && profile ? getPlayerLevelProgress(stats, profile) : null;
 
   const averageReaction = stats && stats.reactionCount > 0 
     ? Math.round(stats.reactionTotal / stats.reactionCount) 
@@ -271,7 +267,7 @@ export function GameOverOverlay({
         {stats && !versus && (
           <div className="mt-3 p-2.5 rounded-2xl bg-white/[0.03] border border-white/5 text-left">
             <div className="flex items-center justify-between text-[11px] font-bold text-white/70">
-              <span>{levelProgress ? `Operative Level ${levelProgress.currentLevel}` : "Operative Rank"}</span>
+              <span>Operative Rank Level</span>
               <span className="text-sky-400 font-extrabold">
                 +{Math.round((summary.score * (summary.modifierMultiplier || 1)) / 10)} XP Gained
               </span>
@@ -279,25 +275,11 @@ export function GameOverOverlay({
             <div className="mt-1.5 h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
-                animate={{
-                  width: `${Math.round(
-                    (levelProgress
-                      ? levelProgress.progress
-                      : Math.min(1, ((stats.totalScore || 0) % 2000) / 2000)) * 100
-                  )}%`,
-                }}
+                animate={{ width: `${Math.min(100, (((stats.totalScore || 0) % 2000) / 2000) * 100)}%` }}
                 transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
                 className="h-full bg-gradient-to-r from-sky-400 to-indigo-500 rounded-full"
               />
             </div>
-            {levelProgress && (
-              <div className="mt-1 flex items-center justify-between text-[10px] text-white/40">
-                <span>{levelProgress.currentXp.toLocaleString()} XP</span>
-                <span>
-                  Next: Level {Math.min(100, levelProgress.currentLevel + 1)} ({levelProgress.nextLevelXp.toLocaleString()} XP)
-                </span>
-              </div>
-            )}
           </div>
         )}
         

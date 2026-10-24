@@ -8,7 +8,6 @@ import { MODES, MODE_ORDER, type GameMode } from "../../game/types";
 import { uiTap } from "../../game/haptics";
 import Avatar from "../Avatar";
 import { DEFAULT_PROFILE, type Profile } from "../../game/profile";
-import { getCurrentTournamentInfo, TOURNAMENT_TIERS, getRewardForRank } from "../../game/tournament";
 
 interface Props {
   initialMode?: string;
@@ -22,9 +21,7 @@ const buildMockProfile = (item: LeaderboardRecord): Profile => ({
 });
 
 const LEADERBOARD_TABS: { id: string; label: string; color: string }[] = [
-  { id: "weekly", label: "Weekly Tourney 🏆", color: "#f59e0b" },
   { id: "overall", label: "Overall", color: "#38bdf8" },
-  { id: "daily", label: "Daily Sprint", color: "#10b981" },
   { id: "arcade", label: "Arcade", color: MODES.arcade.color },
   { id: "rush", label: "Rush", color: MODES.rush.color },
   { id: "zen", label: "Zen", color: MODES.zen.color },
@@ -41,9 +38,7 @@ export default function LeaderboardScreen({ initialMode = "overall", onSelectMod
   const [records, setRecords] = useState<LeaderboardRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewingPlayer, setViewingPlayer] = useState<LeaderboardRecord | null>(null);
-  const [showPrizeModal, setShowPrizeModal] = useState(false);
   const { user } = useAuth();
-  const tourneyInfo = getCurrentTournamentInfo();
 
   useEffect(() => {
     setLoading(true);
@@ -122,7 +117,7 @@ export default function LeaderboardScreen({ initialMode = "overall", onSelectMod
       )}
 
       {/* Mode Filter Tabs */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-3 mb-4 scrollbar-none">
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-3 mb-6 scrollbar-none">
         {LEADERBOARD_TABS.map((tab) => {
           const isActive = activeTab === tab.id;
           return (
@@ -149,69 +144,6 @@ export default function LeaderboardScreen({ initialMode = "overall", onSelectMod
           );
         })}
       </div>
-
-      {/* Seeded Weekly Tournament Banner */}
-      {activeTab === "weekly" && (
-        <div className="mb-6 p-4.5 rounded-3xl bg-gradient-to-r from-amber-950/70 via-slate-900/90 to-yellow-950/70 border border-amber-500/40 backdrop-blur-xl shadow-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-start gap-3.5">
-            <span className="text-3xl p-2 rounded-2xl bg-amber-500/20 border border-amber-500/30 text-amber-300 shrink-0">
-              🏆
-            </span>
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs uppercase font-black tracking-widest text-amber-300">
-                  {tourneyInfo.displayLabel}
-                </span>
-                <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-200 border border-amber-500/30 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
-                  Resets in {tourneyInfo.formattedCountdown}
-                </span>
-              </div>
-              <p className="text-xs text-slate-300 mt-1 max-w-xl leading-relaxed">
-                All players face the identical pseudo-random seed. Bracket winners earn exclusive <strong className="text-amber-300">Diamonds</strong>, <strong className="text-amber-300">Sparks</strong>, and the prestigious <strong className="text-amber-300">«Tournament King»</strong> title.
-              </p>
-
-              {userRank && (
-                <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs">
-                  <span className="text-amber-300 font-bold">Your Current Placement: #{userRank}</span>
-                  {(() => {
-                    const reward = getRewardForRank(userRank);
-                    if (!reward) return null;
-                    return (
-                      <span className="text-white/80">
-                        · Projected Prize: <strong className="text-yellow-300">+{reward.diamonds} 💎</strong>, <strong className="text-cyan-300">+{reward.sparks} ✦</strong>
-                      </span>
-                    );
-                  })()}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
-            <button
-              onClick={() => {
-                uiTap();
-                setShowPrizeModal(true);
-              }}
-              className="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs uppercase tracking-wider border border-white/20 transition cursor-pointer"
-            >
-              Prizes & Tiers
-            </button>
-            {onSelectMode && (
-              <button
-                onClick={() => {
-                  uiTap();
-                  onSelectMode("weekly");
-                }}
-                className="flex-1 sm:flex-initial px-4 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-amber-500/20 hover:scale-105 active:scale-95 transition cursor-pointer"
-              >
-                Enter Tournament →
-              </button>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* Podium for Top 3 */}
       {topThree.length > 0 && (
@@ -476,92 +408,6 @@ export default function LeaderboardScreen({ initialMode = "overall", onSelectMod
                     <Flame size={14} /> {viewingPlayer.streak}
                   </div>
                 </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-
-        {/* Weekly Tournament Prize Tiers Modal */}
-        {showPrizeModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
-            onClick={() => setShowPrizeModal(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full max-w-lg bg-slate-900 border border-amber-500/40 rounded-3xl p-6 shadow-2xl overflow-hidden"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                className="absolute top-5 right-5 text-white/50 hover:text-white transition cursor-pointer"
-                onClick={() => setShowPrizeModal(false)}
-              >
-                <X size={20} />
-              </button>
-
-              <div className="flex items-center gap-3 mb-5">
-                <span className="text-3xl p-2 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-300">
-                  🏆
-                </span>
-                <div>
-                  <h3 className="text-xl font-black text-white m-0">Weekly Tournament Rewards</h3>
-                  <p className="text-xs text-amber-300/80 m-0 mt-0.5 font-bold">
-                    {tourneyInfo.displayLabel} · Resets in {tourneyInfo.formattedCountdown}
-                  </p>
-                </div>
-              </div>
-
-              <p className="text-xs text-slate-300 mb-5 leading-relaxed">
-                Rankings lock every Sunday at midnight UTC. Top participants in the seeded bracket receive diamond allocations, high-frequency spark bounties, and exclusive collectible titles.
-              </p>
-
-              <div className="space-y-2.5">
-                {TOURNAMENT_TIERS.map((tier) => (
-                  <div
-                    key={tier.tier}
-                    className="p-3.5 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-between gap-3 hover:border-amber-500/30 transition"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl">{tier.badge}</span>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-black text-white">{tier.tier}</span>
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/10 text-white/70">
-                            {tier.rankLabel}
-                          </span>
-                        </div>
-                        {tier.titleName && (
-                          <div className="text-xs text-amber-300 font-bold mt-0.5">
-                            Title: «{tier.titleName}»
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="text-right shrink-0">
-                      <div className="text-sm font-black text-yellow-300 flex items-center justify-end gap-1 font-mono">
-                        +{tier.diamonds} 💎
-                      </div>
-                      <div className="text-xs text-cyan-300 font-mono">
-                        +{tier.sparks.toLocaleString()} ✦
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-6 flex gap-3">
-                <button
-                  onClick={() => setShowPrizeModal(false)}
-                  className="w-full py-3 rounded-xl bg-amber-400 text-slate-950 font-black text-xs uppercase tracking-wider hover:bg-amber-300 transition cursor-pointer"
-                >
-                  Got It
-                </button>
               </div>
             </motion.div>
           </motion.div>

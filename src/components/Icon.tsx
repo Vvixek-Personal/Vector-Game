@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
 
-export type IconName = "arrow" | "play" | "home" | "user" | "settings" | "keyboard" | "touch" | "left" | "right" | "sun" | "moon" | "expand" | "check" | "help" | "close" | "lock" | "bag" | "chart" | "trophy" | "award" | "music" | "target";
+export type IconName = "arrow" | "play" | "home" | "user" | "settings" | "keyboard" | "touch" | "left" | "right" | "sun" | "moon" | "expand" | "check" | "help" | "close" | "lock" | "bag" | "chart" | "trophy" | "award" | "music";
 
 interface Props {
   name: IconName;
@@ -33,7 +33,6 @@ export default function Icon({ name, size = 20, strokeWidth = 1.65, className, s
     trophy: <><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" /><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" /><path d="M4 22h16" /><path d="M10 14.66V17c0 .55-.45 1-1 1H8v4h8v-4h-1c-.55 0-1-.45-1-1v-2.34" /><path d="M18 4H6v7a6 6 0 0 0 12 0V4Z" /></>,
     award: <><circle cx="12" cy="8" r="6" /><path d="m15.48 12.89 1.52 9.11-5-3-5 3 1.52-9.11" /></>,
     music: <><path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" /></>,
-    target: <><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" /><path d="M12 2v4m0 12v4M2 12h4m12 0h4" /></>,
   };
 
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className} style={style} aria-hidden="true">{paths[name]}</svg>;

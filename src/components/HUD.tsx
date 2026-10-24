@@ -103,23 +103,6 @@ export default function HUD({
           <div className="text-2xl font-extrabold leading-none tabular-nums text-white sm:text-4xl mt-0.5">
             {hud.score.toLocaleString()}
           </div>
-          
-          {/* Live Rival Ghost / PB Pace Delta */}
-          {hud.pbPaceDelta !== undefined && (
-            <div className="mt-1 flex items-center gap-1.5">
-              <span className="text-xs">👻</span>
-              <span
-                className={`text-[10px] font-black px-1.5 py-0.2 rounded-md ${
-                  hud.pbPaceDelta >= 0
-                    ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-                    : "bg-rose-500/20 text-rose-300 border border-rose-500/30"
-                }`}
-              >
-                {hud.pbPaceDelta >= 0 ? `+${hud.pbPaceDelta}` : `${hud.pbPaceDelta}`} vs Ghost
-              </span>
-            </div>
-          )}
-
           <div className="mt-1 flex items-center gap-2 text-[10px] font-semibold text-white/35">
             <span>BEST {best.toLocaleString()}</span>
             {hud.modifierMultiplier && hud.modifierMultiplier > 1 && (
@@ -132,25 +115,6 @@ export default function HUD({
 
       {/* center: mode-specific status */}
       <div className="pointer-events-none absolute left-1/2 top-3 z-20 flex -translate-x-1/2 flex-col items-center gap-1 sm:top-5">
-        {/* Boss Raid Active Banner */}
-        {hud.bossRaid?.active && (
-          <div className="glass px-3 sm:px-4 py-1.5 rounded-2xl border border-rose-500/60 bg-rose-950/60 text-center shadow-lg shadow-rose-950/60 animate-pulse mb-1">
-            <div className="flex items-center justify-between gap-3 text-[10px] sm:text-[11px] font-black text-rose-300 uppercase tracking-wider">
-              <span>⚠️ RAID: {hud.bossRaid.targetName}</span>
-              <span className="text-white font-mono">{hud.bossRaid.remaining}/{hud.bossRaid.needed} HP</span>
-            </div>
-            <div className="w-32 sm:w-44 h-1.5 rounded-full bg-black/60 overflow-hidden mt-1 mx-auto flex gap-0.5">
-              {Array.from({ length: hud.bossRaid.needed }).map((_, i) => (
-                <div
-                  key={i}
-                  className={`h-full flex-1 rounded-sm transition-all duration-300 ${
-                    i < hud.bossRaid!.remaining ? "bg-gradient-to-r from-rose-500 to-amber-500" : "bg-slate-800 opacity-25"
-                  }`}
-                />
-              ))}
-            </div>
-          </div>
-        )}
         {mode === "versus" && hud.versus ? (
           <>
             <div className="glass rounded-xl px-3 py-1.5 text-center">

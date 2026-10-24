@@ -219,8 +219,6 @@ export interface HudState {
   focusAvailable: boolean;
   modifiers?: GameModifiers;
   modifierMultiplier?: number;
-  pbPaceDelta?: number;
-  bossRaid?: { active: boolean; needed: number; remaining: number; targetName: string } | null;
 }
 
 export interface GameSummary {
@@ -240,7 +238,6 @@ export interface GameSummary {
   playSeconds: number;
   rank?: "SSS" | "S" | "A" | "B" | "C";
   modifierMultiplier?: number;
-  bossRaidsCleared?: number;
 }
 
 export interface EngineEvents {

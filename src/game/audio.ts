@@ -175,28 +175,6 @@ export class SoundManager {
       this.tone(f * 0.5, 0.1, "sawtooth", 0.4);
       this.noise(0.05, 0.3);
       if (lightning) this.tone(f, 0.1, "sawtooth", 0.3, 0.02);
-    } else if (this.audioPackId === "synth") {
-      this.tone(f * 0.75, 0.12, "sawtooth", 0.45, 0, f * 0.5);
-      this.tone(f * 1.5, 0.08, "square", 0.25, 0.01);
-      if (lightning) {
-        this.tone(f * 2, 0.15, "sawtooth", 0.35, 0.02);
-        this.noise(0.08, 0.2);
-      }
-    } else if (this.audioPackId === "chiptune") {
-      // 8-Bit rapid arpeggio
-      this.tone(f, 0.04, "square", 0.35);
-      this.tone(f * 1.25, 0.04, "square", 0.32, 0.025);
-      this.tone(f * 1.5, 0.06, "square", 0.3, 0.05);
-      if (lightning) {
-        this.tone(f * 2, 0.08, "square", 0.35, 0.075);
-      }
-    } else if (this.audioPackId === "lofi") {
-      // Warm, mellow acoustic resonance
-      this.tone(f * 0.5, 0.25, "sine", 0.4);
-      this.tone(f * 0.75, 0.2, "triangle", 0.2, 0.02);
-      if (lightning) {
-        this.tone(f, 0.3, "sine", 0.25, 0.04);
-      }
     } else if (this.audioPackId === "zen") {
       this.tone(f * 0.5, 0.4, "triangle", 0.5);
       this.tone(f * 0.5, 0.5, "sine", 0.4, 0.02);
@@ -287,31 +265,6 @@ export class SoundManager {
     this.tone(220, 0.2, "sine", 0.2, 0, 660);
   }
 
-  setStreak(streak: number) {
-    // Dynamically increase procedural music tempo and tone urgency with combo streak
-    const baseBpm = 116;
-    const bonusBpm = Math.min(32, Math.floor(streak / 5) * 3);
-    this.bpm = baseBpm + bonusBpm;
-  }
-
-  bossRaidStart() {
-    // Alarming dramatic boss encounter siren + sub bass drop
-    this.tone(140, 0.45, "sawtooth", 0.6, 0, 50);
-    this.noise(0.25, 0.35);
-    [220, 277, 330, 440].forEach((f, i) =>
-      this.tone(f, 0.18, "sawtooth", 0.4, i * 0.08),
-    );
-  }
-
-  bossRaidSuccess() {
-    // Victorious boss defeat chord fanfare + sparkling cascade
-    [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach((f, i) => {
-      this.tone(f, 0.35, "triangle", 0.5, i * 0.07);
-      this.tone(f * 2, 0.25, "sine", 0.35, i * 0.07 + 0.02);
-    });
-    this.noise(0.3, 0.25, 0.35);
-  }
-
   badgePop() {
     this.tone(990, 0.07, "sine", 0.22);
   }
@@ -355,148 +308,6 @@ export class SoundManager {
       this.tone(f, 0.32, "sawtooth", 0.28, i * 0.13),
     );
     this.noise(0.4, 0.2, 0.1);
-  }
-
-  // ------------------------------------------------------------- ARCADE SPIN & WIN FX
-
-  // Whirring high-pitch acceleration & deceleration during spin
-  startSpinWhir(durationMs = 4400) {
-    this.ensure();
-    if (!this.ctx || !this.sfxGain || this.muted) return () => {};
-
-    const ctx = this.ctx;
-    const t0 = ctx.currentTime;
-    const durSec = durationMs / 1000;
-
-    // High-pitched synth whirring oscillator + filter modulation
-    const osc1 = ctx.createOscillator();
-    const osc2 = ctx.createOscillator();
-    const gain = ctx.createGain();
-    const filter = ctx.createBiquadFilter();
-
-    osc1.type = "sawtooth";
-    osc2.type = "sine";
-
-    filter.type = "bandpass";
-    filter.Q.value = 4.5;
-
-    // Pitch rises rapidly to high-pitched whir (850Hz -> 2100Hz), then smoothly winds down to 240Hz
-    const peakTime = t0 + Math.min(0.6, durSec * 0.15);
-    osc1.frequency.setValueAtTime(420, t0);
-    osc1.frequency.exponentialRampToValueAtTime(1950, peakTime);
-    osc1.frequency.exponentialRampToValueAtTime(260, t0 + durSec);
-
-    osc2.frequency.setValueAtTime(630, t0);
-    osc2.frequency.exponentialRampToValueAtTime(2925, peakTime);
-    osc2.frequency.exponentialRampToValueAtTime(390, t0 + durSec);
-
-    filter.frequency.setValueAtTime(700, t0);
-    filter.frequency.exponentialRampToValueAtTime(2600, peakTime);
-    filter.frequency.exponentialRampToValueAtTime(380, t0 + durSec);
-
-    // Whir amplitude envelope
-    gain.gain.setValueAtTime(0.0001, t0);
-    gain.gain.linearRampToValueAtTime(0.24, t0 + 0.08);
-    gain.gain.setValueAtTime(0.22, t0 + durSec - 0.5);
-    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + durSec);
-
-    osc1.connect(filter);
-    osc2.connect(filter);
-    filter.connect(gain);
-    gain.connect(this.sfxGain);
-
-    osc1.start(t0);
-    osc2.start(t0);
-    osc1.stop(t0 + durSec + 0.05);
-    osc2.stop(t0 + durSec + 0.05);
-
-    // Return stop callback in case of interruption
-    return () => {
-      try {
-        const stopTime = ctx.currentTime;
-        gain.gain.cancelScheduledValues(stopTime);
-        gain.gain.setValueAtTime(gain.gain.value, stopTime);
-        gain.gain.exponentialRampToValueAtTime(0.0001, stopTime + 0.08);
-        setTimeout(() => {
-          try {
-            osc1.stop();
-            osc2.stop();
-          } catch {
-            /* ignore */
-          }
-        }, 100);
-      } catch {
-        /* ignore */
-      }
-    };
-  }
-
-  // Pin click as needle hits sector pegs
-  spinTick(speedRatio = 1) {
-    this.ensure();
-    const f = 1400 + Math.min(1200, speedRatio * 800);
-    this.tone(f, 0.02, "square", 0.08);
-    this.tone(f * 1.5, 0.015, "triangle", 0.06);
-  }
-
-  // Rarity-based celebrations
-  rewardFanfare(rarity: "common" | "rare" | "epic" | "ultra") {
-    this.ensure();
-    if (!this.ctx || !this.sfxGain || this.muted) return;
-
-    if (rarity === "common") {
-      // Pleasant light chime
-      [523.25, 659.25, 783.99].forEach((f, i) => {
-        this.tone(f, 0.16, "sine", 0.28, i * 0.06);
-      });
-    } else if (rarity === "rare") {
-      // Ascending energetic fanfare + sparkle
-      [440, 554.37, 659.25, 880, 1108.73].forEach((f, i) => {
-        this.tone(f, 0.2, "triangle", 0.35, i * 0.065);
-        this.tone(f * 2, 0.12, "sine", 0.2, i * 0.065 + 0.01);
-      });
-      this.noise(0.15, 0.18, 0.32);
-    } else if (rarity === "epic") {
-      // Deep punch + soaring purple orchestral synth arpeggio
-      this.tone(130.81, 0.35, "sine", 0.5, 0, 65.4); // bass drop
-      const notes = [329.63, 440, 523.25, 659.25, 880, 1046.5, 1318.5];
-      notes.forEach((f, i) => {
-        this.tone(f, 0.25, "sawtooth", 0.28, i * 0.055);
-        this.tone(f * 1.5, 0.2, "triangle", 0.22, i * 0.055 + 0.01);
-      });
-      // Grand chord bloom
-      setTimeout(() => {
-        [523.25, 659.25, 880, 1046.5].forEach((f) => {
-          this.tone(f, 0.5, "sine", 0.28);
-        });
-        this.noise(0.25, 0.2);
-      }, 420);
-    } else if (rarity === "ultra") {
-      // Epic Jackpot / Ultra Gold Blast
-      this.tone(110, 0.5, "sine", 0.65, 0, 45); // Sub thunder
-      const fanfare = [
-        { f: 523.25, d: 0 },
-        { f: 659.25, d: 0.07 },
-        { f: 783.99, d: 0.14 },
-        { f: 1046.5, d: 0.21 },
-        { f: 1318.5, d: 0.28 },
-        { f: 1567.98, d: 0.35 },
-        { f: 2093.0, d: 0.44 },
-      ];
-      fanfare.forEach(({ f, d }) => {
-        this.tone(f, 0.35, "triangle", 0.45, d);
-        this.tone(f * 1.5, 0.25, "sawtooth", 0.28, d + 0.01);
-        this.tone(f * 2, 0.2, "sine", 0.25, d + 0.02);
-      });
-      // Triumphant triumphant sustained crown chord
-      setTimeout(() => {
-        [523.25, 659.25, 783.99, 1046.5, 1567.98].forEach((f) => {
-          this.tone(f, 0.85, "triangle", 0.32);
-          this.tone(f * 2, 0.7, "sine", 0.25);
-        });
-        this.noise(0.4, 0.3);
-      }, 480);
-    }
   }
 
   // ------------------------------------------------------------- BGM ENGINE
@@ -615,14 +426,4 @@ export class SoundManager {
       osc.stop(t + 0.1);
     }
   }
-}
-
-// Global shared instance for UI components outside the canvas Engine (e.g., Arcade Lucky Spin)
-let sharedSoundInstance: SoundManager | null = null;
-
-export function getSharedSound(): SoundManager {
-  if (!sharedSoundInstance) {
-    sharedSoundInstance = new SoundManager();
-  }
-  return sharedSoundInstance;
 }

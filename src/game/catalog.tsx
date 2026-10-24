@@ -75,10 +75,6 @@ export const STORE_ITEMS: StoreItem[] = [
   { id: "ani-shin", tab: "avatars", name: "Shinobi X", desc: "Cybernetic phantom assassin with illuminated visor.", ...D(30), anime: "ani-shin", apply: { avatarId: "ani-shin" }, rarity: "ultra" },
   { id: "ani-astral", tab: "avatars", name: "Astral Prime", desc: "Cosmic sovereign with starfield locks and gold crown.", ...D(50), anime: "ani-astral", apply: { avatarId: "ani-astral" }, rarity: "ultra" },
   { id: "ani-nova", tab: "avatars", name: "Nova", desc: "Solar alchemist with radiant golden hair and star prism earrings.", ...S(1450), anime: "ani-nova", apply: { avatarId: "ani-nova" }, rarity: "epic", isNew: true },
-  { id: "ani-raiden", tab: "avatars", name: "Raiden", desc: "Thunder Katana operative with purple arc lightning.", ...S(1550), anime: "ani-raiden", apply: { avatarId: "ani-raiden" }, rarity: "epic", isNew: true },
-  { id: "ani-chronos", tab: "avatars", name: "Chronos", desc: "Time weaver operative with temporal gold halo.", ...S(1680), anime: "ani-chronos", apply: { avatarId: "ani-chronos" }, rarity: "epic", isNew: true },
-  { id: "ani-mecha-zero", tab: "avatars", name: "Unit Zero", desc: "Ace mecha phantom pilot with emerald neural suit.", ...S(1720), anime: "ani-mecha-zero", apply: { avatarId: "ani-mecha-zero" }, rarity: "epic", isNew: true },
-  { id: "ani-kitsune-fire", tab: "avatars", name: "Homura", desc: "Celestial nine-tailed fox deity with burning vermilion aura.", ...D(45), anime: "ani-kitsune-fire", apply: { avatarId: "ani-kitsune-fire" }, rarity: "ultra", isNew: true },
 
   // Illustrated faces — categorized under Avatar
   { id: "cto-blaze", tab: "avatars", name: "Blaze", desc: "High-velocity pilot with fiery locks, goggles and flight jacket.", ...S(2400), cartoon: "cto-blaze", apply: { avatarId: "cto-blaze" }, rarity: "epic", isNew: true },
@@ -142,9 +138,6 @@ export const STORE_ITEMS: StoreItem[] = [
   })),
 
   // Themes 12
-  { id: "thm-hyper-laser", tab: "themes", name: "Laser Inferno", desc: "Carbon obsidian with burning vermilion and solar amber vectors.", preview: "#ef4444", themeSwatch: ["#ef4444", "#0f0204", "#f59e0b"], ...S(350), rarity: "epic", isNew: true },
-  { id: "thm-prism-wave", tab: "themes", name: "Prism Wave", desc: "Holographic pastel iridescent spectrum on void carbon.", preview: "#a855f7", themeSwatch: ["#a855f7", "#0a0614", "#38bdf8"], ...S(380), rarity: "epic", isNew: true },
-  { id: "thm-deep-abyss", tab: "themes", name: "Abyssal Trench", desc: "Trench black with bioluminescent electric teal.", preview: "#14b8a6", themeSwatch: ["#14b8a6", "#020c0f", "#06b6d4"], ...S(420), rarity: "rare", isNew: true },
   { id: "thm-matrix", tab: "themes", name: "Neon Matrix", desc: "Hyper-contrast digital rain emerald with obsidian core.", preview: "#10b981", themeSwatch: ["#10b981", "#020d08", "#059669"], ...S(380), rarity: "rare", isNew: true },
   { id: "thm-cyberpunk", tab: "themes", name: "Cyberpunk", desc: "High-octane magenta & electric cyan.", preview: "#ec4899", themeSwatch: ["#ec4899", "#080614", "#06b6d4"], cost: 270, originalCost: 360, currency: "sparks", isSale: true, salePercent: 25, rarity: "rare" },
   ...([
@@ -170,9 +163,6 @@ export const STORE_ITEMS: StoreItem[] = [
   { id: "thm-gold", tab: "themes", name: "Aurum", desc: "Black and gold only.", preview: "#fbbf24", themeSwatch: ["#fbbf24", "#0a0702", "#f59e0b"], ...D(50), rarity: "ultra" },
 
   // Frames 16
-  { id: "frm-dragon", tab: "frames", name: "Dragon Ring", desc: "Dual serpentine dragon coils emitting molten gold fire.", frameCss: "0 0 0 3px #f59e0b, 0 0 18px 4px #ef4444, 0 0 0 6px #b45309", apply: { frameId: "dragon" }, ...S(480), rarity: "epic", isNew: true },
-  { id: "frm-quantum-orbit", tab: "frames", name: "Quantum Orbit", desc: "Tachyonic orbital rings with continuous spinning starlight particles.", frameCss: "0 0 0 3px #a855f7, 0 0 20px 4px #06b6d4, 0 0 0 6px #6366f1", apply: { frameId: "quantum-orbit" }, ...S(560), rarity: "epic", isNew: true },
-  { id: "frm-neon-matrix", tab: "frames", name: "Matrix Pulse", desc: "Emerald code stream outline that beats in rhythm.", frameCss: "0 0 0 3px #10b981, 0 0 22px 5px #059669", apply: { frameId: "neon-matrix" }, ...S(420), rarity: "rare", isNew: true },
   { id: "frm-celestial", tab: "frames", name: "Celestial Corona", desc: "Radiant multi-layered astral ring with orbiting cyan light particles.", frameCss: "0 0 0 3px #38bdf8, 0 0 0 6px #818cf8, 0 0 28px 6px #38bdf8aa", apply: { frameId: "celestial" }, ...S(520), rarity: "epic", isNew: true },
   { id: "frm-valkyrie", tab: "frames", name: "Valkyrie Halo", desc: "Radiant winged halo with twin sapphire crystal flares.", frameCss: "0 0 0 3px #38bdf8, 0 0 24px 6px #0284c7, 0 0 0 6px #ffffff44", apply: { frameId: "valkyrie" }, ...S(460), rarity: "epic", isNew: true },
   { id: "frm-starlight", tab: "frames", name: "Starlight", desc: "Pulsing diamond stellar aura with four-point star flares.", frameCss: "0 0 0 3px #38bdf8, 0 0 20px 4px #818cf8", apply: { frameId: "starlight" }, cost: 238, originalCost: 340, currency: "sparks", isSale: true, salePercent: 30, rarity: "rare" },
@@ -198,9 +188,6 @@ export const STORE_ITEMS: StoreItem[] = [
   { id: "frm-crown", tab: "frames", name: "Crown", desc: "The expensive ring.", frameCss: "0 0 0 3px #fbbf24, 0 0 0 8px #f472b6, 0 0 28px #fbbf24", apply: { frameId: "crown" }, ...D(100), rarity: "ultra" },
 
   // Titles 14
-  { id: "ttl-time-bender", tab: "titles", name: "Time Bender", desc: "For operative chronos who react between the frames.", apply: { titleId: "time-bender" }, ...S(580), rarity: "epic", isNew: true },
-  { id: "ttl-bounty-hunter", tab: "titles", name: "Bounty Hunter", desc: "Operative who systematically purges daily & weekly bounties.", apply: { titleId: "bounty-hunter" }, ...S(620), rarity: "epic", isNew: true },
-  { id: "ttl-tournament-king", tab: "titles", name: "Tournament King", desc: "Reigns supreme atop weekly seeded tournament brackets.", apply: { titleId: "tournament-king" }, ...D(40), rarity: "ultra", isNew: true },
   { id: "ttl-godspeed", tab: "titles", name: "Godspeed", desc: "For arrow masters who read patterns at instantaneous reflex.", apply: { titleId: "godspeed" }, ...S(650), rarity: "rare", isNew: true },
   { id: "ttl-hyperdrive", tab: "titles", name: "Hyperdrive", desc: "Surpassed the reaction barrier.", apply: { titleId: "hyperdrive" }, cost: 385, originalCost: 550, currency: "sparks", isSale: true, salePercent: 30, rarity: "rare" },
   ...([
@@ -226,9 +213,6 @@ export const STORE_ITEMS: StoreItem[] = [
   { id: "ttl-myth", tab: "titles", name: "Myth", desc: "Almost nobody has this.", apply: { titleId: "myth" }, ...D(100), rarity: "ultra" },
 
   // Audio Packs
-  { id: "aud-synth", tab: "audio", name: "Cyberpunk Pulse", desc: "Analog sawtooth basslines, punchy synthesized clicks, and neon filter sweeps.", apply: { audioPackId: "synth" }, ...S(1800), rarity: "epic", isNew: true },
-  { id: "aud-chiptune", tab: "audio", name: "Arcade 84", desc: "Authentic FM-synthesis blips, square-wave arpeggios, and 80s coin hits.", apply: { audioPackId: "chiptune" }, ...S(2200), rarity: "epic", isNew: true },
-  { id: "aud-lofi", tab: "audio", name: "Lofi Midnight", desc: "Warm vinyl flutter, mellow Rhodes piano chords, and soothing night ambience.", apply: { audioPackId: "lofi" }, ...D(30), rarity: "ultra", isNew: true },
   { id: "aud-retro", tab: "audio", name: "8-Bit Arcade", desc: "Classic chiptune sound effects and retro synthesizer hits.", apply: { audioPackId: "retro" }, ...S(2000), rarity: "rare" },
   { id: "aud-ethereal", tab: "audio", name: "Ethereal Chimes", desc: "Soft, crystalline bells and windchimes for a relaxing vibe.", apply: { audioPackId: "ethereal" }, ...S(3500), rarity: "epic" },
   { id: "aud-cyber", tab: "audio", name: "Cyberdeck", desc: "Heavy mechanical clacks and glitch hop synthetic bursts.", apply: { audioPackId: "cyber" }, ...D(30), rarity: "ultra" },

@@ -2,11 +2,10 @@ import { motion } from "motion/react";
 import { uiTap } from "../game/haptics";
 import Icon from "./Icon";
 
-export type DockTab = "home" | "missions" | "leaderboard" | "store" | "stats" | "settings" | "profile";
+export type DockTab = "home" | "leaderboard" | "store" | "stats" | "settings" | "profile";
 
-const TABS: { id: DockTab; label: string; icon: "home" | "target" | "trophy" | "bag" | "chart" | "settings" }[] = [
+const TABS: { id: DockTab; label: string; icon: "home" | "trophy" | "bag" | "chart" | "settings" }[] = [
   { id: "home", label: "Play", icon: "home" },
-  { id: "missions", label: "Bounties", icon: "target" },
   { id: "leaderboard", label: "Ranks", icon: "trophy" },
   { id: "store", label: "Store", icon: "bag" },
   { id: "stats", label: "Stats", icon: "chart" },

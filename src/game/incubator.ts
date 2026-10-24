@@ -3,7 +3,7 @@
 import { type Stats, saveStats, spendSparks, spendDiamonds } from "./storage";
 import { type Profile, saveProfile } from "./profile";
 
-export type EggType = "neon" | "quantum" | "solar" | "chrono" | "glitch" | "astral";
+export type EggType = "neon" | "quantum" | "solar";
 
 export interface EggDef {
   type: EggType;
@@ -15,11 +15,11 @@ export interface EggDef {
   glowColor: string;
   accentColor: string;
   eggIcon: string;
-  tier: "Common" | "Rare" | "Legendary" | "Mythic";
+  tier: "Common" | "Rare" | "Legendary";
   possibleLoot: string[];
 }
 
-export const BASE_EGG_DEFS: Record<string, EggDef> = {
+export const EGG_DEFS: Record<EggType, EggDef> = {
   neon: {
     type: "neon",
     name: "Neon Core Egg",
@@ -59,83 +59,7 @@ export const BASE_EGG_DEFS: Record<string, EggDef> = {
     tier: "Legendary",
     possibleLoot: ["Massive Sparks (2,000+)", "Diamonds (40 - 100)", "Legendary Dragon Avatar", "Legendary Title: Dragon Sovereign"],
   },
-  chrono: {
-    type: "chrono",
-    name: "Chrono Phoenix Egg",
-    tagline: "Temporal temporal matrix that rewinds incubation speed with kinetic fire.",
-    durationSeconds: 35,
-    costSparks: 950,
-    costDiamonds: 15,
-    glowColor: "#ec4899",
-    accentColor: "#f472b6",
-    eggIcon: "🔥",
-    tier: "Rare",
-    possibleLoot: ["Sparks (800 - 2000)", "Diamonds (15 - 35)", "Title: Time Bender", "Phoenix Flare Frame"],
-  },
-  glitch: {
-    type: "glitch",
-    name: "Cyber Glitch Egg",
-    tagline: "Unstable holographic data packet leaking corrupted digital currency.",
-    durationSeconds: 40,
-    costSparks: 1100,
-    costDiamonds: 18,
-    glowColor: "#06b6d4",
-    accentColor: "#67e8f9",
-    eggIcon: "👾",
-    tier: "Rare",
-    possibleLoot: ["Sparks (1000 - 2500)", "Diamonds (20 - 45)", "Glitchy Avatar", "Matrix Frame"],
-  },
-  astral: {
-    type: "astral",
-    name: "Astral Hydra Egg",
-    tagline: "Ancient multi-core cosmic relic pulsing with celestial starlight.",
-    durationSeconds: 65,
-    costSparks: 2200,
-    costDiamonds: 40,
-    glowColor: "#6366f1",
-    accentColor: "#a5b4fc",
-    eggIcon: "✨",
-    tier: "Mythic",
-    possibleLoot: ["Sparks (3000 - 6000)", "Diamonds (50 - 120)", "Astral Prime Avatar", "Celestial Corona"],
-  },
 };
-
-export function getDailyIncubatorAtmosphere(): {
-  name: string;
-  tagline: string;
-  speedMultiplier: number;
-  featuredEggType: EggType;
-} {
-  const d = new Date();
-  const day = d.getDay(); // 0-6
-  const atmospheres = [
-    { name: "Solar Flare", tagline: "Kinetic plasma radiation accelerates all egg pods by 25%!", speedMultiplier: 0.75, featuredEggType: "solar" as EggType },
-    { name: "Temporal Rift", tagline: "Chrono distortion bends time! Chrono Phoenix Egg available today.", speedMultiplier: 0.8, featuredEggType: "chrono" as EggType },
-    { name: "Matrix Overclock", tagline: "Cyber circuits glitching with high data payloads!", speedMultiplier: 0.7, featuredEggType: "glitch" as EggType },
-    { name: "Starlight Conjunction", tagline: "Astral stars align, granting legendary hatchery yields!", speedMultiplier: 0.85, featuredEggType: "astral" as EggType },
-    { name: "Neon Surge", tagline: "High-voltage energy surges through basic incubator pods!", speedMultiplier: 0.6, featuredEggType: "neon" as EggType },
-    { name: "Quantum Tachyons", tagline: "Subatomic quantum wave density triples pod resonance!", speedMultiplier: 0.75, featuredEggType: "quantum" as EggType },
-    { name: "Cosmic Genesis", tagline: "Weekend apex storm! Hatch speeds boosted across all tiers!", speedMultiplier: 0.65, featuredEggType: "astral" as EggType },
-  ];
-  return atmospheres[day];
-}
-
-export function getActiveEggDefs(): Record<EggType, EggDef> {
-  const atmo = getDailyIncubatorAtmosphere();
-  const defs = { ...BASE_EGG_DEFS } as Record<EggType, EggDef>;
-  // Apply atmosphere speed boost
-  for (const key of Object.keys(defs) as EggType[]) {
-    if (defs[key]) {
-      defs[key] = {
-        ...defs[key],
-        durationSeconds: Math.max(10, Math.round(defs[key].durationSeconds * atmo.speedMultiplier)),
-      };
-    }
-  }
-  return defs;
-}
-
-export const EGG_DEFS: Record<EggType, EggDef> = getActiveEggDefs();
 
 export interface ActivePod {
   id: string;
@@ -336,48 +260,6 @@ export function hatchPod(
         nextStats.sparks = (nextStats.sparks || 0) + bonus;
       }
     }
-  } else if (pod.eggType === "chrono") {
-    const sparks = 800 + Math.floor(Math.random() * 800);
-    const diamonds = 12 + Math.floor(Math.random() * 10);
-    reward = {
-      title: "Chrono Phoenix Essence",
-      description: `Harvested +${sparks} Sparks and +${diamonds} Diamonds from the temporal flare!`,
-      type: "sparks",
-      rarity: "Rare",
-      amount: sparks,
-    };
-    nextStats.sparks = (nextStats.sparks || 0) + sparks;
-    nextStats.diamonds = (nextStats.diamonds || 0) + diamonds;
-  } else if (pod.eggType === "glitch") {
-    const avatarId = "ani-raiden";
-    reward = {
-      title: "Raiden Prime Operative",
-      description: "Thunder katana operative recovered from the corrupted data shell!",
-      type: "avatar",
-      rarity: "Epic",
-      avatarId,
-      avatarName: "Raiden Prime",
-    };
-    if (!nextProfile.purchased.includes(avatarId)) {
-      nextProfile.purchased = [...nextProfile.purchased, avatarId];
-      nextProfile.avatarId = avatarId;
-    } else {
-      const bonus = 1200;
-      reward.description = `Already unlocked! Received +${bonus} Bonus Sparks.`;
-      nextStats.sparks = (nextStats.sparks || 0) + bonus;
-    }
-  } else if (pod.eggType === "astral") {
-    const diamonds = 45 + Math.floor(Math.random() * 55);
-    const sparks = 2500;
-    reward = {
-      title: `Astral Hydra Genesis (+${diamonds} ◆)`,
-      description: `Extracted ${diamonds} cosmic diamonds and ${sparks} starlight sparks!`,
-      type: "diamonds",
-      rarity: "Legendary",
-      amount: diamonds,
-    };
-    nextStats.diamonds = (nextStats.diamonds || 0) + diamonds;
-    nextStats.sparks = (nextStats.sparks || 0) + sparks;
   } else {
     // Solar Dragon Egg
     const roll = Math.random();
