@@ -429,16 +429,28 @@ export function checkDailyLogin(stats: Stats): { nextStats: Stats; rewardSparks:
 
 // ---------------------------------------------------------------- misc
 
+export function sanitizeName(raw: unknown): string {
+  if (typeof raw !== "string") return "Ace";
+  // Strip HTML tags and control characters, trim whitespace, and enforce max length
+  const cleaned = raw
+    .replace(/<[^>]*>/g, "")
+    .replace(/[\x00-\x1F\x7F-\x9F]/g, "")
+    .trim()
+    .slice(0, 30);
+  return cleaned || "Ace";
+}
+
 export function loadName(): string {
   try {
-    return localStorage.getItem(NAME_KEY) || "Ace";
+    return sanitizeName(localStorage.getItem(NAME_KEY));
   } catch {
     return "Ace";
   }
 }
 
 export function saveName(name: string) {
-  persistSave("operativeName", name);
+  const cleanName = sanitizeName(name);
+  persistSave("operativeName", cleanName);
 }
 
 export function hasSeenTutorial(): boolean {
