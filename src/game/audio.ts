@@ -43,13 +43,13 @@ export class SoundManager {
       this.master.connect(this.ctx.destination);
 
       this.musicGain = this.ctx.createGain();
-      this.updateGains();
       this.musicGain.connect(this.master);
 
       this.sfxGain = this.ctx.createGain();
       this.sfxGain.connect(this.master);
+      this.updateGains();
     }
-    if (this.ctx.state === "suspended") void this.ctx.resume();
+    if (this.ctx.state === "suspended") void this.ctx.resume().catch(() => undefined);
   }
 
   setGlobalMuted(m: boolean) {
@@ -69,7 +69,7 @@ export class SoundManager {
 
   private updateGains() {
     const isMuted = this.globalMuted || this.muted;
-    const isMusicMuted = this.globalMuted || this.muted || this.musicMuted;
+    const isMusicMuted = this.globalMuted || this.musicMuted;
     
     if (this.sfxGain) {
       this.sfxGain.gain.value = isMuted ? 0 : 0.65;

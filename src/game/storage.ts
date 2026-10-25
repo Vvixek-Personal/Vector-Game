@@ -1,8 +1,9 @@
 // Persistence: settings, per-mode high scores, lifetime stats.
 
+import { HISTORY_LIMIT } from "./analytics";
 import type { DirName, GameMode } from "./types";
-import { auth, db, sanitizeFirestoreData } from "../firebase/config";
-import { doc, setDoc } from "firebase/firestore";
+import { persistSave } from "../firebase/cloudSave";
+import { safeStorage as localStorage } from "./persistence";
 
 export type UiMode = "dark" | "light";
 export type Colorway = "cobalt" | "tangerine" | "orchid" | "spring" | "pearl";
@@ -103,11 +104,21 @@ export function loadSettings(): Settings {
   try {
     const raw = localStorage.getItem(SETTINGS_KEY);
     if (!raw) return { ...DEFAULT_SETTINGS };
-    const merged: Settings = { ...DEFAULT_SETTINGS, ...(JSON.parse(raw) as Partial<Settings>) };
+    const parsed = JSON.parse(raw);
+    const merged: Settings = { ...DEFAULT_SETTINGS, ...(parsed && typeof parsed === "object" ? parsed : {}) };
+    for (const key of Object.keys(DEFAULT_SETTINGS) as (keyof Settings)[]) {
+      if (typeof DEFAULT_SETTINGS[key] === "boolean" && typeof merged[key] !== "boolean") (merged as any)[key] = DEFAULT_SETTINGS[key];
+    }
+    for (const [key, values] of Object.entries({ uiMode: ["dark", "light"], colorway: COLORWAYS.map(c => c.id), theme: ARENA_THEMES.map(t => t.id), dpad: ["center", "right", "left", "hidden"], musicStyle: ["drive", "pulse", "calm"], keyPreset: ["both", "arrows", "wasd"] })) {
+      if (!(values as string[]).includes(merged[key])) merged[key] = DEFAULT_SETTINGS[key];
+    }
+    merged.haptics = Number.isFinite(merged.haptics) ? Math.min(100, Math.max(0, merged.haptics)) : 100;
+    merged.dpadScale = Number.isFinite(merged.dpadScale) ? Math.min(125, Math.max(80, merged.dpadScale)) : 100;
     if (!merged.binds || typeof merged.binds !== "object") merged.binds = {};
     if (!["normal", "medium", "large", "huge"].includes(merged.textSize)) {
       merged.textSize = "medium";
     }
+    merged.binds = Object.fromEntries(Object.entries(merged.binds).filter(([d, codes]) => ["N", "E", "S", "W"].includes(d) && Array.isArray(codes)).map(([d, codes]) => [d, (codes as unknown[]).filter(c => typeof c === "string" && !["KeyF", "KeyM", "KeyP", "Escape", "Tab", "Space", "Enter"].includes(c)).slice(-2)]));
     return merged;
   } catch {
     return { ...DEFAULT_SETTINGS };
@@ -115,14 +126,7 @@ export function loadSettings(): Settings {
 }
 
 export function saveSettings(s: Settings) {
-  try {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
-  } catch {
-    /* ignore */
-  }
-  if (auth?.currentUser) {
-    setDoc(doc(db, "users", auth.currentUser.uid), sanitizeFirestoreData({ settings: s }), { merge: true }).catch(console.warn);
-  }
+  persistSave("settings", s);
 }
 
 // ---------------------------------------------------------------- key binds
@@ -176,26 +180,34 @@ const MAX_SCORES = 8;
 function allScores(): Record<string, ScoreEntry[]> {
   try {
     const raw = localStorage.getItem(SCORE_KEY);
-    return raw ? (JSON.parse(raw) as Record<string, ScoreEntry[]>) : {};
+    const parsed = raw ? JSON.parse(raw) : {};
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
   } catch {
     return {};
   }
 }
 
-export function loadScores(mode: GameMode): ScoreEntry[] {
-  return allScores()[mode] ?? [];
+export function getDailyId(): string { return new Date().toISOString().slice(0, 10); }
+export function scoreBucket(mode: GameMode, challengeId?: string) {
+  return mode === "daily" ? `daily_${challengeId && /^\d{4}-\d{2}-\d{2}$/.test(challengeId) ? challengeId : getDailyId()}` : mode === "weekly" ? `weekly_${challengeId && /^\d{4}_W\d{1,2}$/.test(challengeId) ? challengeId : getWeeklyId()}` : mode;
+}
+export function loadScores(mode: GameMode, challengeId?: string): ScoreEntry[] {
+  if (mode === "practice") return [];
+  const scores = allScores()[scoreBucket(mode, challengeId)];
+  return Array.isArray(scores) ? scores.filter(s => Number.isFinite(s.score) && s.score >= 0).sort((a, b) => b.score - a.score) : [];
 }
 
-export function bestScore(mode: GameMode): number {
-  const list = loadScores(mode);
+export function bestScore(mode: GameMode, challengeId?: string): number {
+  const list = loadScores(mode, challengeId);
   return list.length ? list[0].score : 0;
 }
 
 /** Insert a score for a mode. Returns list + rank (-1 = not placed). */
-export function addScore(mode: GameMode, entry: ScoreEntry): { list: ScoreEntry[]; rank: number } {
+export function addScore(mode: GameMode, entry: ScoreEntry, challengeId?: string): { list: ScoreEntry[]; rank: number } {
+  if (mode === "practice") return { list: [], rank: -1 };
   const all = allScores();
-  const list = [...(all[mode] ?? []), entry].sort((a, b) => b.score - a.score).slice(0, MAX_SCORES);
-  all[mode] = list;
+  const list = [...loadScores(mode, challengeId), entry].sort((a, b) => b.score - a.score).slice(0, MAX_SCORES);
+  all[scoreBucket(mode, challengeId)] = list;
   try {
     localStorage.setItem(SCORE_KEY, JSON.stringify(all));
   } catch {
@@ -213,6 +225,16 @@ export interface RunSnap {
   sparks: number;
   streak: number;
   date: string;
+  id?: string;
+  runNumber?: number;
+  createdAt?: number;
+  hits?: number;
+  misses?: number;
+  perfectHits?: number;
+  avgReactionMs?: number;
+  fastestMs?: number;
+  playSeconds?: number;
+  modifierMultiplier?: number;
 }
 
 export interface Stats {
@@ -229,6 +251,7 @@ export interface Stats {
   reactionCount: number;
   sparksSpent: number;
   diamonds: number;
+  bonusXp?: number;
   history: RunSnap[];
   modeRuns: Record<string, number>;
   loginStreak?: number;
@@ -246,7 +269,15 @@ const EMPTY_STATS: Stats = {
 export function loadStats(): Stats {
   try {
     const raw = localStorage.getItem(STATS_KEY);
-    return raw ? { ...EMPTY_STATS, ...(JSON.parse(raw) as Partial<Stats>) } : { ...EMPTY_STATS };
+    const parsed = raw ? JSON.parse(raw) : {};
+    const stats: Stats = { ...structuredClone(EMPTY_STATS), ...(parsed && typeof parsed === "object" ? parsed : {}) };
+    for (const [key, value] of Object.entries(EMPTY_STATS)) {
+      if (typeof value === "number" && (typeof stats[key] !== "number" || !Number.isFinite(stats[key]) || stats[key] < 0)) stats[key] = value;
+    }
+    stats.bonusXp = Number.isFinite(stats.bonusXp) ? Math.max(0, stats.bonusXp ?? 0) : 0;
+    stats.history = Array.isArray(stats.history) ? stats.history.filter(r => r && Number.isFinite(r.score) && typeof r.mode === "string").slice(0, HISTORY_LIMIT) : [];
+    stats.modeRuns = stats.modeRuns && typeof stats.modeRuns === "object" && !Array.isArray(stats.modeRuns) ? Object.fromEntries(Object.entries(stats.modeRuns).filter(([k, v]) => typeof v === "number" && Number.isFinite(v) && v >= 0)) : {};
+    return stats;
   } catch {
     return { ...EMPTY_STATS };
   }
@@ -262,17 +293,23 @@ export function recordRun(
   score: number,
   bestStreak: number,
   fastestMs: number,
-  extra?: { hits?: number; misses?: number; playSeconds?: number; avgMs?: number; mode?: string; acc?: number },
+  extra?: { modifierMultiplier?: number; perfectHits?: number; hits?: number; misses?: number; playSeconds?: number; avgMs?: number; mode?: string; acc?: number },
 ): Stats {
   const s = loadStats();
+  if (extra?.mode === "practice") return s;
   const gained = sparksForRun(score, bestStreak);
   const snap: RunSnap = {
     score, mode: extra?.mode ?? "arcade", acc: extra?.acc ?? 0, sparks: gained, streak: bestStreak,
     date: new Date().toLocaleDateString(),
+    id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+    runNumber: s.runs + 1, createdAt: Date.now(),
+    hits: extra?.hits, misses: extra?.misses, perfectHits: extra?.perfectHits, modifierMultiplier: extra?.modifierMultiplier,
+    avgReactionMs: extra?.avgMs, fastestMs: fastestMs > 0 ? fastestMs : undefined, playSeconds: extra?.playSeconds,
   };
   const modeRuns = { ...(s.modeRuns ?? {}) };
   if (extra?.mode) modeRuns[extra.mode] = (modeRuns[extra.mode] ?? 0) + 1;
   const next: Stats = {
+    ...s,
     runs: s.runs + 1,
     totalScore: s.totalScore + score,
     bestStreak: Math.max(s.bestStreak, bestStreak),
@@ -286,7 +323,7 @@ export function recordRun(
     reactionCount: (s.reactionCount ?? 0) + (extra?.hits ?? 0),
     sparksSpent: s.sparksSpent ?? 0,
     diamonds: s.diamonds ?? 0,
-    history: [snap, ...(s.history ?? [])].slice(0, 24),
+    history: [snap, ...(s.history ?? [])].slice(0, HISTORY_LIMIT),
     modeRuns,
   };
   try {
@@ -298,6 +335,7 @@ export function recordRun(
 }
 
 export function spendSparks(amount: number): Stats | null {
+  if (!Number.isSafeInteger(amount) || amount <= 0) return null;
   const s = loadStats();
   if ((s.sparks ?? 0) < amount) return null;
   const next = { ...s, sparks: s.sparks - amount, sparksSpent: (s.sparksSpent ?? 0) + amount };
@@ -310,6 +348,7 @@ export function spendSparks(amount: number): Stats | null {
 }
 
 export function spendDiamonds(amount: number): Stats | null {
+  if (!Number.isSafeInteger(amount) || amount <= 0) return null;
   const s = loadStats();
   if ((s.diamonds ?? 0) < amount) return null;
   const next = { ...s, diamonds: s.diamonds - amount };
@@ -322,6 +361,7 @@ export function spendDiamonds(amount: number): Stats | null {
 }
 
 export function convertSparksToDiamonds(sparksCost: number, diamondsGain: number): Stats | null {
+  if (!Number.isFinite(sparksCost) || sparksCost <= 0 || !Number.isFinite(diamondsGain) || diamondsGain <= 0) return null;
   const s = loadStats();
   if ((s.sparks ?? 0) < sparksCost) return null;
   const next = {
@@ -339,17 +379,11 @@ export function convertSparksToDiamonds(sparksCost: number, diamondsGain: number
 }
 
 export function saveStats(s: Stats) {
-  try {
-    localStorage.setItem(STATS_KEY, JSON.stringify(s));
-  } catch {
-    /* ignore */
-  }
-  if (auth?.currentUser) {
-    setDoc(doc(db, "users", auth.currentUser.uid), sanitizeFirestoreData({ stats: s }), { merge: true }).catch(console.warn);
-  }
+  persistSave("stats", s);
 }
 
 export function checkDailyLogin(stats: Stats): { nextStats: Stats; rewardSparks: number; rewardDiamonds: number } | null {
+  stats = loadStats(); // Read the persisted claim, including React Strict Mode replays.
   const now = new Date();
   const today = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
   if (stats.lastLoginDate === today) return null; // Already logged in today
@@ -404,14 +438,7 @@ export function loadName(): string {
 }
 
 export function saveName(name: string) {
-  try {
-    localStorage.setItem(NAME_KEY, name);
-  } catch {
-    /* ignore */
-  }
-  if (auth?.currentUser) {
-    setDoc(doc(db, "users", auth.currentUser.uid), sanitizeFirestoreData({ operativeName: name || "Operative" }), { merge: true }).catch(console.warn);
-  }
+  persistSave("operativeName", name);
 }
 
 export function hasSeenTutorial(): boolean {
@@ -439,9 +466,8 @@ export function resetTutorial() {
 }
 
 /** Deterministic seed for the Daily mode. */
-export function dailySeed(): number {
-  const d = new Date();
-  const str = `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+export function dailySeed(challengeId = getDailyId()): number {
+  const str = challengeId.split("-").map(Number).join("-");
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     hash = (hash << 5) - hash + str.charCodeAt(i);
@@ -452,16 +478,16 @@ export function dailySeed(): number {
 
 export function getWeeklyId(): string {
   const d = new Date();
-  const year = d.getFullYear();
-  const start = new Date(year, 0, 1);
-  const diff = (d.getTime() - start.getTime()) + (start.getTimezoneOffset() - d.getTimezoneOffset()) * 60000;
+  const year = d.getUTCFullYear();
+  const start = Date.UTC(year, 0, 1);
+  const diff = d.getTime() - start;
   const oneWeek = 1000 * 60 * 60 * 24 * 7;
   const week = Math.floor(diff / oneWeek);
   return `${year}_W${week}`;
 }
 
-export function weeklySeed(): number {
-  const str = getWeeklyId();
+export function weeklySeed(challengeId = getWeeklyId()): number {
+  const str = challengeId;
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     hash = (hash << 5) - hash + str.charCodeAt(i);

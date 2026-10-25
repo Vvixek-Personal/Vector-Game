@@ -1,15 +1,17 @@
+import { safeStorage as localStorage } from "../../game/persistence";
 import React, { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import {
   SPIN_SLICES,
+  canFreeSpin,
   getRemainingFreeSpinMs,
   recordFreeSpinUsed,
   pickSpinRewardIndex,
   applySpinReward,
   type SpinReward,
 } from "../../game/spin";
-import { type Stats, spendSparks, spendDiamonds } from "../../game/storage";
-import { type Profile } from "../../game/profile";
+import { type Stats, loadSettings, loadStats, spendSparks, spendDiamonds } from "../../game/storage";
+import { loadProfile, type Profile } from "../../game/profile";
 import { uiTap, uiConfirm, uiUnlock } from "../../game/haptics";
 import { CanvasSpinWheel } from "./CanvasSpinWheel";
 import { Sparkles, Disc, Award, Clock } from "lucide-react";
@@ -29,6 +31,7 @@ export const LuckySpinView: React.FC<Props> = ({
   onProfile,
   onMessage,
 }) => {
+  const reducedMotion = useReducedMotion() || loadSettings().reducedMotion;
   const [spinning, setSpinning] = useState(false);
   const [rotation, setRotation] = useState(0);
   const [reward, setReward] = useState<SpinReward | null>(null);
@@ -45,6 +48,7 @@ export const LuckySpinView: React.FC<Props> = ({
   });
 
   const animFrameRef = useRef<number | null>(null);
+  const spinningRef = useRef(false);
   const currentRotationRef = useRef(0);
   const lastTickSliceRef = useRef<number>(-1);
 
@@ -87,10 +91,10 @@ export const LuckySpinView: React.FC<Props> = ({
   };
 
   const handleSpin = (costType: "free" | "sparks" | "diamonds") => {
-    if (spinning) return;
+    if (spinningRef.current) return;
 
     if (costType === "free") {
-      if (!freeAvailable) return;
+      if (!canFreeSpin()) return;
       recordFreeSpinUsed();
       setCooldownRemaining(getRemainingFreeSpinMs());
     } else if (costType === "sparks") {
@@ -109,12 +113,21 @@ export const LuckySpinView: React.FC<Props> = ({
       onStats(next);
     }
 
+    spinningRef.current = true;
     uiConfirm();
     setSpinning(true);
     setReward(null);
     setHighlightedIndex(null);
 
     const winningIndex = pickSpinRewardIndex();
+    // Settle before animation so navigation cannot lose a paid reward.
+    const wonReward = SPIN_SLICES[winningIndex];
+    const result = applySpinReward(wonReward, loadStats(), loadProfile());
+    onStats(result.nextStats);
+    onProfile(result.nextProfile);
+    const nextHistory = [wonReward.label + " " + wonReward.sublabel, ...history.slice(0, 9)];
+    setHistory(nextHistory);
+    try { localStorage.setItem("vector_spin_history", JSON.stringify(nextHistory)); } catch {}
     const sliceCount = SPIN_SLICES.length;
     const sliceAngle = 360 / sliceCount;
 
@@ -129,7 +142,7 @@ export const LuckySpinView: React.FC<Props> = ({
     const deltaToTarget = ((targetSliceAngle - currentModulo) + 360) % 360;
     const endRot = startRot + extraFullSpins + deltaToTarget;
 
-    const duration = 4400; // 4.4 seconds of cinematic spin
+    const duration = reducedMotion ? 1 : 4400; // 4.4 seconds of cinematic spin
     const startTime = performance.now();
 
     // High-performance 60/120fps physics loop with cubic-bezier deceleration
@@ -168,25 +181,8 @@ export const LuckySpinView: React.FC<Props> = ({
         setShowCelebration(true);
         uiUnlock();
 
-        const { nextStats, nextProfile, message } = applySpinReward(
-          wonReward,
-          stats,
-          profile
-        );
-        onStats(nextStats);
-        onProfile(nextProfile);
-        onMessage(message);
-
-        const nextHistory = [
-          wonReward.label + " " + wonReward.sublabel,
-          ...history.slice(0, 9),
-        ];
-        setHistory(nextHistory);
-        try {
-          localStorage.setItem("vector_spin_history", JSON.stringify(nextHistory));
-        } catch {
-          /* ignore */
-        }
+        spinningRef.current = false;
+        onMessage(result.message);
       }
     };
 
@@ -403,7 +399,7 @@ export const LuckySpinView: React.FC<Props> = ({
                 onClick={() => setShowCelebration(false)}
                 className="mt-6 w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 text-black font-black text-sm uppercase tracking-wider hover:opacity-95 transition shadow-lg shadow-amber-500/20 cursor-pointer"
               >
-                Claim Prize
+                Continue
               </button>
             </motion.div>
           </div>

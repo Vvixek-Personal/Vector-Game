@@ -122,6 +122,7 @@ export default function DPad({
               onContextMenu={(e) => e.preventDefault()}
               onPointerDown={(e) => {
                 e.preventDefault();
+                e.currentTarget.setPointerCapture(e.pointerId);
                 onPress(d);
               }}
               onPointerUp={(e) => {
@@ -129,9 +130,10 @@ export default function DPad({
                 onRelease(d);
               }}
               onPointerCancel={() => onRelease(d)}
-              onPointerLeave={() => {
-                if (on) onRelease(d);
-              }}
+              onLostPointerCapture={() => onRelease(d)}
+              onKeyDown={(e) => { if ((e.key === " " || e.key === "Enter") && !e.repeat) { e.preventDefault(); onPress(d); } }}
+              onKeyUp={(e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); onRelease(d); } }}
+              onBlur={() => onRelease(d)}
               aria-label={d}
             >
               {DIR_GLYPH[d]}

@@ -1,3 +1,4 @@
+import { safeStorage as localStorage } from "../game/persistence";
 // Quantum Incubator & Hatchery mechanics
 
 import { type Stats, saveStats, spendSparks, spendDiamonds } from "./storage";
@@ -31,7 +32,7 @@ export const EGG_DEFS: Record<EggType, EggDef> = {
     accentColor: "#86efac",
     eggIcon: "🟢",
     tier: "Common",
-    possibleLoot: ["Sparks (100 - 500)", "Diamonds (2 - 8)", "Title: Plasma Spark", "Rare Neon Frame"],
+    possibleLoot: ["Sparks (200 - 499)", "Diamonds (4 - 8)"],
   },
   quantum: {
     type: "quantum",
@@ -44,7 +45,7 @@ export const EGG_DEFS: Record<EggType, EggDef> = {
     accentColor: "#d8b4fe",
     eggIcon: "🟣",
     tier: "Rare",
-    possibleLoot: ["Sparks (500 - 1500)", "Diamonds (10 - 25)", "Anime Avatar: Cipher", "Title: Chrono Breaker"],
+    possibleLoot: ["Diamonds (15 - 29)", "Anime Avatar: Cipher", "Duplicate avatar: 800 Sparks"],
   },
   solar: {
     type: "solar",
@@ -57,7 +58,7 @@ export const EGG_DEFS: Record<EggType, EggDef> = {
     accentColor: "#fde68a",
     eggIcon: "🟡",
     tier: "Legendary",
-    possibleLoot: ["Massive Sparks (2,000+)", "Diamonds (40 - 100)", "Legendary Dragon Avatar", "Legendary Title: Dragon Sovereign"],
+    possibleLoot: ["Diamonds (50 - 99) and 1,500 Sparks", "Anime Avatar: Astral Prime", "Duplicate avatar: 2,000 Sparks"],
   },
 };
 
@@ -86,14 +87,14 @@ const DEFAULT_STATE: IncubatorState = {
 export function loadIncubatorState(): IncubatorState {
   try {
     const raw = localStorage.getItem(INCUBATOR_KEY);
-    if (!raw) return DEFAULT_STATE;
+    if (!raw) return structuredClone(DEFAULT_STATE);
     const parsed = JSON.parse(raw);
     return {
-      inventory: parsed.inventory || [],
-      pods: Array.isArray(parsed.pods) && parsed.pods.length === 2 ? parsed.pods : [null, null],
+      inventory: Array.isArray(parsed?.inventory) ? parsed.inventory.filter(e => e && typeof e.id === "string" && EGG_DEFS[e.eggType]) : [],
+      pods: Array.isArray(parsed?.pods) && parsed.pods.length === 2 ? parsed.pods.map(p => p && EGG_DEFS[p.eggType] && Number.isFinite(p.readyAt) && Number.isFinite(p.durationMs) && p.durationMs > 0 ? p : null) : [null, null],
     };
   } catch {
-    return DEFAULT_STATE;
+    return structuredClone(DEFAULT_STATE);
   }
 }
 
@@ -305,6 +306,7 @@ export function hatchPod(
     pods: nextPods,
   };
 
+  nextStats.sparksEarned = (nextStats.sparksEarned ?? 0) + Math.max(0, nextStats.sparks - currentStats.sparks);
   saveIncubatorState(nextIncubator);
   saveStats(nextStats);
   saveProfile(nextProfile);

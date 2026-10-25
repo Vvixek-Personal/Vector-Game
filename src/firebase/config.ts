@@ -29,8 +29,7 @@ export async function testFirestoreConnection(): Promise<boolean> {
   }
 }
 
-// Kick off test connection
-testFirestoreConnection().catch(() => {});
+// Connection checks are explicit; startup must work offline.
 
 /**
  * Recursively strips any `undefined` values from an object or array before

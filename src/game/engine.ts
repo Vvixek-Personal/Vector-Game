@@ -5,7 +5,7 @@
 import { SoundManager } from "./audio";
 import { Fx } from "./fx";
 import { playHaptic } from "./haptics";
-import { bestScore, resolveKeyMap, type Settings, type ThemeId } from "./storage";
+import { getDailyId, getWeeklyId, dailySeed, weeklySeed, bestScore, resolveKeyMap, type Settings, type ThemeId } from "./storage";
 import { type GameModifiers, getModifierMultiplier } from "./modifiers";
 import {
   ALL_DIRS,
@@ -28,6 +28,7 @@ import {
   type GameMode,
   type GameSummary,
   type HudState,
+  type HitFeedback,
   type ModeDef,
   type Phase,
 } from "./types";
@@ -204,6 +205,10 @@ export class Engine {
   private correctCount = 0;
   private reactions: number[] = [];
   private fastest = 9999;
+  private perfectHits = 0;
+  private hitFeedback: HitFeedback | null = null;
+  private feedbackAt = 0;
+  private feedbackId = 0;
 
   // focus slow-mo
   private focusCharges = FOCUS_CHARGES;
@@ -222,6 +227,8 @@ export class Engine {
 
   private rng = new Rng(12345);
   private modifiers: GameModifiers = {};
+  private challengeId: string | undefined;
+  private shopTheme: { bg: [string, string, string]; accent: string; decoy: string } | null = null;
 
   constructor(canvas: HTMLCanvasElement, settings: Settings, events: EngineEvents) {
     this.canvas = canvas;
@@ -249,7 +256,7 @@ export class Engine {
     canvas.addEventListener("pointerdown", this.onPointerDown);
     canvas.addEventListener("pointermove", this.onPointerMove);
     canvas.addEventListener("pointerup", this.onPointerUp);
-    canvas.addEventListener("pointercancel", this.onPointerUp);
+    canvas.addEventListener("pointercancel", this.onPointerCancel);
 
     // Menus are HTML/CSS. The canvas only needs a loop during an active run.
   }
@@ -265,11 +272,16 @@ export class Engine {
     this.canvas.removeEventListener("pointerdown", this.onPointerDown);
     this.canvas.removeEventListener("pointermove", this.onPointerMove);
     this.canvas.removeEventListener("pointerup", this.onPointerUp);
-    this.canvas.removeEventListener("pointercancel", this.onPointerUp);
+    this.canvas.removeEventListener("pointercancel", this.onPointerCancel);
     this.sound.destroy();
   }
 
   // ---------------------------------------------------------- public api
+
+  setArenaTheme(colors?: readonly [string, string, string]) {
+    this.shopTheme = colors ? { accent: colors[0], bg: [colors[1], colors[1], colors[1]], decoy: colors[2] } : null;
+    this.configure(this.settings);
+  }
 
   setAudioPack(audioPackId?: string) {
     this.sound.setAudioPackId(audioPackId);
@@ -298,14 +310,15 @@ export class Engine {
     this.pausedAt = 0;
     this.mode = mode;
     this.def = MODES[mode];
-    this.modifiers = modifiers ? { ...modifiers } : {};
+    this.modifiers = mode === "practice" || mode === "daily" || mode === "weekly" ? {} : modifiers ? { ...modifiers } : {};
     
-    const seed = mode === "weekly" ? this.weeklySeed() : (this.def.seeded ? this.dailySeed() : Math.floor(Math.random() * 1e9) + 1);
+    this.challengeId = mode === "daily" ? getDailyId() : mode === "weekly" ? getWeeklyId() : undefined;
+    const seed = mode === "weekly" ? weeklySeed(this.challengeId) : (this.def.seeded ? dailySeed(this.challengeId) : Math.floor(Math.random() * 1e9) + 1);
     this.rng = new Rng(seed);
 
     this.fx.clear();
     this.score = 0;
-    this.best = bestScore(mode);
+    this.best = bestScore(mode, this.challengeId);
     this.livesLeft = this.modifiers.suddenRisk ? 1 : this.def.lives;
     this.streak = 0;
     this.bestStreak = 0;
@@ -315,14 +328,19 @@ export class Engine {
     this.correctCount = 0;
     this.reactions = [];
     this.fastest = 9999;
+    this.perfectHits = 0;
+    this.hitFeedback = null;
+    this.visualDir = 90;
+    this.hudEmitAt = this.t;
+    this.ptr.active = false;
     this.total = this.def.total ?? 0;
     this.waveStep = 0;
     this.waves = 0;
     this.versus = { turn: 0, round: 1, scores: [0, 0] };
     this.lastVersusAt = 0;
     this.coop = [
-      { held: new Set(), chord: new Set(), pend: false, at: 0, input: null, armed: true, lives: this.def.lives, stale: new Set() },
-      { held: new Set(), chord: new Set(), pend: false, at: 0, input: null, armed: true, lives: this.def.lives, stale: new Set() },
+      { held: new Set(), chord: new Set(), pend: false, at: 0, input: null, armed: true, lives: this.modifiers.suddenRisk ? 1 : this.def.lives, stale: new Set() },
+      { held: new Set(), chord: new Set(), pend: false, at: 0, input: null, armed: true, lives: this.modifiers.suddenRisk ? 1 : this.def.lives, stale: new Set() },
     ];
     this.coopKeys.clear();
     this.focusCharges = FOCUS_CHARGES;
@@ -377,6 +395,10 @@ export class Engine {
     this.events.onPhase("menu");
   }
 
+  finishPractice() {
+    if (this.mode === "practice" && (this.phase === "playing" || this.phase === "paused")) this.over();
+  }
+
   triggerFocus() {
     if (this.phase !== "playing" || !this.focusAvailable()) return;
     if (this.focusActive || this.focusCharges <= 0) return;
@@ -396,40 +418,15 @@ export class Engine {
   }
 
   private focusAvailable() {
-    return this.def.players === 1;
+    return this.def.players === 1 && this.mode !== "versus" && this.mode !== "practice";
   }
 
   // ---------------------------------------------------------- theme
 
   private themeColors(s: Settings): { bg: [string, string, string]; accent: string; decoy: string } {
+    if (this.shopTheme) return this.shopTheme;
     if (s.uiMode === "light") return LIGHT_THEMES[s.colorway] ?? LIGHT_THEMES.cobalt;
     return THEME_COLORS[s.theme] ?? THEME_COLORS.cyan;
-  }
-
-  private weeklySeed(): number {
-    const d = new Date();
-    const year = d.getFullYear();
-    const start = new Date(year, 0, 1);
-    const diff = (d.getTime() - start.getTime()) + (start.getTimezoneOffset() - d.getTimezoneOffset()) * 60000;
-    const week = Math.floor(diff / (1000 * 60 * 60 * 24 * 7));
-    const str = `${year}_W${week}`;
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      hash = (hash << 5) - hash + str.charCodeAt(i);
-      hash |= 0;
-    }
-    return Math.abs(hash) || 12345;
-  }
-
-  private dailySeed(): number {
-    const d = new Date();
-    const str = `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      hash = (hash << 5) - hash + str.charCodeAt(i);
-      hash |= 0;
-    }
-    return Math.abs(hash) || 12345;
   }
 
   // ---------------------------------------------------------- loop
@@ -471,6 +468,7 @@ export class Engine {
     this.fx.update(dt, this.t);
     this.reveal = this.settings.reducedMotion ? 1 : Math.min(1, this.reveal + dt / 0.18);
     this.runClock += dt;
+    if (this.hitFeedback && this.t - this.feedbackAt > 1) { this.hitFeedback = null; this.emitHud(); }
 
     if (this.focusActive) {
       this.focusLeft -= dt;
@@ -514,7 +512,8 @@ export class Engine {
         this.revealT += dt;
         if (this.revealT >= (this.def.reveal ?? 0.9)) {
           this.memoryPhase = "recall";
-          this.timeLeft = this.def.roundTime;
+          this.timeLeft = this.roundDuration();
+          this.clearSoloInput();
           this.roundStart = performance.now();
           this.emitHud();
         }
@@ -532,12 +531,12 @@ export class Engine {
     }
 
     // round timer (slowed by focus)
-    this.timeLeft -= dt * (this.focusActive ? FOCUS_SCALE : 1);
-    if (!this.warned && this.timeLeft < 0.45 && this.timeLeft > 0) {
+    if (!this.def.untimed) this.timeLeft -= dt * (this.focusActive ? FOCUS_SCALE : 1);
+    if (!this.def.untimed && !this.warned && this.timeLeft < 0.45 && this.timeLeft > 0) {
       this.warned = true;
       this.sound.lowTime();
     }
-    if (this.timeLeft <= 0) {
+    if (!this.def.untimed && this.timeLeft <= 0) {
       this.handleTimeout();
       return;
     }
@@ -553,6 +552,10 @@ export class Engine {
 
   private rand() {
     return this.def.seeded ? this.rng.next() : Math.random();
+  }
+
+  private roundDuration() {
+    return this.def.roundTime / (this.modifiers.hyperSpeed ? 1.35 : 1);
   }
 
   private spawn() {
@@ -573,8 +576,7 @@ export class Engine {
     this.requiredDir = req;
     if (this.mark === "bonus") this.sound.bonusSpawn();
 
-    const speedMult = this.modifiers.hyperSpeed ? 1.35 : 1.0;
-    this.timeLeft = this.def.roundTime / speedMult;
+    this.timeLeft = this.roundDuration();
     this.reveal = 0;
     this.revealT = 0;
     this.warned = false;
@@ -603,9 +605,9 @@ export class Engine {
   // ---------------------------------------------------------- solo input
 
   private soloPress(d: DirName) {
+    if (this.phase !== "playing" || this.def.players === 2 || (this.mode === "memory" && this.memoryPhase !== "recall")) return;
     if (this.held.has(d)) return;
     this.held.add(d);
-    if (this.phase !== "playing" || this.def.players === 2) return;
     this.sound.tap();
     this.haptic("tap");
     if (this.committed || !this.armed) return;
@@ -672,11 +674,10 @@ export class Engine {
     if (this.mode === "coop") return; // coop uses its own per-player flow
     if (this.mode === "memory" && this.memoryPhase !== "recall") return;
 
+    if (this.mode === "versus" && this.lastVersusAt && performance.now() - this.lastVersusAt < 500) return;
     this.committed = true;
     this.swipes++;
     const reactionMs = performance.now() - this.roundStart;
-    this.reactions.push(reactionMs);
-    this.fastest = Math.min(this.fastest, reactionMs);
     this.fx.hitStop = this.settings.reducedMotion ? 0 : 0.016;
 
     if (this.mode === "versus") {
@@ -695,7 +696,19 @@ export class Engine {
 
   // ---------------------------------------------------------- correct / miss
 
+  private recordReaction(reactionMs: number) {
+    this.reactions.push(reactionMs);
+    this.fastest = Math.min(this.fastest, reactionMs);
+    if (reactionMs < 340) this.perfectHits++;
+  }
+
+  private showFeedback(kind: HitFeedback["kind"], label: string, reactionMs?: number, points?: number) {
+    this.hitFeedback = { id: ++this.feedbackId, kind, label, reactionMs, points };
+    this.feedbackAt = this.t;
+  }
+
   private correct(reactionMs: number) {
+    this.recordReaction(reactionMs);
     this.correctCount++;
     this.streak++;
     this.bestStreak = Math.max(this.bestStreak, this.streak);
@@ -713,6 +726,7 @@ export class Engine {
     const modMult = getModifierMultiplier(this.modifiers);
     const pts = Math.round((BASE_SCORE * diag * markMult * this.combo * (this.overdrive ? 2 : 1) + rating.bonus) * modMult);
     this.score += pts;
+    this.showFeedback("hit", rating.label, reactionMs, pts);
 
     this.fx.hit(this.cx, this.cy, this.arrowSize(), this.visualDir, rgba(this.accent));
     this.fx.float(
@@ -730,7 +744,7 @@ export class Engine {
     }
     this.sound.correct(this.streak, rating.label === "Lightning");
     this.haptic("hit");
-    if (!this.settings.reducedMotion && this.streak >= 10) {
+    if (!this.settings.reducedMotion && this.settings.screenShake !== false && this.streak >= 10) {
       this.fx.shakeBy(Math.min(2 + this.streak / 6, 8));
     }
 
@@ -757,6 +771,8 @@ export class Engine {
   }
 
   private miss(kind: "wrong" | "timeout") {
+    this.showFeedback(kind === "wrong" ? "miss" : "timeout", kind === "wrong" ? "Try again" : "Time ran out");
+    this.waveStep = 0;
     this.streak = 0;
     this.combo = 1;
     this.overdrive = false;
@@ -784,7 +800,7 @@ export class Engine {
       }
       // Same arrow stays: unlock input and give a bit of time to retry.
       this.committed = false;
-      this.timeLeft = Math.max(this.timeLeft, this.def.roundTime * 0.6);
+      this.timeLeft = Math.max(this.timeLeft, this.roundDuration() * 0.6);
       this.emitHud();
       return;
     }
@@ -800,7 +816,7 @@ export class Engine {
 
     // Endless modes (zen, blitz): just let the player retry the same arrow.
     this.committed = false;
-    this.timeLeft = Math.max(this.timeLeft, this.def.roundTime * 0.6);
+    this.timeLeft = Math.max(this.timeLeft, this.roundDuration() * 0.6);
     this.emitHud();
   }
 
@@ -812,6 +828,9 @@ export class Engine {
     }
     if (this.mode === "versus") {
       // Current player scores nothing and the match advances.
+      this.swipes++;
+      this.streak = 0;
+      this.showFeedback("timeout", "Time ran out");
       this.versusAdvance(false);
       return;
     }
@@ -830,10 +849,19 @@ export class Engine {
     this.committed = false;
     const correct = ang === this.requiredDir;
     if (correct) {
-      this.versus.scores[this.versus.turn] += 25;
+      this.recordReaction(now - this.roundStart);
+      this.correctCount++;
+      this.streak++;
+      this.bestStreak = Math.max(this.bestStreak, this.streak);
+      const points = Math.round(25 * getModifierMultiplier(this.modifiers));
+      this.versus.scores[this.versus.turn] += points;
+      this.score += points;
+      this.showFeedback("hit", reactionRating(performance.now() - this.roundStart).label, performance.now() - this.roundStart, points);
       this.fx.hit(this.cx, this.cy, this.arrowSize(), this.visualDir, rgba(this.accent));
       this.sound.correct(2);
     } else {
+      this.streak = 0;
+      this.showFeedback("miss", "Try again");
       this.fx.miss(this.cx, this.cy, this.arrowSize());
       this.sound.wrong();
     }
@@ -843,7 +871,7 @@ export class Engine {
   private versusAdvance(_correct: boolean) {
     if (this.versus.turn === 0) {
       this.versus.turn = 1;
-      this.timeLeft = this.def.roundTime;
+      this.timeLeft = this.roundDuration();
       this.reveal = 0;
       this.roundStart = performance.now();
       this.committed = false;
@@ -959,6 +987,7 @@ export class Engine {
 
   private coopEval() {
     const [p0, p1] = this.coop;
+    this.swipes++;
     const c0 = p0.input === this.requiredDir;
     const c1 = p1.input === this.requiredDir;
 
@@ -967,9 +996,12 @@ export class Engine {
       this.streak++;
       this.bestStreak = Math.max(this.bestStreak, this.streak);
       this.combo = Math.min(COMBO_CAP, 1 + Math.floor(this.streak / COMBO_STEP));
-      this.score += 15 * this.combo;
+      this.recordReaction(performance.now() - this.roundStart);
+      const points = Math.round(15 * this.combo * getModifierMultiplier(this.modifiers));
+      this.score += points;
+      this.showFeedback("hit", reactionRating(performance.now() - this.roundStart).label, performance.now() - this.roundStart, points);
       this.fx.hit(this.cx, this.cy, this.arrowSize(), this.visualDir, rgba(this.accent));
-      this.fx.float(`+${15 * this.combo}`, "#a5f3fc", this.cx, this.cy - this.arrowSize() * 1.55);
+      this.fx.float(`+${points}`, "#a5f3fc", this.cx, this.cy - this.arrowSize() * 1.55);
       if (this.combo > 1 && this.streak % COMBO_STEP === 0) {
         const isMax = this.combo >= COMBO_CAP;
         this.sound.comboComplete(this.combo, isMax);
@@ -979,7 +1011,7 @@ export class Engine {
       }
       this.sound.correct(this.streak);
       this.haptic("hit");
-      if (!this.settings.reducedMotion && this.streak >= 10) {
+      if (!this.settings.reducedMotion && this.settings.screenShake !== false && this.streak >= 10) {
         this.fx.shakeBy(Math.min(2 + this.streak / 6, 8));
       }
       this.fx.hitStop = this.settings.reducedMotion ? 0 : 0.016;
@@ -995,6 +1027,7 @@ export class Engine {
     this.fx.shakeBy(this.settings.reducedMotion || this.settings.screenShake === false ? 0 : 14);
     this.sound.wrong();
     this.haptic("error");
+    this.showFeedback("miss", "Team: try again");
     if (!c0) p0.lives--;
     if (!c1) p1.lives--;
     this.emitHud();
@@ -1009,11 +1042,13 @@ export class Engine {
 
   private coopTimeout() {
     const [p0, p1] = this.coop;
+    this.swipes++;
     const c0 = p0.input === this.requiredDir;
     const c1 = p1.input === this.requiredDir;
     if (c0 && c1) return;
     this.streak = 0;
     this.combo = 1;
+    this.showFeedback("miss", "Team: try again");
     if (!c0) p0.lives--;
     if (!c1) p1.lives--;
     this.fx.miss(this.cx, this.cy, this.arrowSize());
@@ -1038,7 +1073,7 @@ export class Engine {
     this.sound.stopBgm();
     this.sound.gameOver();
 
-    const newBest = this.score > this.best && this.score > 0;
+    const newBest = this.mode !== "practice" && this.score > this.best && this.score > 0;
     if (newBest) this.fx.confetti(this.w, this.h);
 
     const [a, b] = this.versus.scores;
@@ -1050,6 +1085,7 @@ export class Engine {
     else if (accuracy >= 65) rank = "B";
 
     const summary: GameSummary = {
+      challengeId: this.challengeId,
       mode: this.mode,
       score: this.score,
       best: Math.max(this.best, this.score),
@@ -1071,6 +1107,7 @@ export class Engine {
           : null,
       waves: this.waves,
       hits: this.correctCount,
+      perfectHits: this.perfectHits,
       misses: Math.max(0, this.swipes - this.correctCount),
       playSeconds: Math.round(this.runClock),
       rank,
@@ -1084,6 +1121,7 @@ export class Engine {
 
   private emitHud() {
     const hud: HudState = {
+      feedback: this.hitFeedback,
       score: this.score,
       streak: this.streak,
       combo: this.combo,
@@ -1118,6 +1156,10 @@ export class Engine {
   private onResize = () => this.resize();
 
   private onBlur = () => {
+    this.physKeys.clear();
+    this.staleKeys.clear();
+    this.clearSoloInput();
+    this.coopAbort();
     if (this.settings.autoPauseBlur === false) return;
     if (this.phase === "playing") this.pause();
   };
@@ -1130,7 +1172,9 @@ export class Engine {
   private onKeyDown = (e: KeyboardEvent) => {
     if (this.phase !== "playing" || e.defaultPrevented) return;
     if ((e.target as HTMLElement | null)?.closest("input, textarea, select, [contenteditable='true']")) return;
+    if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
     if (e.code === "KeyF") {
+      e.preventDefault();
       this.triggerFocus();
       return;
     }
@@ -1172,14 +1216,16 @@ export class Engine {
   };
 
   // tap + swipe on the arena
-  private ptr = { active: false, x: 0, y: 0, t0: 0, fired: false };
+  private ptr = { id: -1, active: false, x: 0, y: 0, t0: 0, fired: false };
 
   private onPointerDown = (e: PointerEvent) => {
-    this.ptr = { active: true, x: e.clientX, y: e.clientY, t0: performance.now(), fired: false };
+    if (this.phase !== "playing" || this.mode === "coop" || this.ptr.active || e.button !== 0) return;
+    this.canvas.setPointerCapture(e.pointerId);
+    this.ptr = { id: e.pointerId, active: true, x: e.clientX, y: e.clientY, t0: performance.now(), fired: false };
   };
 
   private onPointerMove = (e: PointerEvent) => {
-    if (!this.ptr.active || this.ptr.fired) return;
+    if (!this.ptr.active || this.ptr.id !== e.pointerId || this.ptr.fired) return;
     if (this.phase !== "playing" || this.mode === "coop") return;
     if (this.mode === "memory" && this.memoryPhase !== "recall") return;
     const dx = e.clientX - this.ptr.x;
@@ -1192,9 +1238,10 @@ export class Engine {
   };
 
   private onPointerUp = (e: PointerEvent) => {
-    if (!this.ptr.active) return;
+    if (!this.ptr.active || this.ptr.id !== e.pointerId) return;
     const wasFired = this.ptr.fired;
     this.ptr.active = false;
+    if (this.canvas.hasPointerCapture(e.pointerId)) this.canvas.releasePointerCapture(e.pointerId);
     if (wasFired) return;
     if (this.phase !== "playing" || this.mode === "coop") return;
 
@@ -1210,6 +1257,10 @@ export class Engine {
     const dist = Math.hypot(vx, vy);
     if (dist < TAP_MIN_DIST) return;
     this.commit(snapAngle((Math.atan2(vy, vx) * 180) / Math.PI));
+  };
+
+  private onPointerCancel = (e: PointerEvent) => {
+    if (this.ptr.id === e.pointerId) this.ptr.active = false;
   };
 
   // ---------------------------------------------------------- feel
@@ -1419,7 +1470,7 @@ export class Engine {
       c.globalAlpha = 1;
 
       // timer ring
-      const frac = clamp(this.timeLeft / Math.max(0.001, this.def.roundTime), 0, 1);
+      const frac = this.def.untimed ? 1 : clamp(this.timeLeft / Math.max(0.001, this.roundDuration()), 0, 1);
       const rr = base * 1.45;
       c.lineWidth = base * 0.055;
       c.strokeStyle = "rgba(255,255,255,0.09)";
@@ -1483,11 +1534,11 @@ export class Engine {
         c.translate(this.cx, this.cy);
         let arrowRot = (this.visualDir * Math.PI) / 180;
         if (this.modifiers.vortexSpin && !this.settings.reducedMotion) {
-          const spinFrac = 1 - clamp(this.timeLeft / Math.max(0.001, this.def.roundTime), 0, 1);
+          const spinFrac = 1 - clamp(this.timeLeft / Math.max(0.001, this.roundDuration()), 0, 1);
           arrowRot += Math.sin(spinFrac * Math.PI) * 0.75;
         }
         c.rotate(arrowRot);
-        if (this.modifiers.phantomMirage) {
+        if (this.modifiers.phantomMirage && !this.settings.reducedMotion) {
           c.globalAlpha = 0.25 + 0.75 * Math.abs(Math.cos(this.t * 6));
         }
         c.shadowColor = rgba(this.targetColor);
@@ -1519,14 +1570,14 @@ export class Engine {
       }
     }
 
-    this.fx.render(c);
+    this.fx.render(c, this.settings.scoreFloats !== false, this.settings.reducedMotion);
     c.restore();
 
-    if (this.fx.flashWhite > 0) {
+    if (!this.settings.reducedMotion && this.fx.flashWhite > 0) {
       c.fillStyle = rgba(this.accent, this.fx.flashWhite * 0.3);
       c.fillRect(0, 0, this.w, this.h);
     }
-    if (this.fx.flashRed > 0) {
+    if (!this.settings.reducedMotion && this.fx.flashRed > 0) {
       c.fillStyle = `rgba(248,60,60,${this.fx.flashRed * 0.25})`;
       c.fillRect(0, 0, this.w, this.h);
     }

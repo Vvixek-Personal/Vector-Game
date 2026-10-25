@@ -1,3 +1,4 @@
+import { safeStorage as localStorage } from "../game/persistence";
 export interface GameModifiers {
   hyperSpeed?: boolean;
   vortexSpin?: boolean;
@@ -78,7 +79,10 @@ export function getModifierMultiplier(mods?: GameModifiers | null): number {
 export function loadModifiers(): GameModifiers {
   try {
     const raw = localStorage.getItem("vector_modifiers_v1");
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return Object.fromEntries(MODIFIER_DEFS.map(m => [m.id, parsed?.[m.id] === true]));
+    }
   } catch {}
   return {};
 }

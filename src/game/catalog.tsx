@@ -18,7 +18,7 @@ export interface StoreItem {
   isSale?: boolean;
   salePercent?: number;
   currency: Currency;
-  apply?: Partial<{ avatarId: string; bannerId: string; frameId: string; titleId: string; bannerStyle: BannerPattern; audioPackId: string }>;
+  apply?: Partial<{ avatarId: string; bannerId: string; frameId: string; titleId: string; bannerStyle: BannerPattern; audioPackId: string; arenaThemeId: string }>;
   photo?: string;
   preview?: string;
   anime?: string;
@@ -235,6 +235,11 @@ if (diamondItems.length > 0) {
   featured.desc = "✨ 30% OFF WEEKLY FEATURE: " + featured.desc;
 }
 
+
+// Every theme in the existing shop can be equipped and restored.
+for (const item of STORE_ITEMS) {
+  if (item.tab === "themes") item.apply = { arenaThemeId: item.id };
+}
 export function itemsFor(tab: StoreTab): StoreItem[] {
   return STORE_ITEMS.filter((i) => i.tab === tab);
 }

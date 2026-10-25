@@ -17,7 +17,7 @@ export const PWAInstallButton: React.FC = () => {
   if (isInstallable) {
     return (
       <button
-        onClick={() => { uiConfirm(); install(); }}
+        onClick={() => { uiConfirm(); void install(); }}
         className="flex items-center gap-2 rounded-xl bg-cyan-500 px-4 py-2 text-sm font-black text-black shadow-[0_0_15px_rgba(34,211,238,0.4)] hover:bg-cyan-400 transition cursor-pointer"
       >
         <Download size={16} />
