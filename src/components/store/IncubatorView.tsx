@@ -54,21 +54,21 @@ export const IncubatorView: React.FC<Props> = ({
     if (next) {
       setIncubator(next);
       setSelectedEggId(null);
-      onMessage("Egg placed into incubation pod chamber!");
+      onMessage("Egg placed in the incubation pod.");
     }
   };
 
   const handleSpeedUp = (podIndex: number) => {
     const nextStats = spendSparks(50);
     if (!nextStats) {
-      onMessage("Need 50 Sparks to supercharge the incubator!");
+      onMessage("Supercharging costs 50 Sparks.");
       return;
     }
     uiUnlock();
     onStats(nextStats);
     const nextInc = speedUpPod(podIndex);
     if (nextInc) setIncubator(nextInc);
-    onMessage("Chamber supercharged! Egg is ready to hatch!");
+    onMessage("Chamber supercharged. Your egg is ready to hatch.");
   };
 
   const handleHatch = (podIndex: number) => {
@@ -119,17 +119,15 @@ export const IncubatorView: React.FC<Props> = ({
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto py-4 px-2 space-y-8">
+    <div className="ink-panel mx-auto w-full max-w-4xl space-y-8 px-2 py-4">
       {/* Header */}
       <div className="text-center">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 font-bold text-xs uppercase tracking-wider mb-2">
-          <span>🧬</span> Bio-Quantum Hatchery
+        <div className="mb-2 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[.14em]" style={{ borderColor: "var(--panel-border)", background: "var(--pill)", color: "var(--text-dim)" }}>
+          <span aria-hidden="true">🧬</span> Incubator
         </div>
-        <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-          Egg Incubator Chambers
-        </h3>
-        <p className="text-slate-400 text-xs sm:text-sm max-w-md mx-auto mt-1">
-          Hatch bio-mechanical eggs to synthesize Sparks, Diamonds, and ultra-rare Anime PFPs!
+        <h3 className="t-title">Egg chambers</h3>
+        <p className="t-caption mx-auto mt-1 max-w-md">
+          Hatch eggs for Sparks, Diamonds, and rare profile pictures.
         </p>
       </div>
 
@@ -159,7 +157,7 @@ export const IncubatorView: React.FC<Props> = ({
               <div className="flex items-center justify-between z-10">
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
-                  <span className="text-xs font-black uppercase tracking-wider text-slate-300">
+                  <span className="text-xs font-semibold uppercase tracking-[.1em] text-slate-300">
                     Pod {idx === 0 ? "Alpha" : "Beta"}
                   </span>
                 </div>
@@ -198,7 +196,7 @@ export const IncubatorView: React.FC<Props> = ({
                       <span className="text-3xl select-none">{eggDef.eggIcon}</span>
                     </div>
 
-                    <h4 className="font-black text-sm text-white mt-3">{eggDef.name}</h4>
+                    <h4 className="font-semibold text-sm text-white mt-3">{eggDef.name}</h4>
                     <span className="text-[11px] text-slate-400">{eggDef.tier} Tier</span>
 
                     {/* Incubation Progress Bar */}
@@ -233,7 +231,7 @@ export const IncubatorView: React.FC<Props> = ({
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => handleHatch(idx)}
-                      className="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-400 text-black font-black text-xs uppercase tracking-wider hover:opacity-95 transition shadow-lg shadow-emerald-500/20 cursor-pointer"
+                      className="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-400 text-black font-semibold text-xs uppercase tracking-[.1em] hover:opacity-95 transition shadow-lg shadow-emerald-500/20 cursor-pointer"
                     >
                       🐣 Crack & Hatch Egg!
                     </motion.button>
@@ -250,7 +248,7 @@ export const IncubatorView: React.FC<Props> = ({
                 ) : selectedEggId ? (
                   <button
                     onClick={() => handleStartIncubation(selectedEggId, idx)}
-                    className="w-full py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-black text-xs uppercase tracking-wider transition cursor-pointer"
+                    className="w-full py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-semibold text-xs uppercase tracking-[.1em] transition cursor-pointer"
                   >
                     Place Selected Egg
                   </button>
@@ -272,7 +270,7 @@ export const IncubatorView: React.FC<Props> = ({
       <div className="glass rounded-3xl p-5 border border-slate-700/60 bg-slate-900/60">
         <div className="flex items-center justify-between mb-3">
           <div>
-            <h4 className="text-sm font-black uppercase tracking-wider text-white">
+            <h4 className="text-sm font-semibold uppercase tracking-[.1em] text-white">
               Your Unhatched Eggs ({incubator.inventory.length})
             </h4>
             <p className="text-xs text-slate-400">
@@ -331,7 +329,7 @@ export const IncubatorView: React.FC<Props> = ({
 
       {/* Egg Lab Market */}
       <div className="glass rounded-3xl p-5 border border-slate-700/60 bg-slate-900/60">
-        <h4 className="text-sm font-black uppercase tracking-wider text-white mb-1">
+        <h4 className="text-sm font-semibold uppercase tracking-[.1em] text-white mb-1">
           Egg Hatchery Market
         </h4>
         <p className="text-xs text-slate-400 mb-4">
@@ -353,7 +351,7 @@ export const IncubatorView: React.FC<Props> = ({
                       {def.tier}
                     </span>
                   </div>
-                  <h5 className="font-black text-sm text-white">{def.name}</h5>
+                  <h5 className="font-semibold text-sm text-white">{def.name}</h5>
                   <p className="text-xs text-slate-400 mt-1 leading-snug">{def.tagline}</p>
 
                   <div className="mt-3 text-[11px] space-y-1">
@@ -409,10 +407,10 @@ export const IncubatorView: React.FC<Props> = ({
               className="relative w-full max-w-sm rounded-3xl bg-slate-900 border border-emerald-500/40 p-6 text-center shadow-[0_0_50px_rgba(16,185,129,0.25)] text-white overflow-hidden"
             >
               <span className="text-4xl animate-bounce inline-block mb-1">🐣</span>
-              <div className="text-xs font-black uppercase tracking-[0.25em] text-emerald-400 mb-1">
+              <div className="text-xs font-semibold uppercase tracking-[0.25em] text-emerald-400 mb-1">
                 Egg Hatched Successfully!
               </div>
-              <h3 className="text-2xl font-black text-white tracking-tight">
+              <h3 className="text-2xl font-semibold text-white tracking-tight">
                 {hatchedReward.title}
               </h3>
               <p className="text-xs text-slate-300 mt-1 max-w-xs mx-auto">
@@ -421,7 +419,7 @@ export const IncubatorView: React.FC<Props> = ({
 
               <button
                 onClick={() => setHatchedReward(null)}
-                className="mt-6 w-full py-3 rounded-2xl bg-gradient-to-r from-emerald-400 to-cyan-400 text-black font-black text-sm uppercase tracking-wider hover:opacity-95 transition shadow-lg shadow-emerald-500/20 cursor-pointer"
+                className="mt-6 w-full py-3 rounded-2xl bg-gradient-to-r from-emerald-400 to-cyan-400 text-black font-semibold text-sm uppercase tracking-[.1em] hover:opacity-95 transition shadow-lg shadow-emerald-500/20 cursor-pointer"
               >
                 Collect Loot
               </button>

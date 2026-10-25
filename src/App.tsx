@@ -5,6 +5,7 @@ import { safeStorage as localStorage } from "./game/persistence";
 
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence, MotionConfig, useReducedMotion } from "motion/react";
+import { DURATION, EASE, backdropVariants, panelVariants } from "./utils/motion";
 import PWAUpdateNotice from "./components/PWAUpdateNotice";
 import Dock from "./components/Dock";
 import HUD from "./components/HUD";
@@ -486,10 +487,10 @@ export default function App() {
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div
                   key={screen}
-                  initial={reduceMotion ? false : { opacity: 0, y: 14, filter: "blur(4px)" }}
-                  animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                  exit={reduceMotion ? undefined : { opacity: 0, y: -10, filter: "blur(4px)" }}
-                  transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                  initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={reduceMotion ? undefined : { opacity: 0, y: -6 }}
+                  transition={{ duration: DURATION.base, ease: EASE.out }}
                   className="w-full min-h-full"
                 >
                   <Suspense fallback={<p className="p-8" role="status">Opening…</p>}>
@@ -590,9 +591,17 @@ export default function App() {
 
       {phase === "countdown" && countdown !== null && (
         <div className="start-countdown fixed inset-0 z-40 flex flex-col items-center justify-center gap-5 bg-slate-950 text-white" role="dialog" aria-modal="true" aria-label="Get ready">
-          <p className="text-xs font-bold uppercase tracking-[.25em] text-white/50">Get ready · {MODES[mode].label}</p>
-          <div className="countdown-number" role="status" aria-live="assertive" aria-atomic="true">{countdown}</div>
-          <p className="text-sm text-white/60">{mode === "coop" ? "Player 1: WASD · Player 2: arrows" : mode === "practice" ? "No timer. Learn at your own pace." : "Arrow keys, WASD, tap or swipe"}</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-white/55">
+            Get ready · {MODES[mode].label}
+          </p>
+          <div key={countdown} className="countdown-number" role="status" aria-live="assertive" aria-atomic="true">{countdown}</div>
+          <p className="max-w-[34ch] text-center text-[13px] leading-relaxed text-white/60">
+            {mode === "coop"
+              ? "Player 1 uses WASD. Player 2 uses the arrow keys."
+              : mode === "practice"
+                ? "No timer here. Learn the patterns at your own pace."
+                : "Arrow keys, WASD, tap or swipe."}
+          </p>
           <button className="text-button text-white/70" onClick={goHome}>Cancel</button>
         </div>
       )}
@@ -652,42 +661,58 @@ export default function App() {
       <AnimatePresence>
         {showNamePopup && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+            variants={backdropVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="surface-backdrop fixed inset-0 z-[200] flex items-center justify-center p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="name-popup-title"
           >
-            <motion.div
-              initial={{ scale: 0.9, y: 20, opacity: 0 }}
-              animate={{ scale: 1, y: 0, opacity: 1 }}
-              exit={{ scale: 0.9, y: 20, opacity: 0 }}
-              className="bg-slate-900 border border-white/20 rounded-3xl p-6 max-w-sm w-full relative shadow-2xl flex flex-col"
-            >
-              <h2 className="text-2xl font-black text-white m-0 mb-2">Welcome!</h2>
-              <p className="text-sm text-white/70 mb-4">
-                Choose a code name for the global leaderboard, or continue with your Google name.
+            <motion.div variants={panelVariants} className="surface-card w-full max-w-[380px] p-6">
+              <p className="t-eyebrow">Global leaderboard</p>
+              <h2 id="name-popup-title" className="t-title mt-1">Choose a code name</h2>
+              <p className="t-body mt-2">
+                This is what appears on global rankings. You can change it later from your profile.
               </p>
-              
-              <input
-                type="text"
-                value={tempName}
-                onChange={(e) => setTempName(e.target.value)}
-                placeholder="Operative Name"
-                maxLength={15}
-                className="w-full bg-black/40 border border-white/20 rounded-xl px-4 py-3 text-white font-bold mb-6 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition"
-              />
 
-              <button
-                onClick={() => {
-                  const finalName = tempName.trim() || "Operative";
-                  setName(finalName);
-                  localStorage.setItem("vector_name_set", "true");
-                  setShowNamePopup(false);
-                }}
-                className="w-full px-4 py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-sm transition"
-              >
-                Save Name & Continue
-              </button>
+              <label className="mt-5 block">
+                <span className="t-caption">Code name</span>
+                <input
+                  type="text"
+                  value={tempName}
+                  onChange={(e) => setTempName(e.target.value)}
+                  placeholder="Operative"
+                  maxLength={15}
+                  autoFocus
+                  className="mt-1.5 w-full rounded-xl border px-3.5 py-2.5 text-[14px] font-medium txt outline-none transition-colors focus:border-[var(--brand)]"
+                  style={{ background: "var(--pill)", borderColor: "var(--panel-border)" }}
+                />
+              </label>
+
+              <div className="dialog-actions mt-5">
+                <button
+                  className="dialog-btn dialog-btn-primary"
+                  onClick={() => {
+                    const finalName = tempName.trim() || "Operative";
+                    setName(finalName);
+                    localStorage.setItem("vector_name_set", "true");
+                    setShowNamePopup(false);
+                  }}
+                >
+                  Save name
+                </button>
+                <button
+                  className="dialog-btn dialog-btn-quiet"
+                  onClick={() => {
+                    localStorage.setItem("vector_name_set", "true");
+                    setShowNamePopup(false);
+                  }}
+                >
+                  Keep my Google name
+                </button>
+              </div>
             </motion.div>
           </motion.div>
         )}
@@ -697,55 +722,52 @@ export default function App() {
       <AnimatePresence>
         {dailyReward && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-md p-4"
+            variants={backdropVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="surface-backdrop fixed inset-0 z-[200] flex items-center justify-center p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="daily-reward-title"
           >
-            <motion.div
-              initial={{ scale: 0.9, y: 20, opacity: 0 }}
-              animate={{ scale: 1, y: 0, opacity: 1 }}
-              exit={{ scale: 0.9, y: 20, opacity: 0 }}
-              className="bg-slate-900 border border-white/20 rounded-3xl p-8 max-w-sm w-full relative shadow-[0_0_40px_rgba(56,189,248,0.2)] flex flex-col items-center text-center overflow-hidden"
-            >
-              <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-              
-              <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-500 m-0 mb-1">Daily Reward!</h2>
-              <p className="text-sm font-semibold text-white/60 mb-6 uppercase tracking-widest">
-                Day {dailyReward.streak} Streak
-              </p>
-              
-              <div className="flex gap-4 mb-8">
+            <motion.div variants={panelVariants} className="surface-card w-full max-w-[360px] p-6 text-center">
+              <p className="t-eyebrow">Daily check-in</p>
+              <h2 id="daily-reward-title" className="t-title mt-1">Day {dailyReward.streak} reward</h2>
+              <p className="t-body mt-1.5">Keep the streak going for bigger drops.</p>
+
+              <div className="mt-5 flex items-center justify-center gap-3">
                 {dailyReward.sparks > 0 && (
-                  <div className="flex flex-col items-center">
-                    <div className="w-16 h-16 rounded-full bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center shadow-[0_0_15px_rgba(56,189,248,0.3)] mb-2">
-                      <span className="text-cyan-400 font-black text-2xl">+{dailyReward.sparks}</span>
+                  <div className="min-w-[96px] rounded-2xl border px-4 py-3" style={{ borderColor: "var(--panel-border)", background: "var(--pill)" }}>
+                    <div className="num text-[22px] font-semibold" style={{ color: "var(--brand)" }}>
+                      +{dailyReward.sparks}
                     </div>
-                    <span className="text-xs font-bold text-cyan-300">Sparks</span>
+                    <div className="t-caption mt-0.5">Sparks</div>
                   </div>
                 )}
                 {dailyReward.diamonds > 0 && (
-                  <div className="flex flex-col items-center">
-                    <div className="w-16 h-16 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center shadow-[0_0_15px_rgba(245,158,11,0.3)] mb-2">
-                      <span className="text-amber-400 font-black text-2xl">+{dailyReward.diamonds}</span>
-                    </div>
-                    <span className="text-xs font-bold text-amber-300">Diamonds</span>
+                  <div className="min-w-[96px] rounded-2xl border px-4 py-3" style={{ borderColor: "var(--panel-border)", background: "var(--pill)" }}>
+                    <div className="num text-[22px] font-semibold txt">+{dailyReward.diamonds}</div>
+                    <div className="t-caption mt-0.5">Diamonds</div>
                   </div>
                 )}
               </div>
 
-              <button
-                onClick={() => setDailyReward(null)}
-                className="w-full px-4 py-4 rounded-xl bg-white hover:bg-gray-200 text-black font-black text-lg shadow-[0_0_15px_rgba(255,255,255,0.2)] transition"
-              >
-                Claim
-              </button>
+              <div className="dialog-actions mt-6">
+                <button className="dialog-btn dialog-btn-primary" onClick={() => setDailyReward(null)}>
+                  Claim reward
+                </button>
+              </div>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {user && !cloudLoaded && phase === "menu" && <div role="status" className="fixed inset-0 z-[250] grid place-items-center bg-slate-950/90 text-white"><p>Restoring your progress…</p></div>}
+      {user && !cloudLoaded && phase === "menu" && (
+        <div role="status" className="surface-backdrop fixed inset-0 z-[250] grid place-items-center">
+          <p className="t-body">Restoring your progress…</p>
+        </div>
+      )}
       <ModifiersModal
         isOpen={showModifiersModal}
         onClose={() => setShowModifiersModal(false)}

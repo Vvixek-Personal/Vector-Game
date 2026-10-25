@@ -10,6 +10,7 @@ import CartoonAvatar from "../CartoonAvatar";
 import AnimeAvatar from "../AnimeAvatar";
 import Icon from "../Icon";
 import { LuckySpinView } from "../store/LuckySpinView";
+import { DURATION, EASE, backdropVariants, panelVariants } from "../../utils/motion";
 import { IncubatorView } from "../store/IncubatorView";
 
 interface Props {
@@ -221,8 +222,7 @@ export default function StoreScreen({ stats, onStats, profile, onProfile }: Prop
             return (
               <motion.button
                 key={t.id}
-                whileHover={{ y: -2 }}
-                whileTap={{ scale: 0.96 }}
+                whileTap={{ scale: 0.97 }}
                 className={`store-tab-pill ${isActive ? "active" : ""}`}
                 onClick={() => { uiTap(); setTab(t.id); setNote(""); }}
               >
@@ -230,7 +230,7 @@ export default function StoreScreen({ stats, onStats, profile, onProfile }: Prop
                   <motion.div
                     layoutId="storeTabActiveIndicator"
                     className="store-tab-active-bg"
-                    transition={{ type: "spring", stiffness: 450, damping: 32 }}
+                    transition={{ type: "spring", stiffness: 420, damping: 34 }}
                   />
                 )}
                 <span className="store-tab-icon"><TabIcon name={t.iconName} /></span>
@@ -244,9 +244,9 @@ export default function StoreScreen({ stats, onStats, profile, onProfile }: Prop
         {tab === "spin" ? (
           <motion.div
             key="tab-spin"
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.22 }}
+            transition={{ duration: DURATION.base, ease: EASE.out }}
           >
             <LuckySpinView
               stats={stats}
@@ -259,9 +259,9 @@ export default function StoreScreen({ stats, onStats, profile, onProfile }: Prop
         ) : tab === "incubator" ? (
           <motion.div
             key="tab-incubator"
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.22 }}
+            transition={{ duration: DURATION.base, ease: EASE.out }}
           >
             <IncubatorView
               stats={stats}
@@ -284,11 +284,10 @@ export default function StoreScreen({ stats, onStats, profile, onProfile }: Prop
               return (
                 <motion.article
                   key={item.id}
-                  initial={{ opacity: 0, scale: 0.94 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: Math.min(0.2, idx * 0.025) }}
-                  whileHover={{ y: -6, scale: 1.055 }}
-                  whileTap={{ scale: 0.97 }}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: DURATION.base, ease: EASE.out, delay: Math.min(0.16, idx * 0.02) }}
+                  whileTap={{ scale: 0.99 }}
                   className={`store-card glass ${have ? "owned" : ""} ${item.rarity ?? ""}`}
                   onClick={() => { uiTap(); setPeek(item); }}
                 >
@@ -296,7 +295,7 @@ export default function StoreScreen({ stats, onStats, profile, onProfile }: Prop
                   <div className="store-card-badge-row">
                     {item.isNew ? (
                       <span className="store-badge badge-new">
-                        <Sparkles size={10} /> NEW
+                        <Sparkles size={10} /> New
                       </span>
                     ) : item.isSale ? (
                       <span className="store-badge badge-sale">
@@ -334,44 +333,37 @@ export default function StoreScreen({ stats, onStats, profile, onProfile }: Prop
           {peek && (
             <motion.div
               key="store-peek-modal"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.18 }}
-              className="store-modal-overlay"
+              variants={backdropVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              className="store-modal-overlay surface-backdrop"
               role="dialog"
               aria-modal="true"
               aria-label={`Preview ${peek.name}`}
               onClick={() => setPeek(null)}
             >
               <motion.div
-                initial={{ scale: 0.9, opacity: 0, y: 16 }}
-                animate={{ scale: 1, opacity: 1, y: 0 }}
-                exit={{ scale: 0.92, opacity: 0, y: 12 }}
-                transition={{ type: "spring", stiffness: 420, damping: 28 }}
-                className="store-modal-card glass"
+                variants={panelVariants}
+                className="store-modal-card surface-card"
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Close X button */}
-                <button
-                  className="store-modal-close"
-                  onClick={() => setPeek(null)}
-                  aria-label="Close preview"
-                >
-                  <X size={18} />
+                <button className="store-modal-close" onClick={() => setPeek(null)} aria-label="Close preview">
+                  <X size={16} />
                 </button>
 
                 {/* Promotional banner if New or Sale */}
                 {peek.isNew && (
                   <div className="modal-promo-banner promo-new">
-                    <Sparkles size={15} />
-                    <span>New Arrival · Fresh in Store</span>
+                    <Sparkles size={14} />
+                    <span>New in store</span>
                   </div>
                 )}
                 {peek.isSale && (
                   <div className="modal-promo-banner promo-sale">
-                    <Flame size={15} />
-                    <span>Special Deal · {peek.salePercent}% Off</span>
+                    <Flame size={14} />
+                    <span>{peek.salePercent}% off this week</span>
                   </div>
                 )}
 
@@ -381,18 +373,18 @@ export default function StoreScreen({ stats, onStats, profile, onProfile }: Prop
                 </div>
 
                 <div>
-                  <h3>{peek.name}</h3>
-                  <div className="flex items-center gap-2 mt-1">
+                  <h3 className="t-title">{peek.name}</h3>
+                  <div className="mt-1.5 flex items-center gap-2">
                     <span className={`store-badge badge-rarity ${peek.rarity ?? "common"}`}>
                       {peek.rarity ?? "common"}
                     </span>
-                    <span className="text-xs text-neutral-400">
+                    <span className="t-caption">
                       {peek.currency === "diamonds" ? "Diamonds collection" : "Sparks collection"}
                     </span>
                   </div>
                 </div>
 
-                <p className="text-sm text-neutral-300 leading-relaxed">{peek.desc}</p>
+                <p className="t-body">{peek.desc}</p>
 
                 {/* Big Price Presentation */}
                 <div className="store-modal-price-box">
@@ -401,7 +393,7 @@ export default function StoreScreen({ stats, onStats, profile, onProfile }: Prop
                     <div>{priceLabel(peek, "xl")}</div>
                     {owned(peek) && (
                       <span className="store-owned-badge">
-                        <Check size={14} /> Already Owned
+                        <Check size={13} /> Owned
                       </span>
                     )}
                   </div>
@@ -410,8 +402,7 @@ export default function StoreScreen({ stats, onStats, profile, onProfile }: Prop
                 {/* Actions */}
                 <div className="store-modal-actions">
                   <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.97 }}
+                    whileTap={{ scale: 0.985 }}
                     className={`store-modal-btn-buy ${owned(peek) ? "equipped" : ""}`}
                     disabled={!owned(peek) && !canAfford(peek)}
                     onClick={() => { uiConfirm(); buy(peek); }}
@@ -422,15 +413,12 @@ export default function StoreScreen({ stats, onStats, profile, onProfile }: Prop
                       </>
                     ) : (
                       <>
-                        <span>{canAfford(peek) ? "Purchase" : "Not Enough"}</span>
+                        <span>{canAfford(peek) ? "Buy" : "Not enough"}</span>
                         {priceLabel(peek, "md")}
                       </>
                     )}
                   </motion.button>
-                  <button
-                    className="store-modal-btn-close"
-                    onClick={() => setPeek(null)}
-                  >
+                  <button className="store-modal-btn-close" onClick={() => setPeek(null)}>
                     Close
                   </button>
                 </div>

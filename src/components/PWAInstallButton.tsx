@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { usePWAInstall } from '../hooks/usePWAInstall';
 import { Download, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { backdropVariants, panelVariants } from '../utils/motion';
 import { uiTap, uiConfirm } from '../game/haptics';
 
 export const PWAInstallButton: React.FC = () => {
@@ -40,39 +41,44 @@ export const PWAInstallButton: React.FC = () => {
 
         <AnimatePresence>
           {showIOSGuide && (
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+            <motion.div
+              variants={backdropVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              className="surface-backdrop fixed inset-0 z-50 flex items-center justify-center p-4"
               onClick={() => setShowIOSGuide(false)}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="ios-install-title"
             >
-              <motion.div 
-                initial={{ scale: 0.95, y: 20 }}
-                animate={{ scale: 1, y: 0 }}
-                exit={{ scale: 0.95, y: 20 }}
-                className="w-full max-w-sm rounded-3xl bg-slate-900 border border-white/20 p-6 shadow-2xl relative"
-                onClick={e => e.stopPropagation()}
+              <motion.div
+                variants={panelVariants}
+                className="surface-card relative w-full max-w-sm p-6"
+                onClick={(e) => e.stopPropagation()}
               >
                 <button
                   onClick={() => { uiTap(); setShowIOSGuide(false); }}
-                  className="absolute top-4 right-4 text-white/50 hover:text-white"
+                  className="icon-button icon-button-sm absolute right-4 top-4"
+                  aria-label="Close install guide"
                 >
-                  <X size={20} />
+                  <X size={16} />
                 </button>
-                <div className="w-12 h-12 rounded-2xl bg-cyan-500/20 flex items-center justify-center text-cyan-400 mb-4">
-                  <Download size={24} />
+                <div className="mb-4 grid h-11 w-11 place-items-center rounded-2xl" style={{ background: "var(--brand-soft)", color: "var(--brand)" }}>
+                  <Download size={20} />
                 </div>
-                <h3 className="text-xl font-black text-white">Install Vector on iOS</h3>
-                <p className="mt-3 text-sm text-white/70 leading-relaxed">
-                  To install Vector as a native app on your iPhone or iPad:
-                  <br /><br />
-                  1. Tap the <strong>Share</strong> button in Safari toolbar at the bottom.<br />
-                  2. Scroll down and tap <strong>Add to Home Screen</strong>.
+                <h3 id="ios-install-title" className="t-title">Install on iOS</h3>
+                <p className="t-body mt-3">
+                  Add Vector to your Home Screen so it opens full screen and works offline.
                 </p>
+                <ol className="mt-3 space-y-1.5 pl-4 text-[12.5px] leading-relaxed" style={{ color: "var(--text-dim)", listStyle: "decimal" }}>
+                  <li>Tap the Share button in the Safari toolbar.</li>
+                  <li>Choose Add to Home Screen.</li>
+                  <li>Tap Add to confirm.</li>
+                </ol>
                 <button
                   onClick={() => { uiTap(); setShowIOSGuide(false); }}
-                  className="mt-6 w-full rounded-xl bg-white/10 hover:bg-white/15 py-3 text-sm font-bold text-white transition cursor-pointer"
+                  className="dialog-btn dialog-btn-primary mt-5 w-full"
                 >
                   Close
                 </button>

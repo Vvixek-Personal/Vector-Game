@@ -81,36 +81,35 @@ export default function HUD({
     <div className="hud-scope pointer-events-none fixed inset-0 z-20 flex justify-center">
       {/* Overdrive Aura Screen Vignette */}
       {hud.overdrive && (
-        <div className="pointer-events-none fixed inset-0 z-10 animate-pulse border-[3px] sm:border-4 border-amber-400/40 shadow-[inset_0_0_80px_rgba(251,191,36,0.2)] transition-all duration-300" />
+        <div className="anim-urgent pointer-events-none fixed inset-0 z-10 border-[3px] sm:border-4" style={{ borderColor: "var(--selected-border)" }} />
       )}
 
       <div className="relative w-full max-w-5xl h-full pointer-events-none">
         <div className="glass rounded-2xl absolute left-3 top-3 z-20 px-3.5 py-2 sm:left-5 sm:top-5 pointer-events-auto">
           <div className="flex items-center justify-between gap-2">
-            <div className="text-[9px] font-bold tracking-[0.25em] text-white/35">{mode === "practice" ? "TRAINING" : "SCORE"}</div>
+            <div className="text-[10px] font-semibold uppercase tracking-[.16em] faint">{mode === "practice" ? "Training" : "Score"}</div>
             {best > 0 && hud.score > 0 && (
               <div
-                className={`text-[10px] font-black px-1.5 py-0.5 rounded-full flex items-center gap-1 ${
+                className="num flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-semibold"
+                style={
                   hud.score >= best
-                    ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 animate-pulse"
-                    : "bg-white/10 text-white/50"
-                }`}
+                    ? { color: "var(--brand)", borderColor: "var(--selected-border)", background: "var(--brand-soft)" }
+                    : { color: "var(--text-faint)", borderColor: "var(--panel-border)", background: "var(--pill)" }
+                }
               >
                 {hud.score >= best
-                  ? `▲ NEW PB (+${(hud.score - best).toLocaleString()})`
-                  : `▼ -${(best - hud.score).toLocaleString()}`}
+                  ? `↑ PB +${(hud.score - best).toLocaleString()}`
+                  : `↓ ${(best - hud.score).toLocaleString()}`}
               </div>
             )}
           </div>
-          <div className="text-2xl font-extrabold leading-none tabular-nums text-white sm:text-4xl mt-0.5">
+          <div className="num mt-0.5 text-[26px] font-semibold leading-none tracking-tight txt sm:text-4xl">
             {hud.score.toLocaleString()}
           </div>
-          <div className="mt-1 flex items-center gap-2 text-[10px] font-semibold text-white/35">
-            {mode !== "practice" && <span>BEST {best.toLocaleString()}</span>}
+          <div className="num mt-1 flex items-center gap-2 text-[10px] font-medium faint">
+            {mode !== "practice" && <span>Best {best.toLocaleString()}</span>}
             {hud.modifierMultiplier && hud.modifierMultiplier > 1 && (
-              <span className="text-amber-400 font-bold bg-amber-500/15 px-1.5 py-0.5 rounded border border-amber-500/30">
-                {hud.modifierMultiplier}× MULT
-              </span>
+              <span style={{ color: "var(--brand)" }}>{hud.modifierMultiplier}× rules</span>
             )}
           </div>
         </div>
@@ -118,56 +117,53 @@ export default function HUD({
       {/* center: mode-specific status */}
       <div className="pointer-events-none absolute left-1/2 top-3 z-20 flex -translate-x-1/2 flex-col items-center gap-1 sm:top-5">
         {mode === "practice" ? (
-          <div className="glass rounded-xl px-3 py-2 text-center text-white"><p className="text-[10px] font-bold tracking-wider">PRACTICE · UNTIMED</p><p className="mt-1 text-xs" data-practice-direction={hud.need.join(",")}>Try {hud.need.map(d => DIR_GLYPH[d]).join(" + ")}</p>{phase === "playing" && <button className="pointer-events-auto mt-1 text-xs underline underline-offset-4" onClick={onFinishPractice}>Finish practice</button>}</div>
+          <div className="glass rounded-xl px-3 py-2 text-center txt"><p className="text-[10px] font-semibold uppercase tracking-[.16em] faint">Practice · untimed</p><p className="mt-1 text-[12px] dim" data-practice-direction={hud.need.join(",")}>Try {hud.need.map(d => DIR_GLYPH[d]).join(" + ")}</p>{phase === "playing" && <button className="pointer-events-auto mt-1 text-xs underline underline-offset-4" onClick={onFinishPractice}>Finish practice</button>}</div>
         ) : mode === "versus" && hud.versus ? (
           <>
             <div className="glass rounded-xl px-3 py-1.5 text-center">
-              <div className="flex items-center gap-3 text-[12px] font-extrabold">
-                <span className={hud.versus.turn === 0 ? "text-white" : "text-white/35"}>
-                  P1 {hud.versus.scores[0]}
-                </span>
-                <span className="text-white/25">·</span>
-                <span className={hud.versus.turn === 1 ? "text-white" : "text-white/35"}>
-                  P2 {hud.versus.scores[1]}
-                </span>
+              <div className="num flex items-center gap-3 text-[13px] font-semibold">
+                <span className={hud.versus.turn === 0 ? "txt" : "faint"}>P1 {hud.versus.scores[0]}</span>
+                <span className="faint">·</span>
+                <span className={hud.versus.turn === 1 ? "txt" : "faint"}>P2 {hud.versus.scores[1]}</span>
               </div>
-              <div className="mt-0.5 text-[9px] font-bold tracking-widest text-white/40">
-                PLAYER {hud.versus.turn + 1} · ARROW {hud.versus.round}/{hud.versus.total}
+              <div className="num mt-0.5 text-[10px] font-medium uppercase tracking-[.12em] faint">
+                Player {hud.versus.turn + 1} · arrow {hud.versus.round}/{hud.versus.total}
               </div>
             </div>
           </>
         ) : mode === "rush" || mode === "blitz" ? (
           <div
-            className={`glass rounded-xl px-3.5 py-1.5 text-xl font-extrabold tabular-nums ${
-              hud.total !== null && hud.total < 10 ? "anim-urgent text-white" : "text-white"
+            className={`glass num rounded-xl px-3.5 py-1.5 text-xl font-semibold tracking-tight txt ${
+              hud.total !== null && hud.total < 10 ? "anim-urgent" : ""
             }`}
           >
             {hud.total !== null ? hud.total.toFixed(1) : "0"}s
           </div>
         ) : mode === "waves" ? (
-          <div className="glass rounded-xl px-3 py-1.5 text-[12px] font-extrabold tracking-widest text-white">
-            WAVE {hud.waveStep}/{hud.waveSize}
+          <div className="glass num rounded-xl px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[.14em] txt">
+            Wave {hud.waveStep}/{hud.waveSize}
           </div>
         ) : mode === "memory" ? (
-          <div className="glass rounded-xl px-3 py-1.5 text-[12px] font-extrabold tracking-widest text-white">
-            {hud.memory === "recall" ? "RECALL!" : "MEMORIZE…"}
+          <div className="glass rounded-xl px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[.14em] txt">
+            {hud.memory === "recall" ? "Recall" : "Memorize…"}
           </div>
         ) : mode === "coop" ? (
-          <div className="glass rounded-xl px-3 py-1.5 text-center text-[11px] font-extrabold tracking-widest text-white">
+          <div className="glass rounded-xl px-3 py-1.5 text-center text-[11px] font-semibold tracking-[.08em] txt">
             P1{"♥".repeat(Math.max(0, hud.coopLives[0]))} {hud.coopReady[0] ? "✓" : "…"}
-            <span className="mx-1.5 text-white/25">·</span>
+            <span className="mx-1.5 faint">·</span>
             P2{"♥".repeat(Math.max(0, hud.coopLives[1]))} {hud.coopReady[1] ? "✓" : "…"}
           </div>
         ) : hud.combo > 1 || hud.overdrive ? (
           <div
             key={hud.combo}
-            className={`anim-pop glass rounded-xl px-3 py-1 text-lg font-extrabold transition-all ${
+            className="anim-pop num glass rounded-xl px-3 py-1 text-[13px] font-semibold tracking-tight"
+            style={
               hud.overdrive
-                ? "text-amber-300 shadow-[0_0_20px_rgba(251,191,36,0.3)] border-amber-400/40"
-                : "text-white"
-            }`}
+                ? { color: "var(--brand)", borderColor: "var(--selected-border)" }
+                : { color: "var(--text)" }
+            }
           >
-            {hud.overdrive ? "⚡ OVERDRIVE" : "COMBO"} ×{hud.combo}
+            {hud.overdrive ? "⚡ Overdrive" : "Combo"} <span className="opacity-70">×{hud.combo}</span>
           </div>
         ) : (
           <div className="h-8" />
@@ -176,31 +172,11 @@ export default function HUD({
         {/* Live Active Modifiers Chips */}
         {hud.modifiers && Object.values(hud.modifiers).some(Boolean) && (
           <div className="flex items-center gap-1 flex-wrap justify-center">
-            {hud.modifiers.hyperSpeed && (
-              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                ⚡ Hyper
-              </span>
-            )}
-            {hud.modifiers.vortexSpin && (
-              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                🌀 Vortex
-              </span>
-            )}
-            {hud.modifiers.phantomMirage && (
-              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                🔮 Mirage
-              </span>
-            )}
-            {hud.modifiers.mirrorRealm && (
-              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-pink-500/20 text-pink-300 border border-pink-500/30">
-                🪞 Mirror
-              </span>
-            )}
-            {hud.modifiers.suddenRisk && (
-              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30">
-                💀 1-Life
-              </span>
-            )}
+            {hud.modifiers.hyperSpeed && <span className="hud-modifier-chip">⚡ Hyper</span>}
+            {hud.modifiers.vortexSpin && <span className="hud-modifier-chip">🌀 Vortex</span>}
+            {hud.modifiers.phantomMirage && <span className="hud-modifier-chip">🔮 Mirage</span>}
+            {hud.modifiers.mirrorRealm && <span className="hud-modifier-chip">🪞 Mirror</span>}
+            {hud.modifiers.suddenRisk && <span className="hud-modifier-chip">💀 One life</span>}
           </div>
         )}
 
@@ -212,7 +188,7 @@ export default function HUD({
                 key={i}
                 className="inline-block"
                 style={{
-                  transition: "transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1)",
+                  transition: "transform 180ms cubic-bezier(.22, 1, .36, 1)",
                   transform: i < hud.lives ? "scale(1.06)" : "scale(1)",
                 }}
               >

@@ -29,6 +29,18 @@ New runs record timing, hit/miss counts, perfect hits, rule multipliers and acti
 
 Animations follow the app's reduced-motion setting and the operating system preference. Moving particles, arena flashes, long counters and wheel spins are suppressed when reduced motion is active.
 
+## Text and motion
+
+VECTOR keeps one typography and one motion system so every screen, dialog and overlay feels like the same product.
+
+- **Type ramp:** `.t-eyebrow`, `.t-display`, `.t-title`, `.t-heading`, `.t-body`, `.t-caption` (in `src/index.css`) plus `.num` for tabular figures. Sizes multiply the user's text-size setting through `--text-scale`.
+- **Case and weight:** sentence case for labels, buttons and headings. Uppercase is reserved for short micro-labels with wider tracking. Nothing goes heavier than semibold (680), and numbers always use tabular figures.
+- **Motion tokens:** `--dur-1`…`--dur-4` (110–280 ms) and `--ease-out`/`--ease-standard`/`--ease-in-out`. The same values are exported for JS animations in `src/utils/motion.ts` (`DURATION`, `EASE`, `SPRING`, shared `backdropVariants`/`panelVariants`/`popoverVariants`).
+- **What animates:** transform and opacity only. Entrances settle in 160–200 ms, dialogs rise 12 px once, and lists cascade at 40 ms. There are no endless decorative loops; only true live states (a running timer, unclaimed rewards) keep moving.
+- **Reduced motion:** the app's setting and the OS preference both remove travel, loops and long counters while keeping opacity and colour changes, so state changes stay visible.
+
+When adding UI, reuse those classes and variants instead of new keyframes or one-off durations.
+
 ## Develop and verify
 
 ```text

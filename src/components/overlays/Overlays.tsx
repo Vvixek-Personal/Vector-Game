@@ -3,28 +3,39 @@ import { Sparkles, X } from "lucide-react";
 import { motion } from "motion/react";
 import type { GameSummary, GameMode } from "../../game/types";
 import { MODES } from "../../game/types";
-import { sparksForRun, spendSparks, type Stats, codeLabel, type Settings } from "../../game/storage";
+import { sparksForRun, type Stats, type Settings } from "../../game/storage";
 import type { Profile } from "../../game/profile";
-import { getPlayerLevelProgress, xpForStats } from "../../game/levels";
+import { getPlayerLevelProgress } from "../../game/levels";
 import { AVATARS, isUnlocked } from "../../game/profile";
 import { STORE_ITEMS } from "../../game/catalog";
 import { uiConfirm, uiTap } from "../../game/haptics";
 import Avatar from "../Avatar";
+import { backdropVariants, panelVariants, rowVariants } from "../../utils/motion";
 
-const Shell = ({ children }: { children: React.ReactNode }) => (
+/** Shared dialog shell: one scrim, one surface, one entrance. */
+const Shell = ({
+  children,
+  labelledBy,
+  label,
+}: {
+  children: React.ReactNode;
+  labelledBy?: string;
+  label?: string;
+}) => (
   <motion.div
-    initial={{ opacity: 0 }}
-    animate={{ opacity: 1 }}
-    exit={{ opacity: 0 }}
-    transition={{ duration: 0.2 }}
-    role="dialog" aria-modal="true" aria-label="Game menu" className="game-dialog absolute inset-0 z-40 flex items-center justify-center overflow-y-auto bg-black/75 p-4 backdrop-blur-md"
+    variants={backdropVariants}
+    initial="hidden"
+    animate="visible"
+    exit="exit"
+    role="dialog"
+    aria-modal="true"
+    aria-label={label}
+    aria-labelledby={labelledBy}
+    className="game-dialog surface-backdrop absolute inset-0 z-40 flex items-center justify-center overflow-y-auto p-4"
   >
     <motion.div
-      initial={{ scale: 0.92, opacity: 0, y: 16 }}
-      animate={{ scale: 1, opacity: 1, y: 0 }}
-      exit={{ scale: 0.94, opacity: 0, y: 8 }}
-      transition={{ type: "spring", stiffness: 380, damping: 26 }}
-      className="my-auto max-h-full overflow-y-auto w-full max-w-sm rounded-3xl border border-white/10 bg-[#0b0818]/95 p-6 text-center shadow-2xl"
+      variants={panelVariants}
+      className="surface-card my-auto max-h-full w-full max-w-[380px] overflow-y-auto p-6"
     >
       {children}
     </motion.div>
@@ -42,7 +53,7 @@ const STEPS = [
   {
     icon: "↑ + →",
     title: "Two for a diagonal",
-    body: "Diagonals need two directions held together — up and right makes north-east.",
+    body: "Diagonals need two directions held together. Up and right makes north-east.",
   },
   {
     icon: "⇄",
@@ -59,44 +70,51 @@ const STEPS = [
 export function TutorialOverlay({ onDone }: { onDone: () => void }) {
   const [step, setStep] = useState(0);
   const s = STEPS[step];
+  const last = step === STEPS.length - 1;
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.2 }}
-      className="absolute inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-md"
-    >
-      <motion.div
-        initial={{ scale: 0.92, opacity: 0, y: 16 }}
-        animate={{ scale: 1, opacity: 1, y: 0 }}
-        exit={{ scale: 0.94, opacity: 0, y: 8 }}
-        transition={{ type: "spring", stiffness: 380, damping: 26 }}
-        className="my-auto max-h-full overflow-y-auto w-full max-w-sm rounded-3xl border border-white/10 bg-[#0b0818]/95 p-6 text-center shadow-2xl"
-      >
-        <div className="anim-pop text-3xl font-black text-cyan-300">{s.icon}</div>
-        <h2 className="mt-2 text-[19px] font-extrabold text-white">{s.title}</h2>
-        <p className="mt-2 min-h-[3.5em] text-[14px] leading-relaxed text-white/50">{s.body}</p>
-        <div className="mt-3 flex justify-center gap-1.5">
+    <Shell label="How to play">
+      <div className="text-center">
+        <p className="t-eyebrow">
+          Step {step + 1} of {STEPS.length}
+        </p>
+        <motion.div
+          key={s.icon}
+          initial={{ opacity: 0, scale: 0.94 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+          className="anim-fade mt-4 text-3xl tracking-tight"
+          style={{ color: "var(--brand)" }}
+        >
+          {s.icon}
+        </motion.div>
+        <h2 className="t-title mt-3">{s.title}</h2>
+        <p className="t-body mx-auto mt-2 max-w-[30ch] min-h-[4.5em]">{s.body}</p>
+
+        <div className="mt-4 flex items-center justify-center gap-1.5" aria-hidden="true">
           {STEPS.map((_, i) => (
-            <span key={i} className={`h-1.5 rounded-full transition-all ${i === step ? "w-6 bg-cyan-300" : "w-1.5 bg-white/15"}`} />
+            <span
+              key={i}
+              className="h-1.5 rounded-full transition-all duration-200"
+              style={{
+                width: i === step ? 22 : 6,
+                background: i === step ? "var(--brand)" : "var(--panel-border)",
+              }}
+            />
           ))}
         </div>
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={() => (step < STEPS.length - 1 ? setStep(step + 1) : onDone())}
-          className="btn brand-grad mt-5 w-full rounded-2xl py-3 text-[14px] font-black uppercase tracking-widest text-white"
-        >
-          {step < STEPS.length - 1 ? "Next" : "Let's play"}
-        </motion.button>
-        {step < STEPS.length - 1 && (
-          <button onClick={onDone} className="mt-2 text-[11px] font-bold text-white/30 hover:text-white/60 transition-colors">
-            Skip
+
+        <div className="dialog-actions mt-6">
+          <button className="dialog-btn dialog-btn-primary" onClick={() => (last ? onDone() : setStep(step + 1))}>
+            {last ? "Let's play" : "Next"}
           </button>
-        )}
-      </motion.div>
-    </motion.div>
+          {!last && (
+            <button className="dialog-btn dialog-btn-quiet" onClick={onDone}>
+              Skip tutorial
+            </button>
+          )}
+        </div>
+      </div>
+    </Shell>
   );
 }
 
@@ -118,28 +136,52 @@ export function PauseOverlay({
   onHome: () => void;
 }) {
   return (
-    <Shell>
-      <h2 className="gradient-title text-[30px] font-black uppercase tracking-tight">Paused</h2>
-      <p className="mt-1 text-[11px] font-bold tracking-[0.25em] text-white/30">
-        {MODES[mode as keyof typeof MODES].label.toUpperCase()} · {score.toLocaleString()} PTS
-      </p>
-      <div className="mt-5 space-y-2">
-        {mode === "practice" && <button onClick={onFinishPractice} className="btn w-full rounded-2xl border border-white/10 py-3 text-white">Finish practice</button>}
-        <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} onClick={onResume} className="btn brand-grad w-full rounded-2xl py-3 text-[14px] font-black uppercase tracking-widest text-white">
+    <Shell label="Paused">
+      <div className="text-center">
+        <p className="t-eyebrow">{MODES[mode as keyof typeof MODES].label}</p>
+        <h2 className="t-display mt-2">Paused</h2>
+        <p className="t-caption num mt-1">
+          {score.toLocaleString()} pts this run
+        </p>
+      </div>
+
+      <div className="dialog-actions mt-6">
+        {mode === "practice" && (
+          <button className="dialog-btn" onClick={onFinishPractice}>
+            Finish practice
+          </button>
+        )}
+        <motion.button
+          whileTap={{ scale: 0.985 }}
+          onClick={onResume}
+          className="dialog-btn dialog-btn-primary"
+        >
           Resume
         </motion.button>
-        <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} onClick={onRestart} className="btn w-full rounded-2xl border border-white/10 bg-white/5 py-2.5 text-[12px] font-bold uppercase tracking-widest text-white/70">
+        <motion.button whileTap={{ scale: 0.985 }} onClick={onRestart} className="dialog-btn">
           Restart
         </motion.button>
-        <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} onClick={onHome} className="btn w-full rounded-2xl border border-white/10 bg-white/5 py-2.5 text-[12px] font-bold uppercase tracking-widest text-white/50">
+        <motion.button whileTap={{ scale: 0.985 }} onClick={onHome} className="dialog-btn dialog-btn-quiet">
           Home
         </motion.button>
       </div>
+      <p className="t-caption mt-4 text-center">
+        <kbd className="sf-mono">Esc</kbd> or <kbd className="sf-mono">P</kbd> resumes
+      </p>
     </Shell>
   );
 }
 
 // ---------------------------------------------------------------- game over
+
+const RANK_TONE: Record<string, { color: string; border: string; background: string }> = {
+  SSS: { color: "#1b1200", border: "transparent", background: "linear-gradient(120deg,#f6d68a,#f2b45f)" },
+  S: { color: "#f3cf8d", border: "color-mix(in srgb, #f3cf8d 45%, transparent)", background: "color-mix(in srgb, #f3cf8d 14%, transparent)" },
+  A: { color: "#9bd7b6", border: "color-mix(in srgb, #9bd7b6 42%, transparent)", background: "color-mix(in srgb, #9bd7b6 12%, transparent)" },
+  B: { color: "var(--text-dim)", border: "var(--panel-border)", background: "var(--pill)" },
+  C: { color: "var(--text-faint)", border: "var(--panel-border)", background: "var(--pill)" },
+  D: { color: "var(--text-faint)", border: "var(--panel-border)", background: "var(--pill)" },
+};
 
 export function GameOverOverlay({
   summary,
@@ -161,184 +203,149 @@ export function GameOverOverlay({
   const def = MODES[summary.mode];
   const versus = summary.versus;
   const level = stats && profile ? getPlayerLevelProgress(stats, profile) : null;
-  const previousStreak = stats ? Math.max(0, ...stats.history.slice(1).map(r => r.streak)) : 0;
   const xpGain = summary.xpGained ?? summary.score + 50;
 
-  const averageReaction = stats && stats.reactionCount > 0 
-    ? Math.round(stats.reactionTotal / stats.reactionCount) 
-    : 0;
+  const averageReaction =
+    stats && stats.reactionCount > 0 ? Math.round(stats.reactionTotal / stats.reactionCount) : 0;
 
-  const reactionDiff = summary.avgReactionMs && averageReaction > 0
-    ? averageReaction - summary.avgReactionMs
-    : 0;
-  
-  const reactionText = reactionDiff > 5 
-    ? `(${reactionDiff}ms faster than avg)`
-    : reactionDiff < -5 
-      ? `(${Math.abs(reactionDiff)}ms slower than avg)`
-      : averageReaction > 0 ? `(Same as your average)` : "";
+  const reactionDiff =
+    summary.avgReactionMs && averageReaction > 0 ? averageReaction - summary.avgReactionMs : 0;
+
+  const reactionNote =
+    Math.abs(reactionDiff) > 5
+      ? `${Math.abs(reactionDiff)} ms ${reactionDiff > 0 ? "faster" : "slower"} than your average`
+      : averageReaction > 0
+        ? "Right on your average reaction"
+        : "";
+
+  const rankTone = summary.rank ? RANK_TONE[summary.rank] ?? RANK_TONE.B : null;
+
+  const stats4: Array<[string, React.ReactNode, string]> = [
+    ["Acc", `${summary.accuracy}%`, "accuracy"],
+    ["Avg", summary.avgReactionMs ? `${summary.avgReactionMs} ms` : "—", "reaction"],
+    ["Streak", String(summary.bestStreak), "streak"],
+    [
+      summary.mode === "practice" ? "Sparks" : "Sparks",
+      `+${summary.mode === "practice" ? 0 : sparksForRun(summary.score, summary.bestStreak)}`,
+      "sparks",
+    ],
+  ];
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.2 }}
-      className="absolute inset-0 z-40 flex items-center justify-center overflow-y-auto bg-black/75 p-4 backdrop-blur-md"
-    >
-      <motion.div
-        initial={{ scale: 0.92, opacity: 0, y: 16 }}
-        animate={{ scale: 1, opacity: 1, y: 0 }}
-        exit={{ scale: 0.94, opacity: 0, y: 8 }}
-        transition={{ type: "spring", stiffness: 380, damping: 26 }}
-        className="my-auto w-full max-w-sm rounded-3xl border border-white/10 bg-[#0b0818]/95 p-6 text-center shadow-2xl"
-      >
-        {versus ? (
-          <>
-            <div className="text-[11px] font-black uppercase tracking-[0.3em] text-white/35">Versus over</div>
-            <div className="mt-3 text-4xl font-black text-white">
-              {summary.winner === 2 ? "It's a tie!" : `P${(summary.winner ?? 0) + 1} wins!`}
-            </div>
-            <div className="mt-2 text-[14px] font-extrabold text-white/60">
-              P1 {versus[0]} <span className="text-white/25">·</span> P2 {versus[1]}
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="text-[11px] font-black uppercase tracking-[0.3em] text-white/35">
-              {def.label} complete
-            </div>
-            
-            {/* Arcade Grade Stamp */}
-            {summary.mode !== "practice" && summary.rank && (
-              <motion.div
-                initial={{ scale: 2.2, opacity: 0, rotate: -20 }}
-                animate={{ scale: 1, opacity: 1, rotate: -5 }}
-                transition={{ type: "spring", stiffness: 450, damping: 18, delay: 0.1 }}
-                className="mx-auto my-2 w-fit"
-              >
-                <div
-                  className={`px-3.5 py-0.5 rounded-2xl border-2 font-black text-xl tracking-widest uppercase shadow-xl ${
-                    summary.rank === "SSS"
-                      ? "bg-gradient-to-r from-amber-400 via-rose-400 to-amber-300 text-black border-white shadow-amber-500/40"
-                      : summary.rank === "S"
-                      ? "bg-amber-400/20 text-amber-300 border-amber-400/60 shadow-amber-500/20"
-                      : summary.rank === "A"
-                      ? "bg-emerald-400/20 text-emerald-300 border-emerald-400/60 shadow-emerald-500/20"
-                      : summary.rank === "B"
-                      ? "bg-cyan-400/20 text-cyan-300 border-cyan-400/60 shadow-cyan-500/20"
-                      : "bg-slate-700/40 text-slate-300 border-slate-500/40"
-                  }`}
-                >
-                  GRADE {summary.rank}
-                </div>
-              </motion.div>
-            )}
-
-            <div className="mt-1 text-5xl font-black tabular-nums text-white">{summary.score.toLocaleString()}</div>
-            {summary.newBest ? (
-              <div className="anim-pop mt-1.5 text-[12px] font-black tracking-[0.2em] text-amber-300">NEW PERSONAL BEST</div>
-            ) : (
-              <div className="mt-1.5 text-[11px] font-bold tracking-[0.2em] text-white/30">
-                {summary.mode === "practice" ? "UNRANKED · TRAINING ONLY" : `BEST ${summary.best.toLocaleString()}`}
-              </div>
-            )}
-            {summary.modifierMultiplier && summary.modifierMultiplier > 1 && (
-              <div className="mt-2 flex items-center justify-center">
-                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm">
-                  ⚡ {summary.modifierMultiplier}× Modifiers Multiplier
-                </span>
-              </div>
-            )}
-          </>
-        )}
-
-        <div className="mt-4 grid grid-cols-4 gap-1.5">
-          {[
-            ["ACC", `${summary.accuracy}%`],
-            ["AVG", summary.avgReactionMs ? `${summary.avgReactionMs}ms` : "—"],
-            ["STREAK", String(summary.bestStreak)],
-            [<Sparkles size={12} className="inline-block" key="spark" />, `+${summary.mode === "practice" ? 0 : sparksForRun(summary.score, summary.bestStreak)}`],
-          ].map(([k, v], i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
-              className="rounded-xl bg-white/[0.04] px-1 py-2"
-            >
-              <div className="text-[8px] font-black tracking-widest text-white/25 flex justify-center">{k}</div>
-              <div className="mt-0.5 text-[13px] font-extrabold text-white">{v}</div>
-            </motion.div>
-          ))}
+    <Shell label="Run summary">
+      {versus ? (
+        <div className="text-center">
+          <p className="t-eyebrow">Versus complete</p>
+          <div className="t-display mt-2">
+            {summary.winner === 2 ? "It's a tie" : `Player ${(summary.winner ?? 0) + 1} wins`}
+          </div>
+          <p className="t-body num mt-2">
+            P1 {versus[0]} <span className="faint">·</span> P2 {versus[1]}
+          </p>
         </div>
+      ) : (
+        <div className="text-center">
+          <p className="t-eyebrow">{def.label} complete</p>
 
-        {/* Level XP Progress Bar */}
-        {stats && !versus && summary.mode !== "practice" && (
-          <div className="mt-3 p-2.5 rounded-2xl bg-white/[0.03] border border-white/5 text-left">
-            <div className="flex items-center justify-between text-[11px] font-bold text-white/70">
-              <span>Operative Rank Level</span>
-              <span className="text-sky-400 font-extrabold">
-                +{xpGain.toLocaleString()} XP Gained
+          {summary.mode !== "practice" && summary.rank && rankTone && (
+            <motion.div
+              initial={{ opacity: 0, scale: 1.12, rotate: -6 }}
+              animate={{ opacity: 1, scale: 1, rotate: -3 }}
+              transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1], delay: 0.06 }}
+              className="mx-auto mt-3 w-fit"
+            >
+              <span
+                className="inline-flex items-center rounded-xl border px-3 py-1 text-base font-bold tracking-[.18em]"
+                style={{ color: rankTone.color, borderColor: rankTone.border, background: rankTone.background }}
+              >
+                {summary.rank}
               </span>
-            </div>
-            <div className="mt-1.5 h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${(level?.progress ?? 0) * 100}%` }}
-                transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
-                className="h-full bg-gradient-to-r from-sky-400 to-indigo-500 rounded-full"
-              />
-            </div>
-          </div>
-        )}
-        
-        {reactionText && !versus && (
-          <div className="mt-2 text-[11px] font-medium text-white/40">
-            {reactionText}
-          </div>
-        )}
+            </motion.div>
+          )}
 
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={onAgain}
-          className="btn brand-grad mt-5 w-full rounded-2xl py-3 text-[14px] font-black uppercase tracking-widest text-white"
-        >
+          <div className="num mt-2 text-[46px] font-semibold leading-none tracking-[-.05em] txt">
+            {summary.score.toLocaleString()}
+          </div>
+
+          {summary.newBest ? (
+            <p className="anim-fade mt-2 text-[11px] font-semibold uppercase tracking-[.14em]" style={{ color: "var(--brand)" }}>
+              New personal best
+            </p>
+          ) : (
+            <p className="t-caption num mt-2 uppercase tracking-[.12em]">
+              {summary.mode === "practice"
+                ? "UNRANKED · TRAINING ONLY"
+                : `Best ${summary.best.toLocaleString()}`}
+            </p>
+          )}
+
+          {summary.modifierMultiplier && summary.modifierMultiplier > 1 && (
+            <p className="t-caption num mt-2">
+              {summary.modifierMultiplier.toFixed(2)}× modifier multiplier applied
+            </p>
+          )}
+        </div>
+      )}
+
+      <div className="dialog-stats mt-5">
+        {stats4.map(([label, value, key], i) => (
+          <motion.div key={key} custom={i} variants={rowVariants} initial="hidden" animate="visible" className="dialog-stat">
+            <span>{label}</span>
+            <strong>{value}</strong>
+          </motion.div>
+        ))}
+      </div>
+
+      {stats && !versus && summary.mode !== "practice" && (
+        <div className="mt-3 rounded-2xl border p-3" style={{ borderColor: "var(--panel-border)", background: "var(--pill)" }}>
+          <div className="flex items-baseline justify-between gap-2">
+            <span className="t-caption">Level {level?.currentLevel ?? 1}</span>
+            <span className="num text-[12px] font-semibold" style={{ color: "var(--brand)" }}>
+              +{xpGain.toLocaleString()} XP
+            </span>
+          </div>
+          <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full" style={{ background: "var(--surface-raised)" }}>
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${Math.round((level?.progress ?? 0) * 100)}%` }}
+              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
+              className="h-full rounded-full"
+              style={{ background: "var(--brand)" }}
+            />
+          </div>
+        </div>
+      )}
+
+      {reactionNote && !versus && <p className="t-caption mt-3 text-center">{reactionNote}</p>}
+
+      <div className="dialog-actions mt-5">
+        <motion.button whileTap={{ scale: 0.985 }} onClick={onAgain} className="dialog-btn dialog-btn-primary">
           Play again
         </motion.button>
-        <div className="mt-2 grid grid-cols-2 gap-2">
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={onShare}
-            className="btn rounded-2xl border border-white/10 bg-white/5 py-2.5 text-[12px] font-bold uppercase tracking-widest text-white/70"
-          >
-            {shared ? "Copied ✓" : "Share"}
+        <div className="grid grid-cols-2 gap-2">
+          <motion.button whileTap={{ scale: 0.985 }} onClick={onShare} className="dialog-btn">
+            {shared ? "Copied" : "Share"}
           </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={onHome}
-            className="btn rounded-2xl border border-white/10 bg-white/5 py-2.5 text-[12px] font-bold uppercase tracking-widest text-white/70"
-          >
+          <motion.button whileTap={{ scale: 0.985 }} onClick={onHome} className="dialog-btn">
             Home
           </motion.button>
         </div>
-      </motion.div>
-    </motion.div>
+      </div>
+    </Shell>
   );
 }
+
+// ---------------------------------------------------------------- prep / loadout
 
 export function PrepOverlay({
   mode,
   profile,
   onUpdateProfile,
   stats,
-  onUpdateStats,
+  onUpdateStats: _onUpdateStats,
   onStart,
   onCancel,
-  settings,
+  settings: _settings,
   modifierMultiplier = 1.0,
   onOpenModifiers,
 }: {
@@ -357,63 +364,78 @@ export function PrepOverlay({
 
   const cycleAvatar = () => {
     uiTap();
-    const ownedAvatars = STORE_ITEMS.filter(i => i.tab === "avatars" && profile.purchased.includes(i.id)).map(i => i.apply?.avatarId).filter(Boolean) as string[];
-    const all = [...new Set([...AVATARS.filter(a => isUnlocked(a.rule, stats)).map(a => a.id), ...ownedAvatars])];
+    const ownedAvatars = STORE_ITEMS.filter((i) => i.tab === "avatars" && profile.purchased.includes(i.id))
+      .map((i) => i.apply?.avatarId)
+      .filter(Boolean) as string[];
+    const all = [
+      ...new Set([...AVATARS.filter((a) => isUnlocked(a.rule, stats)).map((a) => a.id), ...ownedAvatars]),
+    ];
     const currentIndex = all.indexOf(profile.avatarId);
     const next = all[(currentIndex + 1) % all.length];
     onUpdateProfile({ ...profile, avatarId: next });
   };
 
   return (
-    <Shell>
-      <div className="relative">
-        <button aria-label="Close loadout" onClick={onCancel} className="absolute -right-2 -top-2 text-white/40 hover:text-white p-2 rounded-full hover:bg-white/10 transition">
-          <X size={18} />
+    <Shell label={`Loadout for ${def.label}`}>
+      <div className="dialog-head">
+        <div>
+          <p className="t-eyebrow">{def.tag}</p>
+          <h2 className="t-title mt-1">Loadout: {def.label}</h2>
+        </div>
+        <button
+          aria-label="Close loadout"
+          onClick={onCancel}
+          className="icon-button icon-button-sm shrink-0"
+        >
+          <X size={16} />
         </button>
-        <h2 className="text-xl font-bold mb-1">Loadout: {def.label}</h2>
-        <p className="text-white/50 text-sm mb-6">Choose your look and prepare for the run.</p>
-        
-        <div className="flex flex-col gap-3 mb-8">
-          <div className="flex justify-between items-center rounded-2xl bg-white/5 p-3.5 border border-white/10">
-            <div className="flex flex-col text-left">
-              <span className="text-xs text-white/40 font-medium">Equipped Identity</span>
-              <span className="text-sm font-semibold text-white/90 capitalize">{profile.avatarId || "Default"}</span>
-            </div>
-            <button className="flex items-center gap-3 rounded-xl bg-white/10 hover:bg-white/15 px-3 py-2 transition" onClick={cycleAvatar}>
-              <Avatar profile={profile} name="" size={32} />
-              <span className="text-xs font-bold uppercase tracking-wide text-white/70">Change</span>
-            </button>
-          </div>
+      </div>
+      <p className="dialog-sub">Pick a look, check your rules, then start when you are ready.</p>
 
-          <div className="flex justify-between items-center rounded-2xl bg-white/5 p-3.5 border border-white/10">
-            <div className="flex flex-col text-left">
-              <span className="text-xs text-white/40 font-medium">Challenge Modifiers</span>
-              <span className="text-sm font-semibold text-amber-300">
-                {modifierMultiplier > 1 ? `${modifierMultiplier.toFixed(2)}× Active Multiplier` : "Standard Rules (1.0×)"}
-              </span>
-            </div>
-            {onOpenModifiers && (
-              <button
-                className="rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 px-3 py-1.5 text-xs font-bold uppercase tracking-wide transition cursor-pointer"
-                onClick={onOpenModifiers}
-              >
-                ⚡ Tune
-              </button>
-            )}
+      <div className="mt-5 flex flex-col gap-2">
+        <div className="flex items-center justify-between gap-3 rounded-2xl border p-3" style={{ borderColor: "var(--panel-border)", background: "var(--pill)" }}>
+          <div className="min-w-0">
+            <span className="t-caption">Identity</span>
+            <div className="truncate text-[13px] font-semibold capitalize txt">{profile.avatarId || "Default"}</div>
           </div>
-
-          <div className="flex items-center justify-between rounded-2xl bg-white/[0.03] p-3 border border-white/5 text-xs text-white/60">
-            <span className="flex items-center gap-1.5 font-medium">
-              <Sparkles size={13} className="text-amber-300" />
-              {(stats.sparks ?? 0).toLocaleString()} Sparks
-            </span>
-            <span className="font-mono text-[11px] text-white/40">{def.tag}</span>
-          </div>
+          <button className="dialog-btn min-h-[38px] px-3 py-1.5 text-[12px]" onClick={cycleAvatar}>
+            <Avatar profile={profile} name="" size={24} />
+            Change
+          </button>
         </div>
 
+        <div className="flex items-center justify-between gap-3 rounded-2xl border p-3" style={{ borderColor: "var(--panel-border)", background: "var(--pill)" }}>
+          <div className="min-w-0">
+            <span className="t-caption">Modifiers</span>
+            <div className="num text-[13px] font-semibold txt">
+              {modifierMultiplier > 1
+                ? `${modifierMultiplier.toFixed(2)}× score and XP`
+                : "Standard rules · 1.00×"}
+            </div>
+          </div>
+          {onOpenModifiers && (
+            <button className="dialog-btn min-h-[38px] px-3 py-1.5 text-[12px]" onClick={onOpenModifiers}>
+              Tune
+            </button>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between gap-3 px-1 pt-1 text-[12px]" style={{ color: "var(--text-faint)" }}>
+          <span className="inline-flex items-center gap-1.5">
+            <Sparkles size={13} style={{ color: "var(--brand)" }} />
+            <span className="num">{(stats.sparks ?? 0).toLocaleString()}</span> sparks
+          </span>
+          <span className="sf-mono text-[11px]">{def.tag}</span>
+        </div>
+      </div>
+
+      <div className="dialog-actions mt-6">
         <button
-          onClick={() => { uiConfirm(); onStart(); }}
-          className="w-full rounded-2xl bg-white py-3.5 text-base font-extrabold text-black hover:scale-[1.02] active:scale-[0.98] transition-transform shadow-lg shadow-white/10"
+          onClick={() => {
+            uiConfirm();
+            onStart();
+          }}
+          className="dialog-btn dialog-btn-primary"
         >
           Start Run
         </button>

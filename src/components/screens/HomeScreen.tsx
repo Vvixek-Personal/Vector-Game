@@ -123,14 +123,10 @@ export default function HomeScreen({
   return (
     <div className="home-page">
       <header className="home-header">
-        <motion.div
-          className="wordmark"
-          whileHover={{ scale: 1.03 }}
-          transition={{ type: "spring", stiffness: 400 }}
-        >
+        <div className="wordmark">
           <Icon name="arrow" size={28} />
           <h1>Vector<span>.</span></h1>
-        </motion.div>
+        </div>
         <div className="home-header-actions">
           {/* PWA Install Button */}
           <PWAInstallButton />
@@ -140,11 +136,10 @@ export default function HomeScreen({
 
           {onMissions && (
             <motion.button
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.96 }}
-              className="text-button flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-purple-500/30 bg-purple-500/10 text-purple-300 font-bold text-xs hover:bg-purple-500/20 transition cursor-pointer"
+              whileTap={{ scale: 0.97 }}
+              className="text-button header-chip"
               onClick={() => { uiTap(); onMissions(); }}
-              title="View Daily Missions"
+              title="Open daily missions"
             >
               <Icon name="award" size={15} />
               <span className="hidden sm:inline">Missions</span>
@@ -153,11 +148,10 @@ export default function HomeScreen({
 
           {onLeaderboard && (
             <motion.button
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.96 }}
-              className="text-button flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-300 font-bold text-xs hover:bg-amber-500/20 transition cursor-pointer"
+              whileTap={{ scale: 0.97 }}
+              className="text-button header-chip"
               onClick={() => { uiTap(); onLeaderboard(); }}
-              title="View Real Data Leaderboard"
+              title="Open the global leaderboard"
             >
               <Icon name="trophy" size={15} />
               <span className="hidden sm:inline">Leaderboard</span>
@@ -165,26 +159,23 @@ export default function HomeScreen({
           )}
 
           <motion.button
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.96 }}
+            whileTap={{ scale: 0.97 }}
             className="text-button how-button"
             onClick={() => { uiTap(); onHowToPlay(); }}
           >
             <Icon name="help" size={18} />How to play
           </motion.button>
           <motion.button
-            whileHover={{ scale: 1.08 }}
             whileTap={{ scale: 0.94 }}
             className="icon-button fullscreen-button"
             onClick={onFullscreen}
-            title="Use browser fullscreen"
-            aria-label="Use browser fullscreen"
+            title="Toggle fullscreen"
+            aria-label="Toggle fullscreen"
           >
             <Icon name="expand" size={19} />
           </motion.button>
           <motion.button
-            whileHover={{ scale: 1.03, y: -1 }}
-            whileTap={{ scale: 0.97 }}
+            whileTap={{ scale: 0.98 }}
             className="player-chip relative"
             onClick={() => { uiTap(); onProfile(); }}
             aria-label="Open your profile and level progression"
@@ -192,10 +183,16 @@ export default function HomeScreen({
             <Avatar profile={profile} name={name} size={34} />
             <div className="flex flex-col text-left leading-tight">
               <span className="player-chip-name">{name.trim() || "Ace"}</span>
-              <span className="text-[10px] text-sky-400 font-bold">Lv. {levelInfo.currentLevel} Rail</span>
+              <span className="num text-[10px] font-semibold" style={{ color: "var(--brand)" }}>
+                Level {levelInfo.currentLevel}
+              </span>
             </div>
             {levelInfo.unclaimedCount > 0 && (
-              <span className="w-2 h-2 rounded-full bg-amber-400 border border-black animate-ping" />
+              <span
+                className="h-1.5 w-1.5 shrink-0 rounded-full"
+                style={{ background: "var(--brand)" }}
+                aria-label="Unclaimed level rewards"
+              />
             )}
             <Icon name="right" size={14} />
           </motion.button>
@@ -208,10 +205,10 @@ export default function HomeScreen({
             <motion.div
               className="mode-copy"
               key={mode}
-              initial={{ opacity: 0, y: 12 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.22, ease: "easeOut" }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
             >
               <h2 id="selected-mode-heading">{def.label}</h2>
               <p className="mode-description">{def.desc}</p>
@@ -219,8 +216,7 @@ export default function HomeScreen({
             </motion.div>
           </AnimatePresence>
           <motion.button
-            whileHover={{ scale: 1.025, boxShadow: "0 8px 24px -4px rgba(0,0,0,0.3)" }}
-            whileTap={{ scale: 0.97 }}
+            whileTap={{ scale: 0.985 }}
             className="primary-action cursor-pointer"
             onClick={() => { uiConfirm(); onPlay(mode); }}
           >
@@ -229,31 +225,26 @@ export default function HomeScreen({
 
           {onOpenModifiers && (
             <motion.button
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.96 }}
+              whileTap={{ scale: 0.97 }}
               onClick={onOpenModifiers}
-              className={`mt-2 px-3 py-1.5 rounded-full border text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
-                modifierMultiplier > 1
-                  ? "bg-amber-500/15 border-amber-500/40 text-amber-300 shadow-sm"
-                  : "bg-white/5 border-white/10 text-white/60 hover:text-white/90 hover:bg-white/10"
+              className={`header-chip pressable mt-3 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11.5px] font-medium ${
+                modifierMultiplier > 1 ? "is-active" : ""
               }`}
             >
-              <span>⚡</span>
-              <span>
-                Modifiers: {modifierMultiplier > 1 ? `${modifierMultiplier.toFixed(2)}× Active` : "Normal (1.0×)"}
+              <span aria-hidden="true">⚡</span>
+              <span className="num">
+                {modifierMultiplier > 1
+                  ? `Modifiers on · ${modifierMultiplier.toFixed(2)}×`
+                  : "Modifiers off · 1.00×"}
               </span>
             </motion.button>
           )}
 
           {showHints && <p className="input-note"><Icon name={mode === "coop" ? "keyboard" : "touch"} size={17} />{mode === "coop" ? "Player 1: WASD. Player 2: arrow keys." : "Swipe, tap, or use your arrow keys."}</p>}
-          <motion.div
-            className="personal-best"
-            whileHover={{ y: -2 }}
-            transition={{ type: "spring", stiffness: 350 }}
-          >
+          <div className="personal-best">
             <span>{mode === "practice" ? "Training mode" : "Personal best"}</span>
             <strong>{mode === "practice" ? "No timer" : (scores[0]?.score ?? 0).toLocaleString()}{mode !== "practice" && <small> pts</small>}</strong>
-          </motion.div>
+          </div>
         </section>
 
         <section className="mode-showcase" aria-label="Choose your game mode">

@@ -1,5 +1,6 @@
 import React from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { Check } from "lucide-react";
 import {
   type GameModifiers,
   MODIFIER_DEFS,
@@ -7,6 +8,7 @@ import {
   saveModifiers,
 } from "../game/modifiers";
 import { uiTap } from "../game/haptics";
+import { backdropVariants, panelVariants } from "../utils/motion";
 
 interface Props {
   isOpen: boolean;
@@ -15,12 +17,7 @@ interface Props {
   onChange: (mods: GameModifiers) => void;
 }
 
-export const ModifiersModal: React.FC<Props> = ({
-  isOpen,
-  onClose,
-  modifiers,
-  onChange,
-}) => {
+export const ModifiersModal: React.FC<Props> = ({ isOpen, onClose, modifiers, onChange }) => {
   const mult = getModifierMultiplier(modifiers);
   const activeCount = Object.values(modifiers).filter(Boolean).length;
 
@@ -40,131 +37,113 @@ export const ModifiersModal: React.FC<Props> = ({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          {/* Backdrop */}
+        <motion.div
+          variants={backdropVariants}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+          className="surface-backdrop fixed inset-0 z-50 flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="modifiers-title"
+        >
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/80 backdrop-blur-md"
-            onClick={onClose}
-          />
-
-          {/* Dialog */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.94, y: 16 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.94, y: 16 }}
-            transition={{ type: "spring", stiffness: 350, damping: 28 }}
-            className="relative w-full max-w-md bg-slate-900/95 border border-slate-700/60 rounded-3xl p-6 shadow-2xl text-slate-100 overflow-hidden"
+            variants={panelVariants}
+            className="surface-card relative flex max-h-[88dvh] w-full max-w-[440px] flex-col p-5"
           >
-            {/* Header */}
-            <div className="flex items-center justify-between pb-4 border-b border-slate-800">
-              <div className="flex items-center gap-2.5">
-                <span className="text-2xl">⚡</span>
-                <div>
-                  <h3 className="text-lg font-black tracking-tight text-white flex items-center gap-2">
-                    Game Modifiers
-                    {activeCount > 0 && (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-bold border border-amber-500/30">
-                        {activeCount} Active
-                      </span>
-                    )}
-                  </h3>
-                  <p className="text-xs text-slate-400">
-                    Stack challenges for massive score & XP multipliers
-                  </p>
-                </div>
+            <div className="dialog-head">
+              <div className="min-w-0">
+                <p className="t-eyebrow">Challenge rules</p>
+                <h2 id="modifiers-title" className="t-title mt-1">
+                  Modifiers
+                  {activeCount > 0 && (
+                    <span className="num ml-2 align-middle text-[11px] font-semibold" style={{ color: "var(--brand)" }}>
+                      {activeCount} on
+                    </span>
+                  )}
+                </h2>
+                <p className="dialog-sub">Stack rules to raise the score and XP multiplier.</p>
               </div>
-
-              <button
-                onClick={onClose}
-                className="w-8 h-8 rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition"
-                aria-label="Close modifiers"
-              >
+              <button onClick={onClose} className="icon-button icon-button-sm shrink-0" aria-label="Close modifiers">
                 ✕
               </button>
             </div>
 
-            {/* Total Multiplier Banner */}
-            <div className="my-4 p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-purple-500/10 to-cyan-500/10 border border-slate-700/50 flex items-center justify-between">
+            <div
+              className="mt-4 flex items-center justify-between gap-3 rounded-2xl border px-4 py-3"
+              style={{ borderColor: "var(--panel-border)", background: "var(--pill)" }}
+            >
               <div>
-                <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                  Total Score Multiplier
-                </div>
-                <div className="text-2xl font-black text-amber-400 tracking-tight">
-                  {mult.toFixed(2)}× <span className="text-xs text-slate-300 font-normal">Score & XP</span>
+                <div className="t-caption">Score and XP multiplier</div>
+                <div className="num mt-0.5 text-[24px] font-semibold leading-none tracking-tight txt">
+                  {mult.toFixed(2)}×
                 </div>
               </div>
               {activeCount > 0 && (
-                <button
-                  onClick={clearAll}
-                  className="text-xs text-slate-400 hover:text-rose-400 font-medium px-2.5 py-1 rounded-lg bg-slate-800/60 hover:bg-rose-500/10 transition"
-                >
-                  Reset All
+                <button onClick={clearAll} className="reset-button">
+                  Clear all
                 </button>
               )}
             </div>
 
-            {/* Modifiers List */}
-            <div className="space-y-2.5 max-h-[50vh] overflow-y-auto pr-1">
-              {MODIFIER_DEFS.map((m) => {
+            <div className="mt-3 flex flex-col gap-2 overflow-y-auto pr-0.5">
+              {MODIFIER_DEFS.map((m, i) => {
                 const active = Boolean(modifiers[m.id]);
                 return (
-                  <motion.div
+                  <motion.button
                     key={m.id}
-                    whileTap={{ scale: 0.98 }}
+                    type="button"
+                    aria-pressed={active}
                     onClick={() => toggle(m.id)}
-                    className={`cursor-pointer rounded-2xl p-3.5 border transition-all flex items-center justify-between gap-3 ${
-                      active
-                        ? "bg-slate-800/90 border-amber-500/60 shadow-lg shadow-amber-500/5"
-                        : "bg-slate-800/40 border-slate-700/40 hover:bg-slate-800/60"
-                    }`}
+                    whileTap={{ scale: 0.99 }}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0, transition: { duration: 0.2, ease: [0.22, 1, 0.36, 1], delay: 40 * i } }}
+                    className="flex w-full items-center justify-between gap-3 rounded-2xl border p-3 text-left transition-colors"
+                    style={{
+                      borderColor: active ? "var(--selected-border)" : "var(--panel-border)",
+                      background: active ? "var(--selected)" : "var(--pill)",
+                    }}
                   >
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl select-none">{m.icon}</span>
-                      <div className="text-left">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-bold text-white">
-                            {m.name}
-                          </span>
-                          <span
-                            className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md border ${m.badgeColor}`}
-                          >
+                    <span className="flex min-w-0 items-start gap-3">
+                      <span className="mt-0.5 text-[18px] leading-none select-none" aria-hidden="true">
+                        {m.icon}
+                      </span>
+                      <span className="min-w-0">
+                        <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                          <span className="text-[13px] font-semibold txt">{m.name}</span>
+                          <span className="num text-[10px] font-semibold uppercase tracking-[.08em] faint">
                             +{m.bonusPercent}%
                           </span>
-                        </div>
-                        <p className="text-xs text-slate-400 mt-0.5 leading-snug">
+                        </span>
+                        <span className="mt-0.5 block text-[11.5px] leading-snug" style={{ color: "var(--text-dim)" }}>
                           {m.desc}
-                        </p>
-                      </div>
-                    </div>
+                        </span>
+                      </span>
+                    </span>
 
-                    <div
-                      className={`w-6 h-6 rounded-full flex items-center justify-center border transition-all ${
-                        active
-                          ? "bg-amber-400 border-amber-400 text-black font-black text-xs"
-                          : "border-slate-600 bg-slate-800"
-                      }`}
+                    <span
+                      className="grid h-5 w-5 shrink-0 place-items-center rounded-full border transition-colors"
+                      style={{
+                        borderColor: active ? "transparent" : "var(--panel-border)",
+                        background: active ? "var(--brand)" : "transparent",
+                        color: "var(--brand-on)",
+                      }}
+                      aria-hidden="true"
                     >
-                      {active ? "✓" : ""}
-                    </div>
-                  </motion.div>
+                      {active && <Check size={12} strokeWidth={3} />}
+                    </span>
+                  </motion.button>
                 );
               })}
             </div>
 
-            {/* Footer */}
-            <div className="mt-5 pt-3 border-t border-slate-800 flex justify-end">
-              <button
-                onClick={onClose}
-                className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-cyan-500 text-black font-black text-sm hover:opacity-95 transition shadow-lg shadow-amber-500/10 cursor-pointer"
-              >
-                Apply & Confirm ({mult.toFixed(2)}×)
+            <div className="dialog-actions mt-4">
+              <button onClick={onClose} className="dialog-btn dialog-btn-primary">
+                Apply · {mult.toFixed(2)}×
               </button>
             </div>
           </motion.div>
-        </div>
+        </motion.div>
       )}
     </AnimatePresence>
   );
