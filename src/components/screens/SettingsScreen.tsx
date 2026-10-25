@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { ARENA_THEMES, COLORWAYS, codeLabel, defaultBindCodes, resetTutorial, type BindDir, type Settings } from "../../game/storage";
+import { ARENA_THEMES, AUDIO_PACKS, COLORWAYS, codeLabel, defaultBindCodes, resetTutorial, type BindDir, type Settings } from "../../game/storage";
 import { playHaptic, uiTap } from "../../game/haptics";
 import { Seg, Toggle } from "../ui";
 import Icon, { type IconName } from "../Icon";
@@ -98,15 +98,26 @@ export default function SettingsScreen({ settings, onChange, onBack }: Props) {
                 <button className="text-button" onClick={() => { resetTutorial(); setMessage("Guide will show on the next run."); }}>Show guide again</button>
               </SettingRow>
             </Section>
-            <Section title="HUD">
+            <Section title="HUD & Performance">
               <SettingRow label="Score floats" description="Little +pts pop on hits.">
                 <Toggle label="Score floats" checked={settings.scoreFloats !== false} onChange={() => onChange("scoreFloats", settings.scoreFloats === false)} />
               </SettingRow>
               <SettingRow label="Compact HUD" description="Smaller score and hearts.">
                 <Toggle label="Compact HUD" checked={!!settings.compactHud} onChange={() => onChange("compactHud", !settings.compactHud)} />
               </SettingRow>
+
               <SettingRow label="Color-blind assist" description="Stronger shapes, less hue.">
                 <Toggle label="Color-blind assist" checked={!!settings.colorBlind} onChange={() => onChange("colorBlind", !settings.colorBlind)} />
+              </SettingRow>
+              <SettingRow label="Particle density" description="Adjust visual effects intensity.">
+                <select className="setting-select" aria-label="Particle density" value={settings.particleDensity || "full"} onChange={(e) => onChange("particleDensity", e.target.value as Settings["particleDensity"])}>
+                  <option value="full">Full (100%)</option>
+                  <option value="reduced">Reduced (50%)</option>
+                  <option value="off">Off (0%)</option>
+                </select>
+              </SettingRow>
+              <SettingRow label="FPS Counter" description="Show real-time frames per second in-game.">
+                <Toggle label="FPS Counter" checked={!!settings.showFps} onChange={() => onChange("showFps", !settings.showFps)} />
               </SettingRow>
             </Section>
           </>}
@@ -120,9 +131,20 @@ export default function SettingsScreen({ settings, onChange, onBack }: Props) {
           </>}
           {tab === "feel" && <>
             <Section title="Touch feedback"><SettingRow label="Haptic strength" description={`${settings.haptics}%`}><input aria-label="Haptic strength" type="range" min="0" max="100" step="5" value={settings.haptics} onChange={(e) => onChange("haptics", Number(e.target.value))} /></SettingRow><SettingRow label="Interface taps" description="A tick on menus, slides, and selections."><Toggle label="Interface tap feedback" checked={settings.hapticsKind} onChange={() => onChange("hapticsKind", !settings.hapticsKind)} /></SettingRow><SettingRow label="Screen shake" description="A short bump on misses."><Toggle label="Screen shake" checked={settings.screenShake} onChange={() => onChange("screenShake", !settings.screenShake)} /></SettingRow><SettingRow label="Try it" description="Vibration depends on device support."><button className="text-button" onClick={() => { const supported = typeof navigator.vibrate === "function"; playHaptic("selection", settings.haptics / 100); setMessage(supported ? (settings.haptics ? "Test feedback sent." : "Raise the strength to feel feedback.") : "This browser does not support vibration. Visual feedback is still available."); }}>Test feedback</button></SettingRow><p className="settings-status" role="status">{message}</p></Section>
-            <Section title="Sound">
+            <Section title="Sound & Audio">
               <SettingRow label="Master sound" description="Turn all game audio on or off.">
                 <Toggle label="Master sound" checked={settings.soundEnabled !== false} onChange={() => onChange("soundEnabled", settings.soundEnabled === false)} />
+              </SettingRow>
+              <SettingRow label="SFX volume" description={`${settings.sfxVolume ?? 100}%`}>
+                <input aria-label="SFX volume" type="range" min="0" max="100" step="5" value={settings.sfxVolume ?? 100} onChange={(e) => onChange("sfxVolume", Number(e.target.value))} />
+              </SettingRow>
+              <SettingRow label="Music volume" description={`${settings.musicVolume ?? 80}%`}>
+                <input aria-label="Music volume" type="range" min="0" max="100" step="5" value={settings.musicVolume ?? 80} onChange={(e) => onChange("musicVolume", Number(e.target.value))} />
+              </SettingRow>
+              <SettingRow label="Audio Pack" description="Synth sound signature for hits and chimes.">
+                <select className="setting-select" aria-label="Audio Pack" value={settings.audioPack || "default"} onChange={(e) => onChange("audioPack", e.target.value as Settings["audioPack"])}>
+                  {AUDIO_PACKS.map((pack) => <option value={pack.id} key={pack.id}>{pack.name}</option>)}
+                </select>
               </SettingRow>
               <SettingRow label="Music mood"><Seg options={[{ id: "drive", label: "Drive" }, { id: "pulse", label: "Pulse" }, { id: "calm", label: "Calm" }]} value={settings.musicStyle} onChange={(value) => onChange("musicStyle", value as Settings["musicStyle"])} /></SettingRow>
               <SettingRow label="Voice call-outs" description="Optional spoken game feedback."><Toggle label="Voice call-outs" checked={settings.announcer} onChange={() => onChange("announcer", !settings.announcer)} /></SettingRow>

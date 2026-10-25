@@ -157,8 +157,13 @@ export class Fx {
     this.flashWhite = Math.max(this.flashWhite, strength);
   }
 
-  render(ctx: CanvasRenderingContext2D, showFloats = true, reducedMotion = false) {
-    for (const p of reducedMotion ? [] : this.particles) {
+  render(ctx: CanvasRenderingContext2D, showFloats = true, reducedMotion = false, density: "full" | "reduced" | "off" = "full") {
+    const renderParticles = reducedMotion || density === "off"
+      ? []
+      : density === "reduced"
+        ? this.particles.filter((_, idx) => idx % 2 === 0)
+        : this.particles;
+    for (const p of renderParticles) {
       if (p.life < 0) continue;
       const k = p.life / p.max;
       ctx.globalAlpha = 1 - k;
