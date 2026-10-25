@@ -522,6 +522,8 @@ export default function App() {
                       onFullscreen={toggleFullscreen}
                       onProfile={() => setScreen("profile")}
                       onLeaderboard={() => setScreen("leaderboard")}
+                      onStore={() => setScreen("store")}
+                      onStatsOpen={() => setScreen("stats")}
                       onMissions={() => setScreen("missions")}
                       onUpdateProfile={updateProfile}
                       settings={settings}
@@ -531,6 +533,7 @@ export default function App() {
                     />
                   ) : screen === "leaderboard" ? (
                     <LeaderboardScreen
+                      stats={stats}
                       initialMode={mode}
                       onSelectMode={(m) => {
                         setMode(m);

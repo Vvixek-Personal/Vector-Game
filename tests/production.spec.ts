@@ -13,6 +13,13 @@ test('production precaches the game and lazy analytics for offline play',async({
   await context.setOffline(true);await page.reload();
   await expect(page.getByRole('button',{name:'Play Arcade',exact:true})).toBeVisible();
   await page.getByRole('button',{name:'Stats',exact:true}).click();await expect(page.getByText('No score data yet',{exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'Store',exact:true}).click();
+  await page.getByRole('button',{name:'Preview Spider-Man',exact:true}).click();
+  await expect(page.getByRole('dialog',{name:'Spider-Man',exact:true}).locator('[data-character="hero-spider"]')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await page.getByRole('button',{name:'Ranks',exact:true}).click();
+  await page.getByRole('tab',{name:'On this device',exact:true}).click();
+  await expect(page.getByRole('tabpanel',{name:'Device scores',exact:true})).toBeVisible();
   await page.screenshot({path:'test-results/production-offline.png'});
   expect(errors).toEqual([]);
 });

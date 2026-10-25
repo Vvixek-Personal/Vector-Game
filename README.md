@@ -1,6 +1,18 @@
-# VECTOR — improved edition
+# VECTOR 1.2 — play your way
 
 A browser reflex game with 12 modes, local progression, optional Firebase sign-in, and offline installation.
+
+## What’s new in 1.2
+
+- A redesigned home with a searchable mode library, saved favorites, personal progress, and quick Daily/Weekly launches.
+- Eight illustrated hero avatars: Spider-Man, Miles Morales, Spider-Gwen, Iron Man, Black Panther, Batman, Deadpool, and Vector Sentinel. All render as local SVGs and work offline.
+- A rebuilt store with Discover, My collection, Wishlist, Activities, and Exchange sections. Search, rarity/currency filters, price sorting, affordability controls, and profile previews help you find a look.
+- A confirmation screen shows your exact balance after a purchase or exchange. Starter, earned, and equivalent owned cosmetics equip without a second charge.
+- A new scoreboard separates Global rankings from On this device. Global boards have search, pagination, tied places, player previews, cached/offline status, and refresh. Device boards show saved bests without sign-in.
+- Profile and settings share the new navigation style. Tabs support arrow keys, Home and End; item dialogs trap focus, close with Escape, and return focus to their opener.
+- Existing gameplay, settings, audio, and the repository’s recent anime/cartoon additions are preserved.
+
+Wishlist and favorite modes are saved with your profile. Daily/Weekly countdowns follow the existing UTC score buckets; the weekly format remains compatible with previous saves.
 
 ## Play on Windows
 

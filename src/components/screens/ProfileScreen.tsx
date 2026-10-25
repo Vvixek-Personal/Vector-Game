@@ -10,8 +10,12 @@ import { saveProfile } from "../../game/profile";
 import { uiTap, uiConfirm, uiUnlock } from "../../game/haptics";
 import Icon from "../Icon";
 import Avatar from "../Avatar";
+import AppHeader from "../AppHeader";
+import SegmentedTabs from "../shared/SegmentedTabs";
 import AnimeAvatar from "../AnimeAvatar";
 import CartoonAvatar from "../CartoonAvatar";
+import HeroAvatar from "../HeroAvatar";
+import { ownsStoreItem, isStoreItemEquipped, transactStoreItem } from "../../game/store";
 import LevelRail from "../LevelRail";
 import LevelProgressBar from "../LevelProgressBar";
 import GoogleAuthButton from "../GoogleAuthButton";
@@ -116,7 +120,7 @@ export default function ProfileScreen({
   // ONLY display items from STORE_ITEMS that the player owns via profile.purchased
   // This guarantees 100% consistency: any item in Vault is shown in Store as "Owned"!
   const ownedStoreItems = STORE_ITEMS.filter(
-    (item) => !item.pack && profile.purchased.includes(item.id)
+    (item) => ownsStoreItem(item, profile, stats)
   );
 
   const filteredItems =
@@ -124,49 +128,13 @@ export default function ProfileScreen({
       ? ownedStoreItems
       : ownedStoreItems.filter((item) => item.tab === vaultTab);
 
-  const isItemEquipped = (item: StoreItem): boolean => {
-    if (item.tab === "avatars") {
-      return profile.avatarId === (item.apply?.avatarId || item.id);
-    }
-    if (item.tab === "banners") {
-      return profile.bannerId === (item.apply?.bannerId || item.id);
-    }
-    if (item.tab === "frames") {
-      const targetFrame = item.apply?.frameId || item.id.replace("frm-", "");
-      return profile.frameId === targetFrame;
-    }
-    if (item.tab === "titles") {
-      const targetTitle = item.apply?.titleId || item.id.replace("ttl-", "");
-      return profile.titleId === targetTitle;
-    }
-    if (item.tab === "styles") {
-      const targetStyle = item.apply?.bannerStyle || item.id.replace("sty-", "");
-      return profile.bannerStyle === targetStyle;
-    }
-    if (item.tab === "themes") return profile.arenaThemeId === item.id;
-    if (item.tab === "audio") {
-      return profile.audioPackId === item.apply?.audioPackId;
-    }
-    return false;
-  };
+  const isItemEquipped = (item: StoreItem) => ownsStoreItem(item, profile, stats) && isStoreItemEquipped(item, profile);
 
   const handleEquip = (item: StoreItem) => {
-    uiConfirm();
-    if (!item.apply) return;
-
-    const next = { ...profile };
-    if (item.apply.avatarId) next.avatarId = item.apply.avatarId;
-    if (item.apply.bannerId) next.bannerId = item.apply.bannerId;
-    if (item.apply.frameId) next.frameId = item.apply.frameId;
-    if (item.apply.titleId) next.titleId = item.apply.titleId;
-    if (item.apply.bannerStyle) next.bannerStyle = item.apply.bannerStyle;
-    if (item.apply.audioPackId) next.audioPackId = item.apply.audioPackId;
-    if (item.apply.arenaThemeId) next.arenaThemeId = item.apply.arenaThemeId;
-
-    saveProfile(next);
-    onProfile(next);
-    setFeedback(`Equipped ${item.name} (${item.tab.slice(0, -1)})`);
-    setTimeout(() => setFeedback(""), 2800);
+    const result = transactStoreItem(item.id, "equip");
+    if (result.ok === false) { setFeedback(result.reason); return; }
+    uiConfirm(); onProfile(result.profile); onStats?.(result.stats);
+    setFeedback("Equipped " + item.name);
   };
 
   // Claim single level reward
@@ -260,27 +228,12 @@ export default function ProfileScreen({
     TITLES.find((t) => t.id === profile.titleId)?.name ?? "Rookie";
 
   return (
-    <div className="profile-page min-h-[calc(100dvh-92px)] pb-28 txt">
+    <div className="profile-page collection-page v-profile-page min-h-[calc(100dvh-92px)] pb-28 txt">
       {/* Header with Wordmark and Currency Balances */}
-      <header className="home-header">
-        <div className="wordmark cursor-pointer" onClick={onBack}>
-          <Icon name="arrow" size={28} />
-          <h1>
-            Vector<span>.</span>
-          </h1>
-        </div>
+      <AppHeader title="Profile" subtitle="Your collection and progress" sparks={sparks} diamonds={diamonds} onBack={onBack}/>
 
-        <div className="currency-row">
-          <div className="spark-chip">
-            <Sparkles size={14} className="inline-icon" /> {sparks.toLocaleString()}
-          </div>
-          <div className="diamond-chip">
-            <Gem size={14} className="inline-icon" /> {diamonds.toLocaleString()}
-          </div>
-        </div>
-      </header>
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-4 space-y-7">
+      <div className="v-profile-content space-y-7">
         {/* Minimal Hero Dossier Card */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -321,7 +274,7 @@ export default function ProfileScreen({
                     >
                       <input 
                         type="text" 
-                        value={editNameValue} 
+                        aria-label="Player name" value={editNameValue}
                         onChange={(e) => setEditNameValue(e.target.value)} 
                         className="w-48 rounded-lg border border-white/30 bg-black/40 px-2 py-1 text-[24px] font-semibold tracking-tight text-white outline-none focus:border-white/70"
                         autoFocus
@@ -343,7 +296,7 @@ export default function ProfileScreen({
                             setEditNameValue(name);
                             setIsEditingName(true);
                           }}
-                          className="cursor-pointer rounded-md p-1 text-white/40 opacity-0 transition-opacity hover:text-white group-hover:opacity-100 focus-visible:opacity-100"
+                          aria-label="Edit player name" className="cursor-pointer rounded-md p-1 text-white/60 transition-opacity hover:text-white focus-visible:opacity-100"
                         >
                           <Pencil size={18} />
                         </button>
@@ -422,35 +375,14 @@ export default function ProfileScreen({
         </AnimatePresence>
 
         {/* Main Tabs Navigation */}
-        <div className="tab-strip mt-8" role="tablist" aria-label="Profile sections">
-          {(
-            [
-              { id: "vault", label: "Vault" },
-              { id: "levels", label: "Milestones" },
-              { id: "achievements", label: "Achievements" },
-              { id: "tasks", label: "Daily Tasks" },
-            ] as const
-          ).map((t) => (
-            <button
-              key={t.id}
-              role="tab"
-              aria-selected={mainTab === t.id}
-              onClick={() => {
-                uiTap();
-                setMainTab(t.id);
-              }}
-              className="tab-strip-btn"
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
+        <SegmentedTabs<MainTab> label="Profile sections" value={mainTab} onChange={setMainTab} panelId="profile-panel" className="v-primary-tabs" options={[{id:"vault",label:"Collection"},{id:"levels",label:"Milestones"},{id:"achievements",label:"Achievements"},{id:"tasks",label:"Missions"}]}/>
+
 
         {/* ========================================================= */}
         {/* HORIZONTAL RAIL LEVEL PROGRESSION SYSTEM */}
         {/* ========================================================= */}
         {mainTab === "levels" && (
-        <section className="level-progression-section pt-8">
+        <section id="profile-panel" role="tabpanel" aria-label="level-progression" className="level-progression-section pt-8">
           <LevelRail
             stats={stats}
             profile={profile}
@@ -464,7 +396,7 @@ export default function ProfileScreen({
         {/* SERVICE RECORD (ACHIEVEMENTS) */}
         {/* ========================================================= */}
         {mainTab === "achievements" && (
-        <section className="achievements-section pt-8">
+        <section id="profile-panel" role="tabpanel" aria-label="achievements" className="achievements-section pt-8">
           <div className="mb-6">
             <h3 className="t-heading flex items-center gap-2">
               <Award size={17} className="faint" />
@@ -495,7 +427,7 @@ export default function ProfileScreen({
         {/* THE VAULT SECTION (100% UNIFIED WITH STORE CATALOG) */}
         {/* ========================================================= */}
         {mainTab === "vault" && (
-        <section className="vault-section pt-8">
+        <section id="profile-panel" role="tabpanel" aria-label="vault" className="vault-section pt-8">
           <div className="flex flex-col gap-6">
             <div>
               <h3 className="t-heading flex items-center gap-2">
@@ -592,7 +524,9 @@ export default function ProfileScreen({
                   >
                     {item.tab === "avatars" && (
                       <>
-                        {item.anime ? (
+                        {item.hero ? (
+                          <HeroAvatar id={item.hero} size={72} />
+                        ) : item.anime ? (
                           <AnimeAvatar id={item.anime} size={72} />
                         ) : item.cartoon ? (
                           <CartoonAvatar id={item.cartoon} size={72} />
@@ -700,7 +634,7 @@ export default function ProfileScreen({
         {/* DAILY TASKS (MISSIONS) */}
         {/* ========================================================= */}
         {mainTab === "tasks" && (
-        <section className="tasks-section pt-8">
+        <section id="profile-panel" role="tabpanel" aria-label="tasks" className="tasks-section pt-8">
           <div className="mb-5">
             <h3 className="t-heading flex items-center gap-2">
               <Zap size={17} className="faint" />

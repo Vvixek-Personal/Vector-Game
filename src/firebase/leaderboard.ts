@@ -140,7 +140,7 @@ export { submitScoreToCloud as submitScore };
 // Subscribe to real-time leaderboard entries for any mode or overall
 export function subscribeToLeaderboard(
   mode: string,
-  callback: (entries: LeaderboardRecord[]) => void,
+  callback: (entries: LeaderboardRecord[], metadata?: { fromCache: boolean }) => void,
   onError?: (error: unknown) => void
 ): Unsubscribe {
   try {
@@ -154,9 +154,10 @@ export function subscribeToLeaderboard(
 
     return onSnapshot(
       q,
+      { includeMetadataChanges: true },
       (snapshot) => {
         if (snapshot.empty) {
-          callback([]);
+          callback([], { fromCache: snapshot.metadata.fromCache });
           return;
         }
 
@@ -165,7 +166,7 @@ export function subscribeToLeaderboard(
           list.push({ ...docSnap.data(), id: docSnap.id } as LeaderboardRecord);
         });
 
-        callback(list);
+        callback(list, { fromCache: snapshot.metadata.fromCache });
       },
       (error) => {
         console.warn("Leaderboard snapshot listener warning:", error);

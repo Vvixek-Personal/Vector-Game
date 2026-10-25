@@ -1,6 +1,7 @@
 import { FRAMES, avatarFor, type Profile } from "../game/profile";
 import CartoonAvatar from "./CartoonAvatar";
 import AnimeAvatar from "./AnimeAvatar";
+import HeroAvatar from "./HeroAvatar";
 
 interface Props {
   profile: Profile;
@@ -15,6 +16,7 @@ export default function Avatar({ profile, name, size = 40, showFrame = true, cla
   const frame = FRAMES.find((f) => f.id === profile.frameId);
   const frameCss = showFrame && frame && frame.id !== "none" ? frame.css : "none";
   const shadow = frameCss === "none" ? "0 6px 18px #00000030" : `${frameCss}, 0 6px 18px #00000030`;
+  if (a.hero) return <span className={`human-avatar ${className}`} style={{ width: size, height: size, boxShadow: shadow }} title={`${a.name} · ${name || "Ace"}`}><HeroAvatar id={a.hero} size={size}/></span>;
   if (a.anime) {
     return (
       <span className={`human-avatar ${className}`} style={{ width: size, height: size, boxShadow: shadow }} title={`${a.name} · ${name || "Ace"}`}>

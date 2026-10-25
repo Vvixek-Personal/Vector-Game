@@ -1,6 +1,7 @@
 // Store catalog. Sparks from play. Diamonds only from Spark conversion.
 
 import React from "react";
+import { HERO_CHARACTERS } from "./characters";
 import { Sparkles, Gem } from "lucide-react";
 import type { BannerPattern } from "./profile";
 
@@ -21,6 +22,7 @@ export interface StoreItem {
   apply?: Partial<{ avatarId: string; bannerId: string; frameId: string; titleId: string; bannerStyle: BannerPattern; audioPackId: string; arenaThemeId: string }>;
   photo?: string;
   preview?: string;
+  hero?: string;
   anime?: string;
   cartoon?: string;
   pattern?: BannerPattern;
@@ -54,6 +56,7 @@ const S = (n: number) => ({ cost: n, currency: "sparks" as const });
 const D = (n: number) => ({ cost: n, currency: "diamonds" as const });
 
 export const STORE_ITEMS: StoreItem[] = [
+  ...HERO_CHARACTERS.map(hero => ({ id: hero.id, tab: "avatars" as const, name: hero.name, desc: hero.desc, cost: hero.cost, currency: "sparks" as const, hero: hero.id, apply: { avatarId: hero.id }, rarity: "epic" as const, isNew: true })),
   // Anime Style PFPs — High-detail Japanese anime aesthetic portraits
   { id: "av-spark", tab: "avatars", name: "Spark", desc: "The original glowing vector spark mark.", ...S(150), preview: "✦", apply: { avatarId: "spark" }, rarity: "common" },
   { id: "ani-valkyrie", tab: "avatars", name: "Valkyrie", desc: "Celestial blade sovereign with radiant star halo and sapphire eyes.", ...S(1350), anime: "ani-valkyrie", apply: { avatarId: "ani-valkyrie" }, rarity: "epic", isNew: true },
@@ -246,6 +249,8 @@ const diamondItems = STORE_ITEMS.filter(i => i.currency === "diamonds" && !i.pac
 if (diamondItems.length > 0) {
   const week = Math.floor(new Date().getTime() / (7 * 24 * 60 * 60 * 1000));
   const featured = diamondItems[week % diamondItems.length];
+  featured.isSale = true;
+  featured.salePercent = 30;
   featured.originalCost = featured.cost;
   featured.cost = Math.floor(featured.cost * 0.7);
   featured.desc = "✨ 30% OFF WEEKLY FEATURE: " + featured.desc;
