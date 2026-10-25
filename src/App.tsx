@@ -493,7 +493,7 @@ export default function App() {
                   transition={{ duration: DURATION.base, ease: EASE.out }}
                   className="w-full min-h-full"
                 >
-                  <Suspense fallback={<p className="p-8" role="status">Opening…</p>}>
+                  <Suspense fallback={<p className="t-caption p-8" role="status">Opening…</p>}>
                   {screen === "home" ? (
                     <HomeScreen
                       keyboardEnabled={!prepMode && !showTutorial && !dailyReward && !showNamePopup && !showModifiersModal}

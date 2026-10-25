@@ -224,11 +224,7 @@ export function GameOverOverlay({
     ["Acc", `${summary.accuracy}%`, "accuracy"],
     ["Avg", summary.avgReactionMs ? `${summary.avgReactionMs} ms` : "—", "reaction"],
     ["Streak", String(summary.bestStreak), "streak"],
-    [
-      summary.mode === "practice" ? "Sparks" : "Sparks",
-      `+${summary.mode === "practice" ? 0 : sparksForRun(summary.score, summary.bestStreak)}`,
-      "sparks",
-    ],
+    ["Sparks", `+${summary.mode === "practice" ? 0 : sparksForRun(summary.score, summary.bestStreak)}`, "sparks"],
   ];
 
   return (
