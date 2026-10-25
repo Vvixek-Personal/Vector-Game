@@ -2524,3 +2524,35 @@ button:focus-visible, a:focus-visible, select:focus-visible { outline: 2px solid
   border-color: var(--accent, #3ec9ff);
   background: var(--pill-hover, rgba(255, 255, 255, 0.1));
 }
+
+/* Additional Store & UI Animations */
+@keyframes storeGlowPulse {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(168, 85, 247, 0.25), inset 0 0 10px rgba(168, 85, 247, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 28px rgba(56, 189, 248, 0.4), inset 0 0 15px rgba(56, 189, 248, 0.2);
+  }
+}
+
+.store-card.ultra {
+  animation: storeGlowPulse 4s ease-in-out infinite;
+}
+
+@keyframes badgeShimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+.store-badge.badge-new {
+  position: relative;
+  overflow: hidden;
+}
+
+.store-badge.badge-new::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  animation: badgeShimmer 2.5s infinite;
+}

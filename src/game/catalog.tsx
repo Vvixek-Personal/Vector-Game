@@ -75,9 +75,16 @@ export const STORE_ITEMS: StoreItem[] = [
   { id: "ani-shin", tab: "avatars", name: "Shinobi X", desc: "Cybernetic phantom assassin with illuminated visor.", ...D(30), anime: "ani-shin", apply: { avatarId: "ani-shin" }, rarity: "ultra" },
   { id: "ani-astral", tab: "avatars", name: "Astral Prime", desc: "Cosmic sovereign with starfield locks and gold crown.", ...D(50), anime: "ani-astral", apply: { avatarId: "ani-astral" }, rarity: "ultra" },
   { id: "ani-nova", tab: "avatars", name: "Nova", desc: "Solar alchemist with radiant golden hair and star prism earrings.", ...S(1450), anime: "ani-nova", apply: { avatarId: "ani-nova" }, rarity: "epic", isNew: true },
+  { id: "ani-solaria", tab: "avatars", name: "Solaria", desc: "Solar priestess with incandescent halo and amber flame eyes.", ...S(1550), anime: "ani-solaria", apply: { avatarId: "ani-solaria" }, rarity: "epic", isNew: true },
+  { id: "ani-phantom", tab: "avatars", name: "Phantom", desc: "Void spectre with violet ethereal hair and glowing aura.", ...S(1750), anime: "ani-phantom", apply: { avatarId: "ani-phantom" }, rarity: "epic", isNew: true },
+  { id: "ani-kyubi", tab: "avatars", name: "Kyubi", desc: "Nine-tailed fox sovereign with crimson sacred ears & golden iris.", ...D(45), anime: "ani-kyubi", apply: { avatarId: "ani-kyubi" }, rarity: "ultra", isNew: true },
+  { id: "ani-mecha-zero", tab: "avatars", name: "Mecha Zero", desc: "Next-gen cyber sentinel with animated laser visor.", ...D(60), anime: "ani-mecha-zero", apply: { avatarId: "ani-mecha-zero" }, rarity: "ultra", isNew: true },
 
   // Illustrated faces — categorized under Avatar
   { id: "cto-blaze", tab: "avatars", name: "Blaze", desc: "High-velocity pilot with fiery locks, goggles and flight jacket.", ...S(2400), cartoon: "cto-blaze", apply: { avatarId: "cto-blaze" }, rarity: "epic", isNew: true },
+  { id: "cto-cosmo", tab: "avatars", name: "Cosmo", desc: "Deep space explorer with purple hair and stardust blush.", ...S(2500), cartoon: "cto-cosmo", apply: { avatarId: "cto-cosmo" }, rarity: "epic", isNew: true },
+  { id: "cto-sprout", tab: "avatars", name: "Sprout", desc: "Nature guardian with fresh leaf green hair and cheerful smile.", ...S(2600), cartoon: "cto-sprout", apply: { avatarId: "cto-sprout" }, rarity: "epic", isNew: true },
+  { id: "cto-glitch", tab: "avatars", name: "Glitch", desc: "Digital anomaly with cyan square frames and pixel energy.", ...D(25), cartoon: "cto-glitch", apply: { avatarId: "cto-glitch" }, rarity: "ultra", isNew: true },
   ...([
     ["cto-bean", "Bean", "Round face, navy hair.", 1200],
     ["cto-pip", "Pip", "Soft oval, cocoa hair.", 1280],
@@ -97,6 +104,8 @@ export const STORE_ITEMS: StoreItem[] = [
 
   // Banners 12+
   { id: "ban-aurora-borealis", tab: "banners", name: "Hyper Aurora", desc: "Prismatic northern light ribbons with drifting cosmic stardust.", preview: "linear-gradient(120deg,#064e3b,#10b981 40%,#6366f1 80%,#ec4899)", apply: { bannerId: "hyper-aurora" }, ...S(420), rarity: "epic", isNew: true },
+  { id: "ban-prism-nebula", tab: "banners", name: "Prism Nebula", desc: "Vibrant cosmic shockwave blending laser magenta, violet & cyan.", preview: "linear-gradient(120deg,#1e1b4b,#a855f7 45%,#06b6d4)", apply: { bannerId: "prism-nebula" }, ...S(480), rarity: "epic", isNew: true },
+  { id: "ban-cyber-grid", tab: "banners", name: "Cyber Horizon", desc: "Retro synthwave grid sunset wash.", preview: "linear-gradient(120deg,#09090b,#f43f5e 50%,#fbbf24)", apply: { bannerId: "cyber-horizon" }, ...S(380), rarity: "rare", isNew: true },
   { id: "ban-supernova", tab: "banners", name: "Supernova", desc: "Cosmic blaze from deep violet to solar gold.", preview: "linear-gradient(120deg,#1c0a35,#9333ea 45%,#f59e0b)", apply: { bannerId: "supernova" }, cost: 308, originalCost: 440, currency: "sparks", isSale: true, salePercent: 30, rarity: "rare" },
   ...([
     ["ban-tide", "Tide", "Teal to mint.", "linear-gradient(120deg,#123a4a,#2dd4bf)", "tide", 180],
@@ -139,6 +148,8 @@ export const STORE_ITEMS: StoreItem[] = [
 
   // Themes 12
   { id: "thm-matrix", tab: "themes", name: "Neon Matrix", desc: "Hyper-contrast digital rain emerald with obsidian core.", preview: "#10b981", themeSwatch: ["#10b981", "#020d08", "#059669"], ...S(380), rarity: "rare", isNew: true },
+  { id: "thm-overdrive", tab: "themes", name: "Overdrive", desc: "Electric orange and plasma cyan high-octane stadium.", preview: "#f97316", themeSwatch: ["#f97316", "#0c0a09", "#06b6d4"], ...S(450), rarity: "epic", isNew: true },
+  { id: "thm-starlight", tab: "themes", name: "Starlight Void", desc: "Deep velvet space with shimmering silver and pastel rose.", preview: "#c084fc", themeSwatch: ["#c084fc", "#090514", "#f472b6"], ...S(420), rarity: "rare", isNew: true },
   { id: "thm-cyberpunk", tab: "themes", name: "Cyberpunk", desc: "High-octane magenta & electric cyan.", preview: "#ec4899", themeSwatch: ["#ec4899", "#080614", "#06b6d4"], cost: 270, originalCost: 360, currency: "sparks", isSale: true, salePercent: 25, rarity: "rare" },
   ...([
     ["thm-ion", "Ion", "Cyan arena.", "#38e8ff", "#0a061b", "#7c5cff", 220],
@@ -164,6 +175,8 @@ export const STORE_ITEMS: StoreItem[] = [
 
   // Frames 16
   { id: "frm-celestial", tab: "frames", name: "Celestial Corona", desc: "Radiant multi-layered astral ring with orbiting cyan light particles.", frameCss: "0 0 0 3px #38bdf8, 0 0 0 6px #818cf8, 0 0 28px 6px #38bdf8aa", apply: { frameId: "celestial" }, ...S(520), rarity: "epic", isNew: true },
+  { id: "frm-phoenix", tab: "frames", name: "Phoenix Wings", desc: "Fiery incandescent aura with solar flare winglets.", frameCss: "0 0 0 3px #ea580c, 0 0 0 6px #f59e0b, 0 0 24px 6px #ea580caa", apply: { frameId: "phoenix" }, ...S(580), rarity: "epic", isNew: true },
+  { id: "frm-quantum", tab: "frames", name: "Quantum Matrix", desc: "Dual cyan and magenta shifting energy ring.", frameCss: "0 0 0 3px #06b6d4, 0 0 0 6px #d946ef, 0 0 20px 4px #06b6d4aa", apply: { frameId: "quantum" }, ...D(35), rarity: "ultra", isNew: true },
   { id: "frm-valkyrie", tab: "frames", name: "Valkyrie Halo", desc: "Radiant winged halo with twin sapphire crystal flares.", frameCss: "0 0 0 3px #38bdf8, 0 0 24px 6px #0284c7, 0 0 0 6px #ffffff44", apply: { frameId: "valkyrie" }, ...S(460), rarity: "epic", isNew: true },
   { id: "frm-starlight", tab: "frames", name: "Starlight", desc: "Pulsing diamond stellar aura with four-point star flares.", frameCss: "0 0 0 3px #38bdf8, 0 0 20px 4px #818cf8", apply: { frameId: "starlight" }, cost: 238, originalCost: 340, currency: "sparks", isSale: true, salePercent: 30, rarity: "rare" },
   ...([
@@ -189,6 +202,8 @@ export const STORE_ITEMS: StoreItem[] = [
 
   // Titles 14
   { id: "ttl-godspeed", tab: "titles", name: "Godspeed", desc: "For arrow masters who read patterns at instantaneous reflex.", apply: { titleId: "godspeed" }, ...S(650), rarity: "rare", isNew: true },
+  { id: "ttl-supersonic", tab: "titles", name: "Supersonic", desc: "Breaking sound barrier reaction precision.", apply: { titleId: "supersonic" }, ...S(700), rarity: "rare", isNew: true },
+  { id: "ttl-apex", tab: "titles", name: "Apex Predator", desc: "Dominates leaderboard streams.", apply: { titleId: "apex" }, ...D(25), rarity: "ultra", isNew: true },
   { id: "ttl-hyperdrive", tab: "titles", name: "Hyperdrive", desc: "Surpassed the reaction barrier.", apply: { titleId: "hyperdrive" }, cost: 385, originalCost: 550, currency: "sparks", isSale: true, salePercent: 30, rarity: "rare" },
   ...([
     ["ttl-rookie", "Rookie", "First steps on the grid.", "rookie", 80],
@@ -214,6 +229,7 @@ export const STORE_ITEMS: StoreItem[] = [
 
   // Audio Packs
   { id: "aud-retro", tab: "audio", name: "8-Bit Arcade", desc: "Classic chiptune sound effects and retro synthesizer hits.", apply: { audioPackId: "retro" }, ...S(2000), rarity: "rare" },
+  { id: "aud-lofi", tab: "audio", name: "Lo-Fi Beats", desc: "Chill vinyl pops, warm bass sweeps, and soft rhodes chords.", apply: { audioPackId: "lofi" }, ...S(2800), rarity: "epic", isNew: true },
   { id: "aud-ethereal", tab: "audio", name: "Ethereal Chimes", desc: "Soft, crystalline bells and windchimes for a relaxing vibe.", apply: { audioPackId: "ethereal" }, ...S(3500), rarity: "epic" },
   { id: "aud-cyber", tab: "audio", name: "Cyberdeck", desc: "Heavy mechanical clacks and glitch hop synthetic bursts.", apply: { audioPackId: "cyber" }, ...D(30), rarity: "ultra" },
   { id: "aud-zen", tab: "audio", name: "Zen Garden", desc: "Bamboo strikes and deep resonating gongs.", apply: { audioPackId: "zen" }, ...D(40), rarity: "ultra" },
