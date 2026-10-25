@@ -80,9 +80,10 @@ export class Fx {
     if (this.floats.length > 10) this.floats.shift();
   }
 
-  /** Directional burst on a correct hit. */
+  /** Directional burst and kinetic ripple on a correct hit. */
   hit(x: number, y: number, base: number, dirDeg: number, color: string) {
-    this.ring(x, y, base * 0.4, color, 1.3);
+    this.ring(x, y, base * 0.35, color, 1.6);
+    this.ring(x, y, base * 0.55, "rgba(255,255,255,0.7)", 1.1);
     const pool = [color, "#ffffff", "#ffd166"];
     for (let i = 0; i < 18; i++) {
       const ang = (dirDeg * Math.PI) / 180 + (Math.random() - 0.5) * 1.1;

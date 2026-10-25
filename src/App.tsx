@@ -498,10 +498,10 @@ export default function App() {
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div
                   key={screen}
-                  initial={reduceMotion ? false : { opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={reduceMotion ? undefined : { opacity: 0, y: -6 }}
-                  transition={{ duration: DURATION.base, ease: EASE.out }}
+                  initial={reduceMotion ? false : { opacity: 0, y: 10, scale: 0.995 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={reduceMotion ? undefined : { opacity: 0, y: -8, scale: 0.995 }}
+                  transition={reduceMotion ? { duration: 0.1 } : { type: "spring", stiffness: 360, damping: 30, mass: 0.8 }}
                   className="w-full min-h-full"
                 >
                   <Suspense fallback={<p className="t-caption p-8" role="status">Opening…</p>}>
