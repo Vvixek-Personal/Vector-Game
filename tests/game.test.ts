@@ -1,7 +1,7 @@
 import test, { beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { Engine } from '../src/game/engine';
-import { loadSettings, loadStats, saveStats, checkDailyLogin, recordRun, spendSparks, spendDiamonds, convertSparksToDiamonds, addScore, loadScores } from '../src/game/storage';
+import { loadSettings, loadStats, saveStats, checkDailyLogin, recordRun, spendSparks, spendDiamonds, convertSparksToDiamonds, addScore, loadScores, sanitizeName, saveName, loadName } from '../src/game/storage';
 import { safeStorage } from '../src/game/persistence';
 import { DEFAULT_PROFILE, loadProfile, saveProfile } from '../src/game/profile';
 import { loadMissions, saveMissions, updateMissionsProgress } from '../src/game/missions';
@@ -167,4 +167,16 @@ test('play again safely resets and restarts without throwing on event arguments'
   hit(restarted.e);
   const nextSum = restarted.finish();
   assert.equal(nextSum.hits, 1);
+});
+
+test('name sanitization strips HTML tags, control chars, trims, truncates and defaults safely', () => {
+  assert.equal(sanitizeName('   <script>alert("xss")</script> Operative  '), 'alert("xss") Operative');
+  assert.equal(sanitizeName('Agent\x00\x07007'), 'Agent007');
+  assert.equal(sanitizeName('   '), 'Ace');
+  assert.equal(sanitizeName(123), 'Ace');
+  assert.equal(sanitizeName(null), 'Ace');
+  assert.equal(sanitizeName('a'.repeat(50)), 'a'.repeat(30));
+
+  saveName('  <b>Cypher</b>\x00  ');
+  assert.equal(loadName(), 'Cypher');
 });
