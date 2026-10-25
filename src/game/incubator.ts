@@ -222,7 +222,7 @@ export function hatchPod(
       const diamonds = 4 + Math.floor(Math.random() * 5);
       reward = {
         title: `+${diamonds} Diamonds`,
-        description: "Gleaming condensed diamond crystals found inside!",
+        description: "Condensed diamond crystals gleam inside.",
         type: "diamonds",
         rarity: "Rare",
         amount: diamonds,
@@ -246,7 +246,7 @@ export function hatchPod(
       const avatarId = "ani-cipher";
       reward = {
         title: "Cipher Operative PFP",
-        description: "Cyberpunk netrunner with holographic neon visor!",
+        description: "Cyberpunk netrunner with a holographic visor.",
         type: "avatar",
         rarity: "Epic",
         avatarId,
@@ -269,7 +269,7 @@ export function hatchPod(
       const sparks = 1500;
       reward = {
         title: `+${diamonds} Diamonds & ${sparks} Sparks`,
-        description: "The Dragon Core released immense celestial energy!",
+        description: "The dragon core releases celestial energy.",
         type: "diamonds",
         rarity: "Legendary",
         amount: diamonds,
@@ -280,7 +280,7 @@ export function hatchPod(
       const avatarId = "ani-astral";
       reward = {
         title: "Astral Prime Avatar",
-        description: "Cosmic sovereign enveloped in starlight void robes!",
+        description: "A cosmic sovereign robed in starlight.",
         type: "avatar",
         rarity: "Legendary",
         avatarId,

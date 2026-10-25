@@ -74,7 +74,7 @@ export const LuckySpinView: React.FC<Props> = ({
   }, []);
 
   const formatCountdown = (ms: number) => {
-    if (ms <= 0) return "Ready Now!";
+    if (ms <= 0) return "Ready now";
     const totalSec = Math.floor(ms / 1000);
     const hours = Math.floor(totalSec / 3600);
     const minutes = Math.floor((totalSec % 3600) / 60);
@@ -100,14 +100,14 @@ export const LuckySpinView: React.FC<Props> = ({
     } else if (costType === "sparks") {
       const next = spendSparks(150);
       if (!next) {
-        onMessage("Need 150 Sparks for an extra spin!");
+        onMessage("Extra spins cost 150 Sparks.");
         return;
       }
       onStats(next);
     } else if (costType === "diamonds") {
       const next = spendDiamonds(5);
       if (!next) {
-        onMessage("Need 5 Diamonds for a premium spin!");
+        onMessage("Premium spins cost 5 Diamonds.");
         return;
       }
       onStats(next);
@@ -190,18 +190,16 @@ export const LuckySpinView: React.FC<Props> = ({
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto py-4 px-2">
+    <div className="ink-panel mx-auto w-full max-w-4xl px-2 py-4">
       {/* Header Banner */}
-      <div className="text-center mb-6">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 font-bold text-xs uppercase tracking-wider mb-2">
-          <Disc size={14} className={spinning ? "animate-spin text-amber-400" : "text-amber-400"} />
-          Quantum Fortune Wheel
+      <div className="mb-6 text-center">
+        <div className="mb-2 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[.14em]" style={{ borderColor: "var(--panel-border)", background: "var(--pill)", color: "var(--text-dim)" }}>
+          <Disc size={13} style={{ color: "var(--brand)" }} />
+          Sparks wheel
         </div>
-        <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-          Lucky Vector Spin
-        </h3>
-        <p className="text-slate-400 text-xs sm:text-sm max-w-md mx-auto mt-1">
-          Spin the wheel for high-yield Sparks, rare Incubator Eggs, and exclusive Operative PFPs!
+        <h3 className="t-title">Lucky spin</h3>
+        <p className="t-caption mx-auto mt-1 max-w-md">
+          Spin for Sparks, incubator eggs, and rare profile pictures.
         </p>
       </div>
 
@@ -254,7 +252,7 @@ export const LuckySpinView: React.FC<Props> = ({
               whileTap={{ scale: 0.97 }}
               disabled={spinning || !freeAvailable}
               onClick={() => handleSpin("free")}
-              className={`flex-1 min-w-[140px] py-3 px-4 rounded-2xl font-black text-sm flex flex-col items-center justify-center transition shadow-lg ${
+              className={`flex-1 min-w-[140px] py-3 px-4 rounded-2xl font-semibold text-sm flex flex-col items-center justify-center transition shadow-lg ${
                 freeAvailable
                   ? "bg-gradient-to-r from-amber-400 to-amber-500 text-black shadow-amber-500/20 cursor-pointer"
                   : "bg-slate-800/80 text-slate-500 border border-slate-700/50 cursor-not-allowed"
@@ -264,7 +262,7 @@ export const LuckySpinView: React.FC<Props> = ({
                 <Sparkles size={16} /> Free Daily Spin
               </span>
               <span className="text-[11px] font-semibold opacity-80 mt-0.5">
-                {freeAvailable ? "Ready Now!" : formatCountdown(cooldownRemaining)}
+                {freeAvailable ? "Ready now" : formatCountdown(cooldownRemaining)}
               </span>
             </motion.button>
 
@@ -274,7 +272,7 @@ export const LuckySpinView: React.FC<Props> = ({
               whileTap={{ scale: 0.97 }}
               disabled={spinning || sparks < 150}
               onClick={() => handleSpin("sparks")}
-              className={`flex-1 min-w-[130px] py-3 px-4 rounded-2xl font-black text-sm flex flex-col items-center justify-center border transition cursor-pointer ${
+              className={`flex-1 min-w-[130px] py-3 px-4 rounded-2xl font-semibold text-sm flex flex-col items-center justify-center border transition cursor-pointer ${
                 sparks >= 150
                   ? "bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border-sky-500/40 shadow-sky-500/10"
                   : "bg-slate-800/40 text-slate-500 border-slate-800 cursor-not-allowed"
@@ -292,7 +290,7 @@ export const LuckySpinView: React.FC<Props> = ({
               whileTap={{ scale: 0.97 }}
               disabled={spinning || diamonds < 5}
               onClick={() => handleSpin("diamonds")}
-              className={`flex-1 min-w-[130px] py-3 px-4 rounded-2xl font-black text-sm flex flex-col items-center justify-center border transition cursor-pointer ${
+              className={`flex-1 min-w-[130px] py-3 px-4 rounded-2xl font-semibold text-sm flex flex-col items-center justify-center border transition cursor-pointer ${
                 diamonds >= 5
                   ? "bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border-emerald-500/40 shadow-emerald-500/10"
                   : "bg-slate-800/40 text-slate-500 border-slate-800 cursor-not-allowed"
@@ -309,7 +307,7 @@ export const LuckySpinView: React.FC<Props> = ({
         {/* Right: Prize Showcase & Recent Wins */}
         <div className="lg:col-span-5 space-y-4">
           <div className="glass rounded-3xl p-5 border border-slate-700/60 bg-slate-900/60 shadow-xl">
-            <h4 className="text-sm font-black uppercase tracking-wider text-slate-300 flex items-center gap-2 mb-3">
+            <h4 className="text-sm font-semibold uppercase tracking-[.1em] text-slate-300 flex items-center gap-2 mb-3">
               <Award size={16} className="text-amber-400" /> Featured Wheel Jackpots
             </h4>
             <div className="space-y-2 text-xs">
@@ -335,13 +333,13 @@ export const LuckySpinView: React.FC<Props> = ({
           {/* Recent History */}
           <div className="glass rounded-3xl p-4 border border-slate-700/40 bg-slate-900/40">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-[.1em] flex items-center gap-1.5">
                 <Clock size={13} /> Your Recent Wins
               </span>
               <span className="text-[10px] text-slate-500">{history.length} logged</span>
             </div>
             {history.length === 0 ? (
-              <p className="text-xs text-slate-500 italic py-2">No spins recorded yet today. Take your lucky shot!</p>
+              <p className="text-xs text-slate-500 py-2">No spins logged today. Take a spin to start the record.</p>
             ) : (
               <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
                 {history.map((h, i) => (
@@ -379,10 +377,10 @@ export const LuckySpinView: React.FC<Props> = ({
               <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 bg-amber-500/20 rounded-full blur-3xl pointer-events-none" />
 
               <span className="text-4xl animate-bounce inline-block mb-1">🎉</span>
-              <div className="text-xs font-black uppercase tracking-[0.25em] text-amber-400 mb-1">
+              <div className="text-xs font-semibold uppercase tracking-[0.25em] text-amber-400 mb-1">
                 Fortune Wheel Winner!
               </div>
-              <h3 className="text-3xl font-black text-white tracking-tight">
+              <h3 className="text-3xl font-semibold text-white tracking-tight">
                 {reward.label}
               </h3>
               <p className="text-sm font-semibold text-slate-300 mt-1">
@@ -397,7 +395,7 @@ export const LuckySpinView: React.FC<Props> = ({
 
               <button
                 onClick={() => setShowCelebration(false)}
-                className="mt-6 w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 text-black font-black text-sm uppercase tracking-wider hover:opacity-95 transition shadow-lg shadow-amber-500/20 cursor-pointer"
+                className="mt-6 w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 text-black font-semibold text-sm uppercase tracking-[.1em] hover:opacity-95 transition shadow-lg shadow-amber-500/20 cursor-pointer"
               >
                 Continue
               </button>

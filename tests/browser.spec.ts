@@ -42,7 +42,7 @@ test('phone home, Memory hints and small-screen pause', async ({page}) => {
   await page.getByRole('button',{name:'Select Memory',exact:true}).click();
   await page.getByRole('button',{name:'Play Memory',exact:true}).click();
   await page.getByRole('button',{name:'Start Run',exact:true}).click();
-  await expect(page.getByText('RECALL!',{exact:true})).toBeVisible();
+  await expect(page.getByText('Recall',{exact:true})).toBeVisible();
   await expect(page.getByText(/^Hold /)).toHaveCount(0);
   await page.screenshot({path:'test-results/phone-memory.png'});
   await page.keyboard.press('Escape'); await page.setViewportSize({width:667,height:375});

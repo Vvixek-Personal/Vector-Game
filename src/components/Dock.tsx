@@ -1,4 +1,5 @@
 import { motion } from "motion/react";
+import { SPRING } from "../utils/motion";
 import { uiTap } from "../game/haptics";
 import Icon from "./Icon";
 
@@ -17,9 +18,9 @@ export default function Dock({ active, onChange }: { active: DockTab; onChange: 
     <motion.nav
       className="dock-nav"
       aria-label="Main navigation"
-      initial={{ y: 28, opacity: 0 }}
+      initial={{ y: 16, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ type: "spring", stiffness: 320, damping: 26 }}
+      transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
     >
       <div className="dock relative shadow-2xl">
         {TABS.map((tab) => {
@@ -35,24 +36,24 @@ export default function Dock({ active, onChange }: { active: DockTab; onChange: 
                   onChange(tab.id);
                 }
               }}
-              whileHover={{ y: -2, scale: 1.04 }}
-              whileTap={{ scale: 0.94 }}
-              transition={{ type: "spring", stiffness: 450, damping: 24 }}
+              whileHover={{ y: -1 }}
+              whileTap={{ scale: 0.96 }}
+              transition={SPRING.press}
             >
               {/* Fluid Sliding Active Background Indicator */}
               {isActive && (
                 <motion.div
                   layoutId="dockActivePill"
                   className="dock-active-pill"
-                  transition={{ type: "spring", stiffness: 440, damping: 30 }}
+                  transition={SPRING.settle}
                 />
               )}
 
               {/* Tab Icon with Micro-motion Lift */}
               <motion.span
                 className="dock-icon-wrap"
-                animate={isActive ? { y: -1, scale: 1.1 } : { y: 0, scale: 1 }}
-                transition={{ duration: 0.25, ease: "easeOut" }}
+                animate={isActive ? { y: -1 } : { y: 0 }}
+                transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
               >
                 <Icon name={tab.icon} size={16} />
               </motion.span>
@@ -65,7 +66,7 @@ export default function Dock({ active, onChange }: { active: DockTab; onChange: 
                 <motion.span
                   layoutId="dockActiveDot"
                   className="dock-active-dot"
-                  transition={{ type: "spring", stiffness: 400, damping: 28 }}
+                  transition={SPRING.settle}
                 />
               )}
             </motion.button>

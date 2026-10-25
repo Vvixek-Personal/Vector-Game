@@ -160,6 +160,10 @@ export default defineConfig(() => {
       },
     },
     server: {
+      // Optional comma-separated list of extra hosts (e.g. tunnel/preview domains).
+      allowedHosts: process.env.ALLOWED_HOSTS
+        ? process.env.ALLOWED_HOSTS.split(',').map((host) => host.trim()).filter(Boolean)
+        : undefined,
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
       // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',

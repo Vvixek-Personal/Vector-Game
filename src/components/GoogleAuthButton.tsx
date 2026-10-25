@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth, signInWithGoogle, signOut, signInAsGuest } from "../firebase/auth";
 import { uiTap, uiConfirm } from "../game/haptics";
-import { LogIn, LogOut, CheckCircle2, User, AlertCircle, ShieldCheck } from "lucide-react";
+import { LogOut, CheckCircle2, AlertCircle, ShieldCheck } from "lucide-react";
+import { popoverVariants } from "../utils/motion";
 
 interface Props {
   compact?: boolean;
@@ -43,8 +44,8 @@ export default function GoogleAuthButton({ compact = false, onSuccess }: Props) 
 
   if (loading) {
     return (
-      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs text-white/50 animate-pulse">
-        <span>Connecting Auth...</span>
+      <div className="header-chip" role="status">
+        <span>Connecting…</span>
       </div>
     );
   }
@@ -54,13 +55,14 @@ export default function GoogleAuthButton({ compact = false, onSuccess }: Props) 
     return (
       <div className="relative">
         <motion.button
-          whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           onClick={() => {
             uiTap();
             setShowMenu(!showMenu);
           }}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500/10 to-sky-500/10 hover:bg-white/15 border border-emerald-500/30 text-xs font-bold text-white transition cursor-pointer shadow-sm"
+          className="header-chip"
+          aria-expanded={showMenu}
+          aria-haspopup="menu"
           title={`Signed in as ${user.displayName || user.email}`}
         >
           {user.photoURL ? (
@@ -71,26 +73,30 @@ export default function GoogleAuthButton({ compact = false, onSuccess }: Props) 
               referrerPolicy="no-referrer"
             />
           ) : (
-            <div className="w-5 h-5 rounded-full bg-emerald-500/30 text-emerald-300 flex items-center justify-center text-[10px] font-black">
+            <div
+              className="grid h-5 w-5 place-items-center rounded-full text-[10px] font-semibold"
+              style={{ background: "var(--brand-soft)", color: "var(--brand)" }}
+            >
               {user.displayName?.charAt(0) || "G"}
             </div>
           )}
 
           <span className="max-w-[110px] truncate">{user.displayName?.split(" ")[0] || "Operative"}</span>
-          <ShieldCheck size={13} className="text-emerald-400 shrink-0" />
+          <ShieldCheck size={13} className="shrink-0" style={{ color: "var(--good)" }} />
         </motion.button>
 
         {/* Dropdown Menu */}
         <AnimatePresence>
           {showMenu && (
             <motion.div
-              initial={{ opacity: 0, y: 6, scale: 0.96 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 6, scale: 0.96 }}
-              transition={{ duration: 0.16 }}
-              className="absolute right-0 top-full mt-2 w-56 rounded-2xl bg-slate-900 border border-white/15 p-3 shadow-2xl z-50 text-left"
+              variants={popoverVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              role="menu"
+              className="surface-card absolute right-0 top-full z-50 mt-2 w-60 p-3 text-left"
             >
-              <div className="flex items-center gap-2.5 pb-2.5 mb-2.5 border-b border-white/10">
+              <div className="flex items-center gap-2.5 border-b pb-2.5" style={{ borderColor: "var(--panel-border)" }}>
                 {user.photoURL ? (
                   <img
                     src={user.photoURL}
@@ -99,34 +105,32 @@ export default function GoogleAuthButton({ compact = false, onSuccess }: Props) 
                     referrerPolicy="no-referrer"
                   />
                 ) : (
-                  <div className="w-9 h-9 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center font-bold text-sm">
+                  <div
+                    className="grid h-9 w-9 place-items-center rounded-full text-sm font-semibold"
+                    style={{ background: "var(--brand-soft)", color: "var(--brand)" }}
+                  >
                     {user.displayName?.charAt(0) || "U"}
                   </div>
                 )}
                 <div className="min-w-0 flex-1">
-                  <div className="text-xs font-bold text-white truncate">
-                    {user.displayName || "Google Runner"}
+                  <div className="truncate text-[12px] font-semibold txt">
+                    {user.displayName || "Google player"}
                   </div>
-                  <div className="text-[10px] text-white/50 truncate">{user.email}</div>
+                  <div className="truncate text-[10.5px] faint">{user.email}</div>
                 </div>
               </div>
 
-              <div className="space-y-1 text-[11px] text-white/70 mb-3 px-1">
-                <div className="flex items-center gap-1.5 text-emerald-400 font-semibold">
+              <div className="my-3 space-y-1 px-1 text-[11px]">
+                <div className="flex items-center gap-1.5 font-medium" style={{ color: "var(--good)" }}>
                   <CheckCircle2 size={13} />
-                  <span>Real Data Leaderboard active</span>
+                  <span>Leaderboard sync on</span>
                 </div>
-                <div className="text-white/40 text-[10px]">
-                  Scores auto-submit to Global Leaderboard.
-                </div>
+                <div className="t-caption">Finished runs submit to the global board.</div>
               </div>
 
-              <button
-                onClick={handleSignOut}
-                className="w-full py-2 px-3 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
-              >
+              <button onClick={handleSignOut} className="dialog-btn dialog-btn-sm w-full">
                 <LogOut size={13} />
-                <span>Sign Out</span>
+                <span>Sign out</span>
               </button>
             </motion.div>
           )}
@@ -139,13 +143,11 @@ export default function GoogleAuthButton({ compact = false, onSuccess }: Props) 
   return (
     <div className="relative">
       <motion.button
-        whileHover={{ scale: 1.03, y: -1 }}
         whileTap={{ scale: 0.97 }}
         onClick={handleGoogleSignIn}
         disabled={inProgress}
-        className={`flex items-center gap-2 rounded-xl bg-white text-black hover:bg-white/95 font-bold transition cursor-pointer shadow-lg disabled:opacity-50 ${
-          compact ? "px-2.5 py-1.5 text-xs" : "px-3.5 py-2 text-xs sm:text-sm"
-        }`}
+        className={`header-chip ${compact ? "" : "header-chip-lg"}`}
+        style={{ color: "var(--text)" }}
       >
         {/* Official Google SVG Logo */}
         <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
@@ -174,13 +176,19 @@ export default function GoogleAuthButton({ compact = false, onSuccess }: Props) 
       <AnimatePresence>
         {errorMsg && (
           <motion.div
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 6 }}
-            className="absolute right-0 top-full mt-2 w-64 p-3 rounded-xl bg-rose-950/90 border border-rose-500/40 text-rose-200 text-xs shadow-2xl z-50 flex items-start gap-2"
+            variants={popoverVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            role="alert"
+            className="surface-card absolute right-0 top-full z-50 mt-2 w-64 p-3"
           >
-            <AlertCircle size={15} className="text-rose-400 shrink-0 mt-0.5" />
-            <div className="leading-snug">{errorMsg}</div>
+            <div className="flex items-start gap-2">
+              <AlertCircle size={15} className="mt-0.5 shrink-0" style={{ color: "#e08b9b" }} />
+              <div className="text-[11.5px] leading-snug" style={{ color: "var(--text-dim)" }}>
+                {errorMsg}
+              </div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

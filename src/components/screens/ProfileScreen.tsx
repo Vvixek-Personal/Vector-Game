@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { backdropVariants, panelVariants } from "../../utils/motion";
 import type { Profile } from "../../game/profile";
 import { TITLES } from "../../game/profile";
 import { STORE_ITEMS, type StoreItem } from "../../game/catalog";
@@ -259,7 +260,7 @@ export default function ProfileScreen({
     TITLES.find((t) => t.id === profile.titleId)?.name ?? "Rookie";
 
   return (
-    <div className="profile-page min-h-screen pb-28 text-white">
+    <div className="profile-page min-h-[calc(100dvh-92px)] pb-28 txt">
       {/* Header with Wordmark and Currency Balances */}
       <header className="home-header">
         <div className="wordmark cursor-pointer" onClick={onBack}>
@@ -282,10 +283,10 @@ export default function ProfileScreen({
       <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-4 space-y-7">
         {/* Minimal Hero Dossier Card */}
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="relative overflow-hidden rounded-2xl border-b border-white/10 p-6 sm:p-8"
+          transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+          className="relative overflow-hidden rounded-2xl border border-white/10 p-6 sm:p-8"
           style={{
             background:
               STORE_ITEMS.find((s) => s.id === profile.bannerId || s.apply?.bannerId === profile.bannerId)?.preview ||
@@ -322,7 +323,7 @@ export default function ProfileScreen({
                         type="text" 
                         value={editNameValue} 
                         onChange={(e) => setEditNameValue(e.target.value)} 
-                        className="bg-black/40 border border-white/20 text-white text-3xl font-light tracking-tight rounded-lg px-2 py-1 w-48 focus:outline-none focus:border-white/50"
+                        className="w-48 rounded-lg border border-white/30 bg-black/40 px-2 py-1 text-[24px] font-semibold tracking-tight text-white outline-none focus:border-white/70"
                         autoFocus
                         onBlur={() => {
                           if (editNameValue.trim() && onNameChange) {
@@ -334,7 +335,7 @@ export default function ProfileScreen({
                       />
                     </form>
                   ) : (
-                    <h2 className="text-3xl font-light tracking-tight text-white m-0 flex items-center gap-2 group">
+                    <h2 className="m-0 flex items-center gap-2 text-[26px] font-semibold leading-tight tracking-[-.03em] text-white group">
                       {name.trim() || "Ace"}
                       {onNameChange && (
                         <button 
@@ -342,36 +343,36 @@ export default function ProfileScreen({
                             setEditNameValue(name);
                             setIsEditingName(true);
                           }}
-                          className="text-white/30 opacity-0 group-hover:opacity-100 transition-opacity hover:text-white cursor-pointer p-1 rounded-md"
+                          className="cursor-pointer rounded-md p-1 text-white/40 opacity-0 transition-opacity hover:text-white group-hover:opacity-100 focus-visible:opacity-100"
                         >
                           <Pencil size={18} />
                         </button>
                       )}
                     </h2>
                   )}
-                  <span className="text-xs font-semibold uppercase tracking-widest text-white/50">
+                  <span className="rounded-full border border-white/20 bg-black/30 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[.14em] text-white/70">
                     {equippedTitle}
                   </span>
                 </div>
 
-                <p className="text-sm font-medium text-white/60 mb-0 flex items-center gap-3 flex-wrap">
+                <p className="num mb-0 mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[12px] font-medium text-white/65">
                   <span className="text-white">Level {levelInfo.currentLevel}</span>
-                  <span className="text-white/20">|</span>
-                  <span>{stats.runs} Runs</span>
-                  <span className="text-white/20">|</span>
-                  <span>Max Combo: {stats.bestStreak}</span>
-                  <span className="text-white/20">|</span>
-                  <span>{ownedStoreItems.length} Items</span>
+                  <span className="text-white/25">·</span>
+                  <span>{stats.runs.toLocaleString()} runs</span>
+                  <span className="text-white/25">·</span>
+                  <span>Best streak {stats.bestStreak}</span>
+                  <span className="text-white/25">·</span>
+                  <span>{ownedStoreItems.length} items</span>
                 </p>
 
                 {/* Level progress bar summary */}
                 <div className="mt-4 max-w-xs w-full">
-                  <div className="h-1 w-full bg-white/10 overflow-hidden">
+                  <div className="h-1 w-full overflow-hidden rounded-full bg-white/15">
                     <motion.div
-                      className="h-full bg-white"
+                      className="h-full rounded-full bg-white"
                       initial={{ width: 0 }}
                       animate={{ width: `${levelInfo.progress * 100}%` }}
-                      transition={{ duration: 0.6, ease: "easeOut" }}
+                      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
                     />
                   </div>
                 </div>
@@ -386,7 +387,7 @@ export default function ProfileScreen({
                   uiTap();
                   onOpenStore();
                 }}
-                className="text-sm font-medium text-white/60 hover:text-white transition flex items-center gap-2 cursor-pointer"
+                className="flex cursor-pointer items-center gap-2 rounded-full border border-white/20 bg-black/30 px-3 py-1.5 text-[12px] font-medium text-white/80 transition-colors hover:bg-black/50 hover:text-white"
               >
                 <ShoppingBag size={16} />
                 <span>Store</span>
@@ -411,16 +412,17 @@ export default function ProfileScreen({
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-500/20 to-sky-500/20 border border-emerald-500/40 text-emerald-200 text-sm font-bold flex items-center gap-2.5 shadow-lg"
+              className="flex items-center gap-2.5 rounded-2xl border px-3.5 py-3 text-[13px] font-medium"
+              style={{ borderColor: "color-mix(in srgb, var(--good) 34%, transparent)", background: "color-mix(in srgb, var(--good) 10%, transparent)", color: "var(--good)" }}
             >
-              <Check size={18} className="text-emerald-400 shrink-0" />
+              <Check size={17} className="shrink-0" />
               <span>{feedback}</span>
             </motion.div>
           )}
         </AnimatePresence>
 
         {/* Main Tabs Navigation */}
-        <div className="flex items-center gap-6 border-b border-white/10 mt-8 overflow-x-auto scrollbar-hide">
+        <div className="tab-strip mt-8" role="tablist" aria-label="Profile sections">
           {(
             [
               { id: "vault", label: "Vault" },
@@ -431,15 +433,13 @@ export default function ProfileScreen({
           ).map((t) => (
             <button
               key={t.id}
+              role="tab"
+              aria-selected={mainTab === t.id}
               onClick={() => {
                 uiTap();
                 setMainTab(t.id);
               }}
-              className={`pb-3 text-sm font-medium whitespace-nowrap transition-colors border-b-2 cursor-pointer ${
-                mainTab === t.id
-                  ? "border-white text-white"
-                  : "border-transparent text-white/40 hover:text-white"
-              }`}
+              className="tab-strip-btn"
             >
               {t.label}
             </button>
@@ -466,9 +466,9 @@ export default function ProfileScreen({
         {mainTab === "achievements" && (
         <section className="achievements-section pt-8">
           <div className="mb-6">
-            <h3 className="text-lg font-semibold text-white tracking-wide flex items-center gap-2">
-              <Award size={18} className="text-white/60" />
-              <span>Service Record</span>
+            <h3 className="t-heading flex items-center gap-2">
+              <Award size={17} className="faint" />
+              <span>Service record</span>
             </h3>
           </div>
           
@@ -477,12 +477,12 @@ export default function ProfileScreen({
               const isUnlocked = getUnlockedAchievements(stats).includes(ach.id);
               return (
                 <div key={ach.id} className={`flex gap-4 ${isUnlocked ? "opacity-100" : "opacity-30 grayscale"}`}>
-                  <div className={`shrink-0 ${isUnlocked ? "text-white" : "text-white/30"}`}>
-                    <Icon name={ach.icon as any} size={24} strokeWidth={1.5} />
+                  <div className={`shrink-0 ${isUnlocked ? "accent" : "faint"}`}>
+                    <Icon name={ach.icon as any} size={22} strokeWidth={1.5} />
                   </div>
                   <div>
-                    <div className="text-sm font-semibold tracking-wide text-white">{ach.title}</div>
-                    <div className="text-xs text-white/50 mt-1 leading-relaxed">{ach.description}</div>
+                    <div className="text-[13px] font-semibold txt">{ach.title}</div>
+                    <div className="t-caption mt-1">{ach.description}</div>
                   </div>
                 </div>
               );
@@ -498,17 +498,15 @@ export default function ProfileScreen({
         <section className="vault-section pt-8">
           <div className="flex flex-col gap-6">
             <div>
-              <h3 className="text-lg font-semibold text-white tracking-wide flex items-center gap-2">
-                <Package size={18} className="text-white/60" />
-                <span>The Vault</span>
+              <h3 className="t-heading flex items-center gap-2">
+                <Package size={17} className="faint" />
+                <span>The vault</span>
               </h3>
-              <p className="text-sm text-white/50 mt-1">
-                Your acquired items and customizations.
-              </p>
+              <p className="t-caption mt-1">Everything you own, ready to equip.</p>
             </div>
 
             {/* Vault Filter Tabs */}
-            <div className="flex gap-6 overflow-x-auto scrollbar-hide border-b border-white/10">
+            <div className="tab-strip" role="tablist" aria-label="Vault categories">
               {(
                 [
                   { id: "all", label: "All", count: ownedStoreItems.length },
@@ -551,17 +549,15 @@ export default function ProfileScreen({
               ).map((t) => (
                 <button
                   key={t.id}
+                  role="tab"
+                  aria-selected={vaultTab === t.id}
                   onClick={() => {
                     uiTap();
                     setVaultTab(t.id);
                   }}
-                  className={`pb-3 text-sm font-medium whitespace-nowrap transition-colors border-b-2 cursor-pointer ${
-                    vaultTab === t.id
-                      ? "border-white text-white"
-                      : "border-transparent text-white/40 hover:text-white"
-                  }`}
+                  className="tab-strip-btn"
                 >
-                  {t.label} <span className="opacity-40 text-xs ml-1">{t.count}</span>
+                  {t.label} <span className="tab-strip-count num">{t.count}</span>
                 </button>
               ))}
             </div>
@@ -577,21 +573,23 @@ export default function ProfileScreen({
                   whileHover={{ y: -2 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => handleEquip(item)}
-                  className={`group relative flex flex-col justify-between p-4 rounded-2xl border transition cursor-pointer ${
+                  className="pressable group relative flex cursor-pointer flex-col justify-between rounded-2xl border p-4"
+                  style={
                     equipped
-                      ? "bg-white/10 border-white/20"
-                      : "bg-transparent border-white/5 hover:border-white/15"
-                  }`}
+                      ? { background: "var(--selected)", borderColor: "var(--selected-border)" }
+                      : { background: "var(--surface)", borderColor: "var(--panel-border)" }
+                  }
                 >
                   {/* Equipped Ribbon */}
                   {equipped && (
-                    <div className="absolute top-3 right-3 z-10 w-2 h-2 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
+                    <div className="absolute right-3 top-3 z-10 h-1.5 w-1.5 rounded-full" style={{ background: "var(--brand)" }} />
                   )}
 
                   {/* Preview Element */}
-                  <div className={`h-24 w-full flex items-center justify-center rounded-xl overflow-hidden mb-4 relative ${
-                    equipped ? "bg-black/40" : "bg-black/20 group-hover:bg-black/40 transition-colors"
-                  }`}>
+                  <div
+                    className="relative mb-4 flex h-24 w-full items-center justify-center overflow-hidden rounded-xl"
+                    style={{ background: "var(--surface-raised)" }}
+                  >
                     {item.tab === "avatars" && (
                       <>
                         {item.anime ? (
@@ -599,9 +597,7 @@ export default function ProfileScreen({
                         ) : item.cartoon ? (
                           <CartoonAvatar id={item.cartoon} size={72} />
                         ) : (
-                          <span className="text-3xl font-light text-white">
-                            {item.preview || "✦"}
-                          </span>
+                          <span className="text-[28px] font-normal txt">{item.preview || "✦"}</span>
                         )}
                       </>
                     )}
@@ -618,8 +614,9 @@ export default function ProfileScreen({
                     {item.tab === "frames" && (
                       <div className="flex items-center justify-center">
                         <div
-                          className="w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold text-white bg-white/5"
+                          className="grid h-12 w-12 place-items-center rounded-full text-[13px] font-semibold txt"
                           style={{
+                            background: "var(--panel-border)",
                             boxShadow: item.frameCss && item.frameCss !== "none" ? item.frameCss : undefined,
                           }}
                         >
@@ -630,9 +627,7 @@ export default function ProfileScreen({
 
                     {item.tab === "titles" && (
                       <div className="text-center px-2">
-                        <span className="text-sm font-semibold tracking-wide text-white">
-                          «{item.name}»
-                        </span>
+                          <span className="text-[13px] font-semibold txt">«{item.name}»</span>
                       </div>
                     )}
 
@@ -649,15 +644,15 @@ export default function ProfileScreen({
                     )}
 
                     {item.tab === "styles" && (
-                      <div className="text-xs font-semibold text-white/60 uppercase tracking-widest text-center">
-                        {item.name} Style
+                      <div className="text-center text-[10px] font-semibold uppercase tracking-[.14em] faint">
+                        {item.name} style
                       </div>
                     )}
 
                     {item.tab === "audio" && (
                       <div className="flex flex-col items-center gap-2">
-                        <div className="text-white/40 group-hover:text-white/80 transition-colors">
-                          <Icon name="music" size={24} />
+                        <div className="faint transition-colors group-hover:txt">
+                          <Icon name="music" size={22} />
                         </div>
                       </div>
                     )}
@@ -665,12 +660,12 @@ export default function ProfileScreen({
 
                   {/* Information & Action */}
                   <div className="space-y-1">
-                    <div className="flex items-center justify-between text-[10px] text-white/40 font-medium capitalize tracking-wide">
+                    <div className="flex items-center justify-between text-[10px] font-medium capitalize faint">
                       <span>{item.tab.slice(0, -1)}</span>
                       <span>{item.rarity ?? "Store"}</span>
                     </div>
 
-                    <div className="font-semibold text-sm text-white truncate">{item.name}</div>
+                    <div className="truncate text-[13px] font-semibold txt">{item.name}</div>
                   </div>
                 </motion.div>
               );
@@ -678,20 +673,23 @@ export default function ProfileScreen({
           </div>
 
           {filteredItems.length === 0 && (
-            <div className="text-center py-16 px-4 rounded-2xl border border-white/10 bg-white/5">
-              <Package size={36} className="mx-auto text-white/30 mb-2" />
-              <h4 className="text-base font-bold text-white m-0">No owned items in this tab</h4>
-              <p className="text-xs text-white/50 mt-1 max-w-sm mx-auto">
-                Level up along the Horizontal Rail or visit the Store to unlock more cosmetics.
+            <div
+              className="rounded-2xl border px-4 py-14 text-center"
+              style={{ borderColor: "var(--panel-border)", background: "var(--pill)" }}
+            >
+              <Package size={32} className="mx-auto mb-2 faint" />
+              <h4 className="t-heading">Nothing here yet</h4>
+              <p className="t-caption mx-auto mt-1 max-w-sm">
+                Claim level rewards along the rail, or visit the store to unlock more looks.
               </p>
               <button
                 onClick={() => {
                   uiTap();
                   onOpenStore();
                 }}
-                className="mt-4 px-4 py-2 rounded-xl bg-white text-black font-bold text-xs hover:bg-white/90 transition cursor-pointer"
+                className="dialog-btn dialog-btn-primary dialog-btn-sm mt-4"
               >
-                Visit Store
+                Visit store
               </button>
             </div>
           )}
@@ -703,22 +701,27 @@ export default function ProfileScreen({
         {/* ========================================================= */}
         {mainTab === "tasks" && (
         <section className="tasks-section pt-8">
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold text-white tracking-wide flex items-center gap-2">
-              <Zap size={18} className="text-white/60" />
+          <div className="mb-5">
+            <h3 className="t-heading flex items-center gap-2">
+              <Zap size={17} className="faint" />
               <span>Missions</span>
             </h3>
-            <p className="text-sm text-white/50 mt-1">
-              Complete these tasks to earn extra Sparks and Diamonds.
-            </p>
+            <p className="t-caption mt-1">Finish these to earn extra Sparks and Diamonds.</p>
           </div>
 
-          <div className="flex gap-2 p-1 bg-white/5 rounded-xl mb-6">
-            {(["daily", "weekly", "monthly"] as const).map(t => (
+          <div className="mb-5 flex gap-1 rounded-xl p-1" style={{ background: "var(--pill)" }} role="tablist" aria-label="Mission periods">
+            {(["daily", "weekly", "monthly"] as const).map((t) => (
               <button
                 key={t}
+                role="tab"
+                aria-selected={missionsTab === t}
                 onClick={() => { uiTap(); setMissionsTab(t); }}
-                className={`flex-1 py-1.5 text-xs font-semibold capitalize rounded-lg transition-colors ${missionsTab === t ? "bg-white/10 text-white shadow-sm" : "text-white/40 hover:text-white/80"}`}
+                className="flex-1 rounded-lg py-1.5 text-[12px] capitalize transition-colors"
+                style={
+                  missionsTab === t
+                    ? { background: "var(--surface)", color: "var(--text)", fontWeight: 600, boxShadow: "0 1px 3px #0001" }
+                    : { color: "var(--text-faint)", fontWeight: 500 }
+                }
               >
                 {t}
               </button>
@@ -726,38 +729,47 @@ export default function ProfileScreen({
           </div>
 
           {missionsState && (
-            <div className="space-y-4">
-              {missionsState[missionsTab].map(m => {
+            <div className="stagger flex flex-col gap-2.5">
+              {missionsState[missionsTab].map((m) => {
                 const isClaimed = m.claimed;
                 const isComplete = m.completed;
                 const pct = Math.min(100, Math.round((m.progress / m.requirement) * 100));
 
                 return (
-                  <div key={m.id} className="relative overflow-hidden bg-white/5 rounded-2xl border border-white/5 p-4 flex flex-col justify-between">
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <h3 className="font-semibold text-white text-sm">{m.title}</h3>
-                        <div className="flex gap-3 text-xs font-semibold text-white/50 mt-1">
-                          <span className="flex items-center gap-1"><Sparkles size={12} className="text-white/30"/> {m.rewardXp} XP</span>
-                          <span className="flex items-center gap-1"><Gem size={12} className="text-white/30"/> {m.rewardDiamonds}</span>
+                  <div
+                    key={m.id}
+                    className="rounded-2xl border p-4"
+                    style={{ borderColor: "var(--panel-border)", background: "var(--surface)" }}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <h3 className="text-[13px] font-semibold txt">{m.title}</h3>
+                        <div className="num mt-1 flex gap-3 text-[11px]" style={{ color: "var(--text-faint)" }}>
+                          <span className="flex items-center gap-1"><Sparkles size={11} /> {m.rewardXp} XP</span>
+                          <span className="flex items-center gap-1"><Gem size={11} /> {m.rewardDiamonds}</span>
                         </div>
                       </div>
                       {isClaimed ? (
-                        <div className="text-[10px] font-bold text-white/30 uppercase tracking-wider py-1 px-3 rounded-md bg-white/5">Claimed</div>
+                        <span className="rounded-md px-2.5 py-1 text-[10px] font-medium uppercase tracking-[.1em]" style={{ background: "var(--pill)", color: "var(--text-faint)" }}>
+                          Claimed
+                        </span>
                       ) : isComplete ? (
-                        <button onClick={() => handleClaimMission(m)} className="bg-white/10 hover:bg-white/20 text-white font-semibold text-xs px-4 py-1.5 rounded-lg border border-white/10 transition">
+                        <button onClick={() => handleClaimMission(m)} className="dialog-btn dialog-btn-primary dialog-btn-sm">
                           Claim
                         </button>
                       ) : (
-                        <div className="text-xs font-medium text-white/60">
-                          {m.progress} <span className="text-white/30">/ {m.requirement}</span>
+                        <div className="num text-[12px]" style={{ color: "var(--text-dim)" }}>
+                          {m.progress} <span style={{ color: "var(--text-faint)" }}>/ {m.requirement}</span>
                         </div>
                       )}
                     </div>
-                    
+
                     {!isClaimed && (
-                      <div className="w-full h-1 bg-black/40 overflow-hidden">
-                        <div className={`h-full transition-all duration-1000 ${isComplete ? "bg-white" : "bg-white/30"}`} style={{ width: `${pct}%` }}></div>
+                      <div className="mt-3 h-1 w-full overflow-hidden rounded-full" style={{ background: "var(--surface-raised)" }}>
+                        <div
+                          className="h-full rounded-full transition-all duration-700"
+                          style={{ width: `${pct}%`, background: isComplete ? "var(--brand)" : "var(--text-faint)" }}
+                        />
                       </div>
                     )}
                   </div>
@@ -769,41 +781,28 @@ export default function ProfileScreen({
         )}
       </div>
 
-      {/* Google DP Choice Modal */}
+      {/* Google picture choice */}
       <AnimatePresence>
         {showDpPopup && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+            variants={backdropVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="surface-backdrop fixed inset-0 z-[100] flex items-center justify-center p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="dp-popup-title"
           >
-            <motion.div
-              initial={{ scale: 0.9, y: 20, opacity: 0 }}
-              animate={{ scale: 1, y: 0, opacity: 1 }}
-              exit={{ scale: 0.9, y: 20, opacity: 0 }}
-              className="bg-slate-900 border border-white/20 rounded-3xl p-6 max-w-md w-full relative shadow-2xl flex flex-col items-center text-center"
-            >
-              <div className="w-16 h-16 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center mb-4">
-                <ImageIcon size={32} />
-              </div>
-              <h2 className="text-2xl font-black text-white m-0 mb-2">Level 20 Reached!</h2>
-              <p className="text-sm text-white/70 mb-6">
-                You've reached Level 20! You now have the option to use your Google Account profile picture across the leaderboard instead of the in-game avatar.
+            <motion.div variants={panelVariants} className="surface-card flex w-full max-w-[380px] flex-col items-center p-6 text-center">
+              <span className="grid h-14 w-14 place-items-center rounded-2xl" style={{ background: "var(--brand-soft)", color: "var(--brand)" }}>
+                <ImageIcon size={26} />
+              </span>
+              <h2 id="dp-popup-title" className="t-title mt-4">Level 20 unlocked</h2>
+              <p className="t-body mt-2">
+                You can now use your Google profile picture on the leaderboard instead of your in-game avatar.
               </p>
-              <div className="flex flex-col sm:flex-row gap-3 w-full">
-                <button
-                  onClick={() => {
-                    uiTap();
-                    const next = { ...profile, useGooglePfp: false };
-                    saveProfile(next);
-                    onProfile(next);
-                    setShowDpPopup(false);
-                  }}
-                  className="flex-1 px-4 py-3 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-sm transition"
-                >
-                  Keep Game Avatar
-                </button>
+              <div className="dialog-actions mt-5 w-full">
                 <button
                   onClick={() => {
                     uiConfirm();
@@ -812,9 +811,21 @@ export default function ProfileScreen({
                     onProfile(next);
                     setShowDpPopup(false);
                   }}
-                  className="flex-1 px-4 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-sm transition"
+                  className="dialog-btn dialog-btn-primary"
                 >
-                  Use Google PFP
+                  Use Google picture
+                </button>
+                <button
+                  onClick={() => {
+                    uiTap();
+                    const next = { ...profile, useGooglePfp: false };
+                    saveProfile(next);
+                    onProfile(next);
+                    setShowDpPopup(false);
+                  }}
+                  className="dialog-btn dialog-btn-quiet"
+                >
+                  Keep my game avatar
                 </button>
               </div>
             </motion.div>
@@ -822,82 +833,57 @@ export default function ProfileScreen({
         )}
       </AnimatePresence>
 
-      {/* Level Up Celebration Modal */}
+      {/* Level up celebration: one short reveal, no infinite spin. */}
       <AnimatePresence>
         {showLevelUp !== null && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md"
+            variants={backdropVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="surface-backdrop fixed inset-0 z-[100] flex items-center justify-center p-4"
             onClick={() => setShowLevelUp(null)}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Level up"
           >
-            {/* Confetti Background Layer */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none flex justify-center">
-               <motion.div 
-                 initial={{ opacity: 0, scale: 0 }}
-                 animate={{ opacity: 1, scale: 1 }}
-                 transition={{ duration: 0.8, type: "spring", bounce: 0.5 }}
-                 className="absolute top-1/4 w-[800px] h-[800px] bg-[radial-gradient(circle_at_center,rgba(56,189,248,0.2)_0%,transparent_50%)]"
-               />
-            </div>
-
             <motion.div
-              initial={{ scale: 0.5, opacity: 0, y: 50 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              transition={{ type: "spring", bounce: 0.6, duration: 0.8 }}
-              className="relative bg-gradient-to-b from-sky-900/40 to-black border border-sky-400/30 rounded-3xl p-8 max-w-sm w-full shadow-[0_0_50px_rgba(56,189,248,0.2)] text-center overflow-hidden"
+              variants={panelVariants}
+              className="surface-card relative w-full max-w-[340px] overflow-hidden p-7 text-center"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Spinning light effect */}
-              <motion.div 
-                animate={{ rotate: 360 }}
-                transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-                className="absolute -top-[50%] -left-[50%] w-[200%] h-[200%] bg-[conic-gradient(from_0deg,transparent_0_340deg,rgba(56,189,248,0.3)_360deg)] pointer-events-none"
-              />
+              <motion.span
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1], delay: 0.05 }}
+                className="mx-auto grid h-16 w-16 place-items-center rounded-full"
+                style={{ background: "var(--brand-soft)", color: "var(--brand)" }}
+              >
+                <PartyPopper size={28} />
+              </motion.span>
 
               <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.2, type: "spring", bounce: 0.7 }}
-                className="relative z-10 w-24 h-24 mx-auto bg-gradient-to-br from-sky-400 to-indigo-600 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(56,189,248,0.6)] mb-6 border-4 border-black"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
               >
-                <PartyPopper size={48} className="text-white drop-shadow-md" />
+                <p className="t-eyebrow mt-4">Level up</p>
+                <h2 className="t-display is-compact mt-1">Level {showLevelUp}</h2>
+                <p className="t-body mt-1.5">New rewards are waiting on the rail.</p>
               </motion.div>
 
-              <div className="relative z-10 space-y-2 mb-8">
-                <motion.h2 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                  className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-sky-300 via-white to-cyan-300 uppercase tracking-widest drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]"
-                >
-                  Level Up!
-                </motion.h2>
-                <motion.p 
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.5 }}
-                  className="text-lg text-sky-200 font-semibold"
-                >
-                  You reached <span className="text-white font-black text-xl">Level {showLevelUp}</span>
-                </motion.p>
-              </div>
-
               <motion.button
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.7 }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1], delay: 0.16 }}
+                whileTap={{ scale: 0.985 }}
                 onClick={() => {
                   uiTap();
                   setShowLevelUp(null);
                 }}
-                className="relative z-10 w-full py-4 rounded-xl bg-white text-black font-black text-lg tracking-wide shadow-[0_0_20px_rgba(255,255,255,0.4)] transition cursor-pointer"
+                className="dialog-btn dialog-btn-primary mt-6 w-full"
               >
-                Awesome!
+                Continue
               </motion.button>
             </motion.div>
           </motion.div>
