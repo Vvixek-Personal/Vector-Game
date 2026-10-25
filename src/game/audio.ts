@@ -11,6 +11,8 @@ export class SoundManager {
   private musicMuted = false;
   private globalMuted = false;
   private audioPackId: string | undefined = undefined;
+  private sfxVolRatio = 1.0;
+  private musicVolRatio = 0.8;
 
   // BGM scheduler
   private bgmPlaying = false;
@@ -67,15 +69,25 @@ export class SoundManager {
     this.updateGains();
   }
 
+  setVolumes(sfxVol: number, musicVol: number) {
+    this.sfxVolRatio = Math.max(0, Math.min(100, sfxVol)) / 100;
+    this.musicVolRatio = Math.max(0, Math.min(100, musicVol)) / 100;
+    this.updateGains();
+  }
+
+  setAudioPack(pack: string) {
+    this.audioPackId = pack;
+  }
+
   private updateGains() {
     const isMuted = this.globalMuted || this.muted;
     const isMusicMuted = this.globalMuted || this.musicMuted;
     
     if (this.sfxGain) {
-      this.sfxGain.gain.value = isMuted ? 0 : 0.65;
+      this.sfxGain.gain.value = isMuted ? 0 : 0.65 * this.sfxVolRatio;
     }
     if (this.musicGain) {
-      this.musicGain.gain.value = isMusicMuted ? 0 : 0.22;
+      this.musicGain.gain.value = isMusicMuted ? 0 : 0.22 * this.musicVolRatio;
     }
   }
 

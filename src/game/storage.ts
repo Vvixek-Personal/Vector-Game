@@ -9,6 +9,8 @@ export type UiMode = "dark" | "light";
 export type Colorway = "cobalt" | "tangerine" | "orchid" | "spring" | "pearl";
 export type ThemeId = "cyan" | "amber" | "violet" | "mono" | "aurora" | "cyber" | "emerald";
 export type MusicStyle = "drive" | "pulse" | "calm";
+export type AudioPack = "default" | "retro" | "ethereal" | "cyber" | "zen";
+export type ParticleDensity = "full" | "reduced" | "off";
 export type PadPosition = "center" | "right" | "left" | "hidden";
 export type KeyPreset = "both" | "arrows" | "wasd";
 export type BindDir = DirName;
@@ -39,6 +41,14 @@ export const ARENA_THEMES: { id: ThemeId; name: string }[] = [
   { id: "emerald", name: "Emerald" },
 ];
 
+export const AUDIO_PACKS: { id: AudioPack; name: string; description: string }[] = [
+  { id: "default", name: "Vector Synth", description: "Balanced modern electronic chimes" },
+  { id: "retro", name: "Arcade 8-Bit", description: "Classic square-wave chip sounds" },
+  { id: "ethereal", name: "Ethereal Glass", description: "Resonant sine-wave crystal bells" },
+  { id: "cyber", name: "Cyberpunk", description: "Aggressive saw-synth and noise bursts" },
+  { id: "zen", name: "Acoustic Zen", description: "Soft warm harmonic tones" },
+];
+
 export interface Settings {
   uiMode: UiMode;
   colorway: Colorway;
@@ -61,6 +71,11 @@ export interface Settings {
   autoPauseBlur: boolean;
   musicStyle: MusicStyle;
   soundEnabled: boolean;
+  sfxVolume: number;
+  musicVolume: number;
+  audioPack: AudioPack;
+  particleDensity: ParticleDensity;
+  showFps: boolean;
   keyPreset: KeyPreset;
   /** Custom solo binds: direction -> key codes. Merged on top of preset defaults. */
   binds: Partial<Record<BindDir, string[]>>;
@@ -89,6 +104,11 @@ const DEFAULT_SETTINGS: Settings = {
   autoPauseBlur: true,
   musicStyle: "drive",
   soundEnabled: true,
+  sfxVolume: 100,
+  musicVolume: 80,
+  audioPack: "default",
+  particleDensity: "full",
+  showFps: false,
   keyPreset: "both",
   binds: {},
   textSize: "medium",
@@ -109,11 +129,22 @@ export function loadSettings(): Settings {
     for (const key of Object.keys(DEFAULT_SETTINGS) as (keyof Settings)[]) {
       if (typeof DEFAULT_SETTINGS[key] === "boolean" && typeof merged[key] !== "boolean") (merged as any)[key] = DEFAULT_SETTINGS[key];
     }
-    for (const [key, values] of Object.entries({ uiMode: ["dark", "light"], colorway: COLORWAYS.map(c => c.id), theme: ARENA_THEMES.map(t => t.id), dpad: ["center", "right", "left", "hidden"], musicStyle: ["drive", "pulse", "calm"], keyPreset: ["both", "arrows", "wasd"] })) {
-      if (!(values as string[]).includes(merged[key])) merged[key] = DEFAULT_SETTINGS[key];
+    for (const [key, values] of Object.entries({
+      uiMode: ["dark", "light"],
+      colorway: COLORWAYS.map(c => c.id),
+      theme: ARENA_THEMES.map(t => t.id),
+      dpad: ["center", "right", "left", "hidden"],
+      musicStyle: ["drive", "pulse", "calm"],
+      audioPack: ["default", "retro", "ethereal", "cyber", "zen"],
+      particleDensity: ["full", "reduced", "off"],
+      keyPreset: ["both", "arrows", "wasd"],
+    })) {
+      if (!(values as string[]).includes((merged as any)[key])) (merged as any)[key] = (DEFAULT_SETTINGS as any)[key];
     }
     merged.haptics = Number.isFinite(merged.haptics) ? Math.min(100, Math.max(0, merged.haptics)) : 100;
     merged.dpadScale = Number.isFinite(merged.dpadScale) ? Math.min(125, Math.max(80, merged.dpadScale)) : 100;
+    merged.sfxVolume = Number.isFinite(merged.sfxVolume) ? Math.min(100, Math.max(0, merged.sfxVolume)) : 100;
+    merged.musicVolume = Number.isFinite(merged.musicVolume) ? Math.min(100, Math.max(0, merged.musicVolume)) : 80;
     if (!merged.binds || typeof merged.binds !== "object") merged.binds = {};
     if (!["normal", "medium", "large", "huge"].includes(merged.textSize)) {
       merged.textSize = "medium";

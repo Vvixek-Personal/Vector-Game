@@ -142,6 +142,9 @@ export class Engine {
   private pausedAt = 0;
   private backgroundGradient: CanvasGradient | null = null;
   private beaconGradient: CanvasGradient | null = null;
+  private fpsCounter = 0;
+  private fpsDisplay = 0;
+  private fpsTimer = 0;
 
   private w = 1;
   private h = 1;
@@ -292,6 +295,8 @@ export class Engine {
     this.keyMap = resolveKeyMap(settings);
     this.sound.setMusicStyle(settings.musicStyle);
     this.sound.setGlobalMuted(settings.soundEnabled === false);
+    this.sound.setVolumes(settings.sfxVolume ?? 100, settings.musicVolume ?? 80);
+    this.sound.setAudioPack(settings.audioPack || "default");
     const c = this.themeColors(settings);
     this.bgA = hex(c.bg[0]);
     this.bgB = hex(c.bg[1]);
@@ -452,6 +457,13 @@ export class Engine {
         this.fx.hitStop = Math.max(0, this.fx.hitStop - dt);
       } else {
         this.t += dt;
+    this.fpsTimer += dt;
+    this.fpsCounter++;
+    if (this.fpsTimer >= 0.5) {
+      this.fpsDisplay = Math.round(this.fpsCounter / this.fpsTimer);
+      this.fpsCounter = 0;
+      this.fpsTimer = 0;
+    }
         this.update(dt);
       }
       this.render();
@@ -1570,7 +1582,7 @@ export class Engine {
       }
     }
 
-    this.fx.render(c, this.settings.scoreFloats !== false, this.settings.reducedMotion);
+    this.fx.render(c, this.settings.scoreFloats !== false, this.settings.reducedMotion, this.settings.particleDensity);
     c.restore();
 
     if (!this.settings.reducedMotion && this.fx.flashWhite > 0) {
@@ -1580,6 +1592,15 @@ export class Engine {
     if (!this.settings.reducedMotion && this.fx.flashRed > 0) {
       c.fillStyle = `rgba(248,60,60,${this.fx.flashRed * 0.25})`;
       c.fillRect(0, 0, this.w, this.h);
+    }
+
+    if (this.settings.showFps) {
+      c.save();
+      c.font = "600 11px system-ui, sans-serif";
+      c.fillStyle = "rgba(255,255,255,0.7)";
+      c.textAlign = "right";
+      c.fillText(`${this.fpsDisplay} FPS`, this.w - 12, 18);
+      c.restore();
     }
   }
 }

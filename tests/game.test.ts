@@ -66,10 +66,13 @@ test("weekly missions refresh independently of the daily refresh", () => {
 });
 test('malformed local stats, scores and controls recover safely', () => {
   safeStorage.setItem('vector_stats_v5', JSON.stringify({ runs: 'bad', totalScore: -1, history: {}, modeRuns: [] }));
-  safeStorage.setItem('vector_settings_v5', JSON.stringify({ binds: { N: 7 }, haptics: 999, dpadScale: null }));
+  safeStorage.setItem('vector_settings_v5', JSON.stringify({ binds: { N: 7 }, haptics: 999, dpadScale: null, sfxVolume: 500, musicVolume: 'invalid', audioPack: 'invalid', particleDensity: 'super' }));
   safeStorage.setItem('vector_scores_v5', 'null');
   assert.equal(loadStats().runs, 0); assert.equal(loadStats().totalScore, 0); assert.deepEqual(loadScores('arcade'), []);
-  assert.deepEqual(loadSettings().binds, {}); assert.equal(loadSettings().haptics, 100);
+  const s = loadSettings();
+  assert.deepEqual(s.binds, {}); assert.equal(s.haptics, 100);
+  assert.equal(s.sfxVolume, 100); assert.equal(s.musicVolume, 80);
+  assert.equal(s.audioPack, 'default'); assert.equal(s.particleDensity, 'full');
 });
 test('wrong responses do not grant reaction records and waves reset on mistakes', () => {
   const {e, finish} = engine('waves'); e.waveStep = 4; hit(e, false);

@@ -2468,3 +2468,59 @@ button:focus-visible, a:focus-visible, select:focus-visible { outline: 2px solid
   .mode-copy h2 { font-size: calc(34px * var(--text-scale)); }
   .dialog-stat > span { font-size: 9px; letter-spacing: .06em; }
 }
+
+
+/* Enhanced Settings Range Sliders and Select Styling */
+.setting-row input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 120px;
+  height: 6px;
+  background: var(--panel-border, rgba(255, 255, 255, 0.15));
+  border-radius: 3px;
+  outline: none;
+  transition: background 150ms ease;
+}
+
+.setting-row input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent, #3ec9ff);
+  cursor: pointer;
+  box-shadow: 0 0 8px rgba(62, 201, 255, 0.4);
+  transition: transform 120ms ease, background-color 150ms ease;
+}
+
+.setting-row input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+.setting-row input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--accent, #3ec9ff);
+  cursor: pointer;
+  box-shadow: 0 0 8px rgba(62, 201, 255, 0.4);
+}
+
+.setting-select {
+  background: var(--pill-bg, rgba(255, 255, 255, 0.06));
+  border: 1px solid var(--panel-border, rgba(255, 255, 255, 0.12));
+  color: var(--text, #ffffff);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+
+.setting-select:hover, .setting-select:focus {
+  border-color: var(--accent, #3ec9ff);
+  background: var(--pill-hover, rgba(255, 255, 255, 0.1));
+}
