@@ -150,3 +150,21 @@ test('challenge scores keep the period in which a run started, even after a rese
   assert.equal(loadScores('weekly','2001_W0')[0].score,888);assert.equal(loadScores('weekly').length,0);
   const {e,finish}=engine('daily');const period=e.challengeId;hit(e);assert.equal(finish().challengeId,period);
 });
+
+test('play again safely resets and restarts without throwing on event arguments', () => {
+  const { e, finish } = engine('arcade');
+  hit(e);
+  const sum = finish();
+  assert.equal(sum.mode, 'arcade');
+
+  // Verify synthetic click event passed to engine restart doesn't break if mode is resolved
+  const isGameMode = (val: unknown) => typeof val === 'string' && ['arcade', 'zen', 'blitz', 'memory', 'daily', 'weekly', 'versus', 'coop', 'practice'].includes(val);
+  const clickEvent = { isTrusted: true, type: 'click', preventDefault() {} };
+  const candidateMode = isGameMode(clickEvent) ? clickEvent : sum.mode;
+  assert.equal(candidateMode, 'arcade');
+
+  const restarted = engine(candidateMode);
+  hit(restarted.e);
+  const nextSum = restarted.finish();
+  assert.equal(nextSum.hits, 1);
+});

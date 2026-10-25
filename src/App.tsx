@@ -301,21 +301,31 @@ export default function App() {
   useEffect(() => () => {
     if (countdownTimer.current !== null) window.clearInterval(countdownTimer.current);
   }, []);
-  const start = useCallback((m?: GameMode) => {
+  const start = useCallback((m?: unknown) => {
     const engine = engineRef.current;
     if (!engine) return;
     stopCountdown();
-    const nextMode = m ?? modeRef.current;
-    modeRef.current = nextMode; setMode(nextMode);
+    const isGameMode = (v: unknown): v is GameMode => typeof v === "string" && v in MODES;
+    const nextMode: GameMode = isGameMode(m) ? m : (isGameMode(modeRef.current) ? modeRef.current : "arcade");
+    modeRef.current = nextMode;
+    setMode(nextMode);
+    setSummary(null);
     const nextModifiers = { ...modifiersRef.current };
-    engine.toMenu(); engine.sound.ensure(); engine.sound.click();
-    phaseRef.current = 'countdown'; setPhase('countdown'); setCountdown(3);
+    engine.toMenu();
+    engine.sound.ensure();
+    engine.sound.click();
+    phaseRef.current = 'countdown';
+    setPhase('countdown');
+    setCountdown(3);
     let remaining = 3;
     countdownTimer.current = window.setInterval(() => {
       remaining--;
-      if (remaining > 0) { setCountdown(remaining); engine.sound.click(); }
-      else {
-        stopCountdown(); engine.startGame(nextMode, nextModifiers);
+      if (remaining > 0) {
+        setCountdown(remaining);
+        engine.sound.click();
+      } else {
+        stopCountdown();
+        engine.startGame(nextMode, nextModifiers);
       }
     }, 1000);
   }, [stopCountdown]);
@@ -372,6 +382,7 @@ export default function App() {
     stopCountdown();
     engineRef.current?.toMenu();
     setScores(loadScores(modeRef.current));
+    setSummary(null);
     setScreen("home");
     setPhase("menu");
   }, [stopCountdown]);
@@ -592,7 +603,7 @@ export default function App() {
       {phase === "countdown" && countdown !== null && (
         <div className="start-countdown fixed inset-0 z-40 flex flex-col items-center justify-center gap-5 bg-slate-950 text-white" role="dialog" aria-modal="true" aria-label="Get ready">
           <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-white/55">
-            Get ready · {MODES[mode].label}
+            Get ready · {MODES[mode]?.label ?? "Arcade"}
           </p>
           <div key={countdown} className="countdown-number" role="status" aria-live="assertive" aria-atomic="true">{countdown}</div>
           <p className="max-w-[34ch] text-center text-[13px] leading-relaxed text-white/60">
@@ -636,7 +647,7 @@ export default function App() {
             mode={mode}
             onFinishPractice={() => engineRef.current?.finishPractice()}
             onResume={togglePause}
-            onRestart={start}
+            onRestart={() => start(mode)}
             onHome={goHome}
           />
         )}
@@ -649,7 +660,7 @@ export default function App() {
             summary={summary}
             stats={stats}
             profile={profile}
-            onAgain={start}
+            onAgain={() => start(summary.mode)}
             onHome={goHome}
             onShare={share}
             shared={copied}

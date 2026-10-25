@@ -29,6 +29,10 @@ test('desktop navigation, settings persistence, game and pause', async ({page}) 
   await page.getByText('Resume',{exact:true}).click();
   await expect(page.getByRole('button',{name:'Play again',exact:true})).toBeVisible({timeout:15000});
   await page.screenshot({path:'test-results/desktop-results.png'});
+  await page.getByRole('button',{name:'Play again',exact:true}).click();
+  await expect(page.getByRole('dialog',{name:'Get ready'})).toBeVisible();
+  await expect(page.getByRole('button',{name:'Pause',exact:true})).toBeVisible({timeout:8000});
+  await page.keyboard.press('Escape');
   await page.getByRole('button',{name:'Home',exact:true}).click();
   for (const name of ['Store','Stats','Ranks']) { await page.getByRole('button',{name,exact:true}).click(); await page.waitForTimeout(350); await page.screenshot({path:'test-results/desktop-'+name.toLowerCase()+'.png',fullPage:true}); }
   expect(errors).toEqual([]);

@@ -158,10 +158,10 @@ export function PauseOverlay({
         >
           Resume
         </motion.button>
-        <motion.button whileTap={{ scale: 0.985 }} onClick={onRestart} className="dialog-btn">
+        <motion.button whileTap={{ scale: 0.985 }} onClick={() => onRestart()} className="dialog-btn">
           Restart
         </motion.button>
-        <motion.button whileTap={{ scale: 0.985 }} onClick={onHome} className="dialog-btn dialog-btn-quiet">
+        <motion.button whileTap={{ scale: 0.985 }} onClick={() => onHome()} className="dialog-btn dialog-btn-quiet">
           Home
         </motion.button>
       </div>
@@ -315,14 +315,14 @@ export function GameOverOverlay({
       {reactionNote && !versus && <p className="t-caption mt-3 text-center">{reactionNote}</p>}
 
       <div className="dialog-actions mt-5">
-        <motion.button whileTap={{ scale: 0.985 }} onClick={onAgain} className="dialog-btn dialog-btn-primary">
+        <motion.button whileTap={{ scale: 0.985 }} onClick={() => onAgain()} className="dialog-btn dialog-btn-primary">
           Play again
         </motion.button>
         <div className="grid grid-cols-2 gap-2">
           <motion.button whileTap={{ scale: 0.985 }} onClick={onShare} className="dialog-btn">
             {shared ? "Copied" : "Share"}
           </motion.button>
-          <motion.button whileTap={{ scale: 0.985 }} onClick={onHome} className="dialog-btn">
+          <motion.button whileTap={{ scale: 0.985 }} onClick={() => onHome()} className="dialog-btn">
             Home
           </motion.button>
         </div>
