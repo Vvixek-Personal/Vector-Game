@@ -3,6 +3,7 @@ import { ARENA_THEMES, AUDIO_PACKS, COLORWAYS, codeLabel, defaultBindCodes, rese
 import { playHaptic, uiTap } from "../../game/haptics";
 import { Seg, Toggle } from "../ui";
 import Icon, { type IconName } from "../Icon";
+import AppHeader from "../AppHeader";
 
 type Tab = "look" | "controls" | "feel";
 interface Props {
@@ -59,8 +60,8 @@ export default function SettingsScreen({ settings, onChange, onBack }: Props) {
   const changeTab = (next: Tab) => { setRecording(null); setMessage(""); uiTap(); setTab(next); };
 
   return (
-    <div className="settings-page">
-      <header className="home-header"><div className="wordmark"><Icon name="arrow" size={28} /><h1>Vector<span>.</span></h1></div><button className="text-button" onClick={onBack}><Icon name="left" size={17} />Back to play</button></header>
+    <div className="settings-page collection-page">
+      <AppHeader title="Settings" subtitle="Make yourself comfortable" onBack={onBack}/>
       <div className="settings-heading"><h2>Make yourself comfortable.</h2><p>A few small adjustments. Saved automatically on this device.</p></div>
       <div className="settings-layout">
         <nav className="settings-tabs" role="tablist" aria-label="Settings categories">{TABS.map((item) => <button key={item.id} id={`tab-${item.id}`} className={`settings-tab ${tab === item.id ? "active" : ""}`} role="tab" aria-selected={tab === item.id} aria-controls={`pane-${item.id}`} onClick={() => changeTab(item.id)}><Icon name={item.icon} size={19} />{item.label}</button>)}</nav>

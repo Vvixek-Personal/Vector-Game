@@ -225,7 +225,7 @@ export function scoreBucket(mode: GameMode, challengeId?: string) {
 export function loadScores(mode: GameMode, challengeId?: string): ScoreEntry[] {
   if (mode === "practice") return [];
   const scores = allScores()[scoreBucket(mode, challengeId)];
-  return Array.isArray(scores) ? scores.filter(s => Number.isFinite(s.score) && s.score >= 0).sort((a, b) => b.score - a.score) : [];
+  return Array.isArray(scores) ? scores.filter(s => s && Number.isSafeInteger(s.score) && s.score >= 0).sort((a, b) => b.score - a.score) : [];
 }
 
 export function bestScore(mode: GameMode, challengeId?: string): number {

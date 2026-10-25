@@ -3,6 +3,8 @@
 // data stays tiny. Pure helpers + a small validated localStorage record.
 
 import { STORE_ITEMS } from "./catalog";
+import { heroFor } from "./characters";
+import { MODE_ORDER, type GameMode } from "./types";
 import type { Stats } from "./storage";
 import { persistSave } from "../firebase/cloudSave";
 import { safeStorage as localStorage } from "./persistence";
@@ -63,6 +65,8 @@ export interface Profile {
   frameId: string;
   titleId: string;
   purchased: string[];
+  wishlist?: string[];
+  favoriteModes?: GameMode[];
   claimedLevels?: number[];
   charges: { shield: number; surge: number; saver: number };
   useGooglePfp?: boolean;
@@ -254,6 +258,8 @@ export const DEFAULT_PROFILE: Profile = {
   frameId: "none",
   titleId: "rookie",
   purchased: [],
+  wishlist: [],
+  favoriteModes: [],
   claimedLevels: [],
   charges: { shield: 1, surge: 0, saver: 0 },
 };
@@ -289,6 +295,8 @@ export function loadProfile(): Profile {
     purchased: Array.isArray(p.purchased)
       ? p.purchased.filter((id): id is string => typeof id === "string")
       : [],
+    favoriteModes: Array.isArray(p.favoriteModes) ? [...new Set(p.favoriteModes.filter((mode): mode is GameMode => MODE_ORDER.includes(mode)))].slice(0, MODE_ORDER.length) : [],
+    wishlist: Array.isArray(p.wishlist) ? [...new Set(p.wishlist.filter((id): id is string => typeof id === "string" && STORE_ITEMS.some(item => item.id === id && !item.pack)))].slice(0, 250) : [],
     claimedLevels: Array.isArray(p.claimedLevels)
       ? p.claimedLevels.filter((lvl): lvl is number => typeof lvl === "number")
       : [],
@@ -312,7 +320,9 @@ export function saveProfile(p: Profile) {
 
 import { ANIME_CHARACTERS, type AnimeId } from "../components/AnimeAvatar";
 
-export function avatarFor(profile: Profile): { glyph: string; from: string; to: string; name: string; cartoon?: string; anime?: string } {
+export function avatarFor(profile: Profile): { glyph: string; from: string; to: string; name: string; cartoon?: string; anime?: string; hero?: string } {
+  const hero = heroFor(profile.avatarId);
+  if (hero) return { glyph: "", from: hero.from, to: hero.to, name: hero.name, hero: hero.id };
   if (profile.avatarId.startsWith("ani-")) {
     const char = ANIME_CHARACTERS[profile.avatarId as AnimeId];
     return {
