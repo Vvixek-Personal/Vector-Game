@@ -26,6 +26,7 @@ const ITEMS: ModeItem[] = MODE_ORDER.map((mode) => ({
 }));
 
 interface Props {
+  keyboardEnabled?: boolean;
   mode: GameMode;
   onMode: (mode: GameMode) => void;
   name: string;
@@ -50,6 +51,7 @@ interface Props {
 
 export default function HomeScreen({
   mode,
+  keyboardEnabled = true,
   onMode,
   name,
   scores,
@@ -77,7 +79,7 @@ export default function HomeScreen({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.defaultPrevented) return;
+      if (e.defaultPrevented || !keyboardEnabled || e.ctrlKey || e.metaKey || e.altKey) return;
       if ((e.target as HTMLElement | null)?.closest("input, textarea, select, [contenteditable='true']")) return;
       if (e.repeat) return;
 
@@ -111,7 +113,7 @@ export default function HomeScreen({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [activeIndex, selectMode, settings]);
+  }, [activeIndex, selectMode, settings, keyboardEnabled]);
   
   const startMode = useCallback((_index: number, item: ModeItem) => {
     uiConfirm();
@@ -249,8 +251,8 @@ export default function HomeScreen({
             whileHover={{ y: -2 }}
             transition={{ type: "spring", stiffness: 350 }}
           >
-            <span>Personal best</span>
-            <strong>{(scores[0]?.score ?? 0).toLocaleString()}<small> pts</small></strong>
+            <span>{mode === "practice" ? "Training mode" : "Personal best"}</span>
+            <strong>{mode === "practice" ? "No timer" : (scores[0]?.score ?? 0).toLocaleString()}{mode !== "practice" && <small> pts</small>}</strong>
           </motion.div>
         </section>
 

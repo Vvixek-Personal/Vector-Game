@@ -2,9 +2,10 @@
 // Everything derives from lifetime stats, so unlocks feel earned and the
 // data stays tiny. Pure helpers + a small validated localStorage record.
 
+import { STORE_ITEMS } from "./catalog";
 import type { Stats } from "./storage";
-import { auth, db, sanitizeFirestoreData } from "../firebase/config";
-import { doc, setDoc } from "firebase/firestore";
+import { persistSave } from "../firebase/cloudSave";
+import { safeStorage as localStorage } from "./persistence";
 
 export interface UnlockRule {
   /** Human-readable requirement, e.g. "Play 10 runs". */
@@ -66,6 +67,7 @@ export interface Profile {
   charges: { shield: number; surge: number; saver: number };
   useGooglePfp?: boolean;
   audioPackId?: string;
+  arenaThemeId?: string;
 }
 
 export type BannerPattern = "waves" | "grid" | "orbits" | "rays" | "dots" | "plain";
@@ -173,8 +175,15 @@ export const TITLES: TitleDef[] = [
   { id: "combo-master", name: "Combo Master", rule: () => shopOnly() },
 ];
 
+// The shop is the source of truth for its existing cosmetics.
+for (const item of STORE_ITEMS) {
+  if (item.apply?.frameId && item.frameCss && !FRAMES.some(f => f.id === item.apply.frameId)) FRAMES.push({ id: item.apply.frameId, name: item.name, css: item.frameCss, rule: () => shopOnly() });
+  if (item.apply?.titleId && !TITLES.some(t => t.id === item.apply.titleId)) TITLES.push({ id: item.apply.titleId, name: item.name, rule: () => shopOnly() });
+  if (item.apply?.bannerId && item.preview && !BANNERS.some(b => b.id === item.apply.bannerId)) BANNERS.push({ id: item.apply.bannerId, name: item.name, css: item.preview, dark: true, rule: () => shopOnly() });
+}
+
 export const PERKS: PerkDef[] = [
-  { id: "founder", icon: "🌱", name: "Founder", desc: "Finish your first run.", effect: "+5 Sparks welcome bonus on the next run", rule: runsRule(1) },
+  { id: "founder", icon: "🌱", name: "Founder", desc: "Finish your first run.", effect: "First-run milestone badge", rule: runsRule(1) },
   { id: "focus", icon: "◎", name: "Centered", desc: "Reach a 6 streak in any mode.", effect: "Unlocks the Glow avatar frame", rule: streakRule(6) },
   { id: "overdrive", icon: "⚡", name: "Overdrive", desc: "Reach an 8 streak.", effect: "Unlocks the Sharpshooter title", rule: streakRule(8) },
   { id: "lockedin", icon: "🎯", name: "Locked In", desc: "Reach a 20 streak.", effect: "Unlocks the Crosshair avatar", rule: streakRule(20) },
@@ -288,6 +297,8 @@ export function loadProfile(): Profile {
       surge: Math.max(0, Number(p.charges?.surge) || 0),
       saver: Math.max(0, Number(p.charges?.saver) || 0),
     },
+    arenaThemeId: typeof p.arenaThemeId === "string" ? p.arenaThemeId : undefined,
+    audioPackId: typeof p.audioPackId === "string" ? p.audioPackId : undefined,
     useGooglePfp: typeof p.useGooglePfp === "boolean" ? p.useGooglePfp : undefined,
     };
   } catch {
@@ -296,14 +307,7 @@ export function loadProfile(): Profile {
 }
 
 export function saveProfile(p: Profile) {
-  try {
-    localStorage.setItem(PROFILE_KEY, JSON.stringify(p));
-  } catch {
-    /* ignore */
-  }
-  if (auth?.currentUser) {
-    setDoc(doc(db, "users", auth.currentUser.uid), sanitizeFirestoreData({ profile: p }), { merge: true }).catch(console.warn);
-  }
+  persistSave("profile", p);
 }
 
 import { ANIME_CHARACTERS, type AnimeId } from "../components/AnimeAvatar";

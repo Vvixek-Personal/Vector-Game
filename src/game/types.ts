@@ -5,6 +5,7 @@ import type { GameModifiers } from "./modifiers";
 export type DirName = "N" | "E" | "S" | "W";
 
 export type GameMode =
+  | "practice"
   | "arcade"
   | "coop"
   | "waves"
@@ -18,7 +19,7 @@ export type GameMode =
   | "weekly";
 
 export type ArrowMark = "none" | "opposite" | "bonus";
-export type Phase = "menu" | "playing" | "paused" | "over";
+export type Phase = "menu" | "countdown" | "playing" | "paused" | "over";
 
 // ---------------------------------------------------------------- direction
 
@@ -106,6 +107,7 @@ export interface ModeDef {
   /** 999 = endless. */
   lives: number;
   roundTime: number;
+  untimed?: boolean;
   players: 1 | 2;
   /** Memory: seconds the arrow is visible before hiding. */
   reveal?: number;
@@ -124,6 +126,11 @@ export interface ModeDef {
 }
 
 export const MODES: Record<GameMode, ModeDef> = {
+  practice: {
+    label: "Practice", icon: "◎", tag: "untimed · unranked", color: "#34d399",
+    desc: "Learn every direction at your own pace. No timer, no lost lives, no effect on your ranked progress.",
+    lives: 999, roundTime: 1, players: 1, untimed: true,
+  },
   arcade: {
     label: "Arcade", icon: "✦", tag: "3 lives · endless", color: "#38e8ff",
     desc: "Match the glowing arrow and climb a high score.",
@@ -170,12 +177,12 @@ export const MODES: Record<GameMode, ModeDef> = {
     lives: 999, roundTime: 2.4, players: 1, rounds: 15,
   },
   daily: {
-    label: "Daily", icon: "◎", tag: "shared seed", color: "#fde047",
+    label: "Daily", icon: "◎", tag: "shared seed · fixed rules · UTC", color: "#fde047",
     desc: "Everyone plays the same arrows today. Same rules, same luck.",
     lives: 3, roundTime: 2.4, players: 1, seeded: true,
   },
   weekly: {
-    label: "Weekly", icon: "🏆", tag: "global tournament", color: "#fbbf24",
+    label: "Weekly", icon: "🏆", tag: "weekly tournament · fixed rules · UTC", color: "#fbbf24",
     desc: "A fresh set of arrows every week. Climb the global tournament leaderboard.",
     lives: 3, roundTime: 2.2, players: 1, seeded: true,
   },
@@ -183,6 +190,7 @@ export const MODES: Record<GameMode, ModeDef> = {
 
 export const MODE_ORDER: GameMode[] = [
   "arcade",
+  "practice",
   "coop",
   "waves",
   "memory",
@@ -198,7 +206,12 @@ export const MODE_ORDER: GameMode[] = [
 // ---------------------------------------------------------------- engine api
 
 /** Everything the HUD needs, in one place. */
+export interface HitFeedback {
+  id: number; kind: "hit" | "miss" | "timeout"; label: string; reactionMs?: number; points?: number;
+}
+
 export interface HudState {
+  feedback?: HitFeedback | null;
   score: number;
   streak: number;
   combo: number;
@@ -222,6 +235,7 @@ export interface HudState {
 }
 
 export interface GameSummary {
+  challengeId?: string;
   mode: GameMode;
   score: number;
   best: number;
@@ -234,10 +248,12 @@ export interface GameSummary {
   winner: 0 | 1 | 2 | null; // 2 = tie
   waves: number;
   hits: number;
+  perfectHits: number;
   misses: number;
   playSeconds: number;
   rank?: "SSS" | "S" | "A" | "B" | "C";
   modifierMultiplier?: number;
+  xpGained?: number;
 }
 
 export interface EngineEvents {

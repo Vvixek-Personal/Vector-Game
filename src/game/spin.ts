@@ -1,7 +1,8 @@
+import { safeStorage as localStorage } from "../game/persistence";
 // Lucky Wheel mechanics, slices, weighting and cooldown logic
 
 import { type Stats, spendSparks, spendDiamonds, saveStats } from "./storage";
-import { type Profile } from "./profile";
+import { saveProfile, type Profile } from "./profile";
 import { type EggType, addEggToInventory } from "./incubator";
 
 export interface SpinReward {
@@ -190,6 +191,7 @@ export function applySpinReward(
       nextStats = {
         ...nextStats,
         sparks: (nextStats.sparks || 0) + 400,
+        sparksEarned: (nextStats.sparksEarned || 0) + 400,
       };
       message = `Already owned ${reward.avatarName || "Item"}! Converted to +400 Sparks.`;
     }
@@ -197,6 +199,7 @@ export function applySpinReward(
 
   try {
     saveStats(nextStats);
+    saveProfile(nextProfile);
   } catch {
     /* ignore */
   }

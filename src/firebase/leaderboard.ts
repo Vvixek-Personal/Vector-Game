@@ -10,13 +10,14 @@ import {
   limit,
   onSnapshot,
   serverTimestamp,
+  runTransaction,
   type Unsubscribe,
 } from "firebase/firestore";
 import { db, auth, sanitizeFirestoreData } from "./config";
 import type { Profile } from "../game/profile";
 import type { GameMode } from "../game/types";
 import { TITLES } from "../game/profile";
-import { getWeeklyId } from "../game/storage";
+import { scoreBucket, getDailyId, getWeeklyId } from "../game/storage";
 
 export interface LeaderboardRecord {
   id: string;
@@ -35,6 +36,7 @@ export interface LeaderboardRecord {
 }
 
 export interface ScoreSubmissionParams {
+  challengeId?: string;
   mode: GameMode;
   score: number;
   streak: number;
@@ -57,6 +59,7 @@ export async function submitScoreToCloud(
   levelArg?: number
 ): Promise<boolean> {
   const currentUser = auth.currentUser;
+  if (paramsOrMode === "practice" || (typeof paramsOrMode === "object" && paramsOrMode.mode === "practice")) return false;
 
   let mode: GameMode;
   let score: number;
@@ -89,28 +92,18 @@ export async function submitScoreToCloud(
     level = levelArg ?? 0;
   }
 
-  const modeString = mode === "weekly" ? `weekly_${getWeeklyId()}` : mode;
+  const modeString = scoreBucket(mode, typeof paramsOrMode === "object" ? paramsOrMode.challengeId : undefined);
 
-  if (!currentUser || score <= 0) return false;
+  if (!currentUser || !Number.isSafeInteger(score) || score <= 0 || !Number.isSafeInteger(streak) || streak < 0) return false;
 
   try {
     const docId = `${currentUser.uid}_${modeString}`;
     const scoreRef = doc(db, "leaderboard", docId);
 
-    // Check if existing record is higher
-    const existingSnap = await getDoc(scoreRef);
-    if (existingSnap.exists()) {
-      const prevData = existingSnap.data() as LeaderboardRecord;
-      if (prevData.score >= score) {
-        // Did not beat personal best in this mode
-        return false;
-      }
-    }
-
     const payload: LeaderboardRecord = {
       id: docId,
       userId: currentUser.uid,
-      userName: operativeName.trim() || currentUser.displayName || "Operative",
+      userName: (operativeName.trim() || currentUser.displayName || "Operative").slice(0, 30),
       userPhoto: userPhoto || currentUser.photoURL || null as unknown as undefined,
       avatarId: avatarId || "spark",
       frameId: frameId || "none",
@@ -123,12 +116,19 @@ export async function submitScoreToCloud(
       updatedAt: serverTimestamp(),
     };
 
-    await setDoc(scoreRef, sanitizeFirestoreData(payload));
-
-    // Also update Overall Leaderboard record
-    await updateOverallScore(currentUser.uid, payload.userName, payload.userPhoto, payload.avatarId, payload.frameId, payload.useGooglePfp, titleName, level);
-
-    return true;
+    return await runTransaction(db, async transaction => {
+      const overallRef = doc(db, 'leaderboard', currentUser.uid + '_overall');
+      const [existing, overall] = await Promise.all([transaction.get(scoreRef), transaction.get(overallRef)]);
+      const previous = existing.exists() ? existing.data().score ?? 0 : 0;
+      if (previous >= score) return false;
+      const overallData = overall.exists() ? overall.data() : {};
+      transaction.set(scoreRef, sanitizeFirestoreData(payload));
+      transaction.set(overallRef, sanitizeFirestoreData({ ...payload, id: currentUser.uid + '_overall', mode: 'overall',
+        score: Math.max(0, (overallData.score ?? 0) + score - previous),
+        streak: Math.max(overallData.streak ?? 0, streak),
+      }));
+      return true;
+    });
   } catch (error) {
     console.warn("Could not submit score to cloud leaderboard:", error);
     return false;
@@ -137,71 +137,14 @@ export async function submitScoreToCloud(
 
 export { submitScoreToCloud as submitScore };
 
-// Calculate and update user's overall leaderboard record
-async function updateOverallScore(
-  userId: string,
-  userName: string,
-  userPhoto: string | undefined,
-  avatarId: string | undefined,
-  frameId: string | undefined,
-  useGooglePfp: boolean | undefined,
-  title: string,
-  level: number
-) {
-  try {
-    const overallDocId = `${userId}_overall`;
-    const overallRef = doc(db, "leaderboard", overallDocId);
-
-    // Query all user's mode scores to calculate overall combined score
-    const userScoresQuery = query(
-      collection(db, "leaderboard"),
-      where("userId", "==", userId)
-    );
-
-    const scoresSnap = await getDocs(userScoresQuery);
-    let totalScore = 0;
-    let maxStreak = 0;
-
-    scoresSnap.forEach((docSnap) => {
-      const data = docSnap.data() as LeaderboardRecord;
-      if (data.mode !== "overall") {
-        totalScore += data.score;
-        maxStreak = Math.max(maxStreak, data.streak);
-      }
-    });
-
-    // Update overall with updated score
-    await setDoc(
-      overallRef,
-      sanitizeFirestoreData({
-        id: overallDocId,
-        userId,
-        userName: userName || "Operative",
-        userPhoto: userPhoto || null,
-        avatarId: avatarId || "spark",
-        frameId: frameId || "none",
-        useGooglePfp: typeof useGooglePfp === "boolean" ? useGooglePfp : false,
-        title: title || "Operative",
-        level: level ?? 0,
-        mode: "overall",
-        score: Math.max(totalScore, 0),
-        streak: maxStreak,
-        updatedAt: serverTimestamp(),
-      }),
-      { merge: true }
-    );
-  } catch (err) {
-    console.warn("Overall score update error:", err);
-  }
-}
-
 // Subscribe to real-time leaderboard entries for any mode or overall
 export function subscribeToLeaderboard(
   mode: string,
-  callback: (entries: LeaderboardRecord[]) => void
+  callback: (entries: LeaderboardRecord[]) => void,
+  onError?: (error: unknown) => void
 ): Unsubscribe {
   try {
-    const modeString = mode === "weekly" ? `weekly_${getWeeklyId()}` : mode;
+    const modeString = mode === "weekly" ? `weekly_${getWeeklyId()}` : mode === "daily" ? `daily_${getDailyId()}` : mode;
     const q = query(
       collection(db, "leaderboard"),
       where("mode", "==", modeString),
@@ -227,11 +170,13 @@ export function subscribeToLeaderboard(
       (error) => {
         console.warn("Leaderboard snapshot listener warning:", error);
         callback([]);
+        onError?.(error);
       }
     );
   } catch (err) {
     console.warn("Leaderboard subscription error:", err);
     callback([]);
+    onError?.(err);
     return () => {};
   }
 }

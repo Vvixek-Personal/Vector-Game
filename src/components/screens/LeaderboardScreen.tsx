@@ -21,6 +21,8 @@ const buildMockProfile = (item: LeaderboardRecord): Profile => ({
 });
 
 const LEADERBOARD_TABS: { id: string; label: string; color: string }[] = [
+  { id: "daily", label: "Daily", color: MODES.daily.color },
+  { id: "weekly", label: "Weekly", color: MODES.weekly.color },
   { id: "overall", label: "Overall", color: "#38bdf8" },
   { id: "arcade", label: "Arcade", color: MODES.arcade.color },
   { id: "rush", label: "Rush", color: MODES.rush.color },
@@ -36,16 +38,19 @@ const LEADERBOARD_TABS: { id: string; label: string; color: string }[] = [
 export default function LeaderboardScreen({ initialMode = "overall", onSelectMode }: Props) {
   const [activeTab, setActiveTab] = useState(initialMode);
   const [records, setRecords] = useState<LeaderboardRecord[]>([]);
+  const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);
   const [viewingPlayer, setViewingPlayer] = useState<LeaderboardRecord | null>(null);
   const { user } = useAuth();
 
   useEffect(() => {
     setLoading(true);
+    setError(false);
+    setRecords([]);
     const unsubscribe = subscribeToLeaderboard(activeTab, (entries) => {
       setRecords(entries);
       setLoading(false);
-    });
+    }, () => { setError(true); setLoading(false); });
 
     return () => unsubscribe();
   }, [activeTab]);
@@ -94,6 +99,7 @@ export default function LeaderboardScreen({ initialMode = "overall", onSelectMod
         </div>
       </header>
 
+      {error && <p role="status" className="rounded-xl border border-amber-400/30 p-3 text-sm text-amber-200">Rankings are unavailable. Your progress is saved on this device; try again when connected.</p>}
       {/* Google Sign-in Promotion Callout for Guests */}
       {!user && (
         <motion.div

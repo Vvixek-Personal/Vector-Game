@@ -11,8 +11,8 @@ import {
   type IncubatorState,
   type HatchReward,
 } from "../../game/incubator";
-import { type Stats, spendSparks, spendDiamonds } from "../../game/storage";
-import { type Profile } from "../../game/profile";
+import { type Stats, loadStats, spendSparks, spendDiamonds } from "../../game/storage";
+import { loadProfile, type Profile } from "../../game/profile";
 import { uiTap, uiConfirm, uiUnlock } from "../../game/haptics";
 import { Sparkles, Gem, Clock, Zap, Flame, ShieldAlert, Plus, Check } from "lucide-react";
 
@@ -72,16 +72,20 @@ export const IncubatorView: React.FC<Props> = ({
   };
 
   const handleHatch = (podIndex: number) => {
+    const res = hatchPod(podIndex, loadStats(), loadProfile());
+    if (!res) return;
+    onStats(res.nextStats);
+    onProfile(res.nextProfile);
+    setIncubator(res.nextIncubator);
     uiConfirm();
     setCrackingIndex(podIndex);
 
     setTimeout(() => {
-      const res = hatchPod(podIndex, stats, profile);
+      // Rewards are already persisted; animation is presentation only.
       setCrackingIndex(null);
       if (res) {
         setIncubator(res.nextIncubator);
-        onStats(res.nextStats);
-        onProfile(res.nextProfile);
+
         setHatchedReward(res.reward);
         uiUnlock();
       }

@@ -21,7 +21,7 @@ export function xpForLevel(level: number): number {
 
 // Player's lifetime XP calculated from total score, runs, and streaks
 export function xpForStats(stats: Stats): number {
-  return Math.max(0, (stats.totalScore ?? 0) + (stats.runs ?? 0) * 50 + (stats.bestStreak ?? 0) * 10);
+  return Math.max(0, (stats.totalScore ?? 0) + (stats.runs ?? 0) * 50 + (stats.bestStreak ?? 0) * 10 + (stats.bonusXp ?? 0));
 }
 
 // 50 Handcrafted Level Rewards matching real STORE_ITEMS
@@ -62,7 +62,7 @@ export const LEVEL_REWARDS: LevelRewardDef[] = [
   { level: 60, xpRequired: xpForLevel(60), storeItemId: "frm-prism", diamonds: 40 },
   { level: 70, xpRequired: xpForLevel(70), storeItemId: "ban-obsidian", diamonds: 50 },
   { level: 80, xpRequired: xpForLevel(80), storeItemId: "ttl-legend", diamonds: 60 },
-  { level: 90, xpRequired: xpForLevel(90), storeItemId: "ban-aurora-borealis", diamonds: 80 },
+  { level: 90, xpRequired: xpForLevel(90), storeItemId: "ban-aurora", diamonds: 80 },
   { level: 100, xpRequired: xpForLevel(100), storeItemId: "ani-valkyrie", diamonds: 100 },
 ];
 

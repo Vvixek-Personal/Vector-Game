@@ -1,7 +1,7 @@
 import React from "react";
 import DPad from "./DPad";
 import type { HudState, GameMode, DirName, Phase } from "../game/types";
-import { MODES } from "../game/types";
+import { DIR_GLYPH, MODES } from "../game/types";
 import { codeLabel, type Settings } from "../game/storage";
 
 interface Props {
@@ -14,6 +14,7 @@ interface Props {
   muted: boolean;
   musicMuted: boolean;
   onPause: () => void;
+  onFinishPractice: () => void;
   onMute: () => void;
   onMusic: () => void;
   onFocus: () => void;
@@ -66,6 +67,7 @@ export default function HUD({
   muted,
   musicMuted,
   onPause,
+  onFinishPractice,
   onMute,
   onMusic,
   onFocus,
@@ -85,7 +87,7 @@ export default function HUD({
       <div className="relative w-full max-w-5xl h-full pointer-events-none">
         <div className="glass rounded-2xl absolute left-3 top-3 z-20 px-3.5 py-2 sm:left-5 sm:top-5 pointer-events-auto">
           <div className="flex items-center justify-between gap-2">
-            <div className="text-[9px] font-bold tracking-[0.25em] text-white/35">SCORE</div>
+            <div className="text-[9px] font-bold tracking-[0.25em] text-white/35">{mode === "practice" ? "TRAINING" : "SCORE"}</div>
             {best > 0 && hud.score > 0 && (
               <div
                 className={`text-[10px] font-black px-1.5 py-0.5 rounded-full flex items-center gap-1 ${
@@ -104,7 +106,7 @@ export default function HUD({
             {hud.score.toLocaleString()}
           </div>
           <div className="mt-1 flex items-center gap-2 text-[10px] font-semibold text-white/35">
-            <span>BEST {best.toLocaleString()}</span>
+            {mode !== "practice" && <span>BEST {best.toLocaleString()}</span>}
             {hud.modifierMultiplier && hud.modifierMultiplier > 1 && (
               <span className="text-amber-400 font-bold bg-amber-500/15 px-1.5 py-0.5 rounded border border-amber-500/30">
                 {hud.modifierMultiplier}× MULT
@@ -115,7 +117,9 @@ export default function HUD({
 
       {/* center: mode-specific status */}
       <div className="pointer-events-none absolute left-1/2 top-3 z-20 flex -translate-x-1/2 flex-col items-center gap-1 sm:top-5">
-        {mode === "versus" && hud.versus ? (
+        {mode === "practice" ? (
+          <div className="glass rounded-xl px-3 py-2 text-center text-white"><p className="text-[10px] font-bold tracking-wider">PRACTICE · UNTIMED</p><p className="mt-1 text-xs" data-practice-direction={hud.need.join(",")}>Try {hud.need.map(d => DIR_GLYPH[d]).join(" + ")}</p>{phase === "playing" && <button className="pointer-events-auto mt-1 text-xs underline underline-offset-4" onClick={onFinishPractice}>Finish practice</button>}</div>
+        ) : mode === "versus" && hud.versus ? (
           <>
             <div className="glass rounded-xl px-3 py-1.5 text-center">
               <div className="flex items-center gap-3 text-[12px] font-extrabold">
@@ -150,9 +154,9 @@ export default function HUD({
           </div>
         ) : mode === "coop" ? (
           <div className="glass rounded-xl px-3 py-1.5 text-center text-[11px] font-extrabold tracking-widest text-white">
-            P1{"♥".repeat(hud.coopLives[0])} {hud.coopReady[0] ? "✓" : "…"}
+            P1{"♥".repeat(Math.max(0, hud.coopLives[0]))} {hud.coopReady[0] ? "✓" : "…"}
             <span className="mx-1.5 text-white/25">·</span>
-            P2{"♥".repeat(hud.coopLives[1])} {hud.coopReady[1] ? "✓" : "…"}
+            P2{"♥".repeat(Math.max(0, hud.coopLives[1]))} {hud.coopReady[1] ? "✓" : "…"}
           </div>
         ) : hud.combo > 1 || hud.overdrive ? (
           <div
@@ -288,13 +292,19 @@ export default function HUD({
         )}
       </div>
 
+      <div className="hit-feedback" role="status" aria-live="polite" aria-atomic="true">
+        {hud.feedback && <div key={hud.feedback.id} className={`hit-feedback-card feedback-${hud.feedback.kind}`}>
+          <strong>{hud.feedback.kind === "hit" ? "✓ " : "↻ "}{hud.feedback.label}</strong>
+          <span>{hud.feedback.kind === "hit" ? `+${hud.feedback.points ?? 0} pts · ${Math.round(hud.feedback.reactionMs ?? 0)} ms` : mode === "practice" ? "Follow the bright arrow; white swap means opposite." : "Watch the arrow and its badge."}</span>
+        </div>}
+      </div>
       {/* d-pad (solo + versus hot seat; co-op uses split keyboard) */}
       {mode !== "coop" && (
         <DPad
           held={held}
-          hint={hud.need.length === 2 ? hud.need : []}
+          hint={settings.showHints && mode !== "memory" && !hud.modifiers?.phantomMirage && (hud.need.length === 2 || mode === "practice") ? hud.need : []}
           accent="var(--brand)"
-          mark={hud.mark}
+          mark={mode === "memory" && hud.memory === "recall" ? "none" : hud.mark}
           layout={padLayout}
           scale={settings.dpadScale}
           onPress={onDir}

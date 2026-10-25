@@ -72,8 +72,8 @@ export default defineConfig(() => {
       tailwindcss(), 
       aistudioMediaPlugin(),
       VitePWA({
-        registerType: 'autoUpdate',
-        includeAssets: ['favicon.ico', 'apple-touch-icon.jpg', 'icon.svg'],
+        registerType: 'prompt',
+        includeAssets: ['apple-touch-icon.png', 'icon.svg'],
         manifest: {
           id: '/',
           name: 'Vector',
@@ -86,21 +86,21 @@ export default defineConfig(() => {
           scope: '/',
           icons: [
             {
-              src: '/pwa-192x192.jpg',
+              src: '/pwa-192x192.png',
               sizes: '192x192',
-              type: 'image/jpeg',
+              type: 'image/png',
               purpose: 'any',
             },
             {
-              src: '/pwa-512x512.jpg',
+              src: '/pwa-512x512.png',
               sizes: '512x512',
-              type: 'image/jpeg',
+              type: 'image/png',
               purpose: 'any',
             },
             {
-              src: '/pwa-512x512.jpg',
+              src: '/pwa-512x512.png',
               sizes: '512x512',
-              type: 'image/jpeg',
+              type: 'image/png',
               purpose: 'maskable',
             },
           ],
@@ -139,11 +139,21 @@ export default defineConfig(() => {
           ],
         },
         devOptions: {
-          enabled: true,
+          enabled: false,
           type: 'module',
         },
       }),
     ],
+    build: {
+      rollupOptions: { output: { manualChunks(id) {
+        if (id.includes("node_modules")) {
+          if (id.includes("firebase")) return "cloud";
+          if (id.includes("motion")) return "motion";
+          if (id.includes("lucide")) return "icons";
+          if (id.includes("react")) return "react";
+        }
+      } } },
+    },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, 'src'),

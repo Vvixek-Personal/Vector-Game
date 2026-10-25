@@ -1,17 +1,20 @@
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "./firebase/config";
+import { beginCloudSync, completeCloudSync, queueCloudSave, SAVE_KEYS } from "./firebase/cloudSave";
+import { safeStorage as localStorage } from "./game/persistence";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence, MotionConfig, useReducedMotion } from "motion/react";
+import PWAUpdateNotice from "./components/PWAUpdateNotice";
 import Dock from "./components/Dock";
 import HUD from "./components/HUD";
 import WavyBackground from "./components/WavyBackground";
 import HomeScreen from "./components/screens/HomeScreen";
-import StoreScreen from "./components/screens/StoreScreen";
-import StatsScreen from "./components/screens/StatsScreen";
-import SettingsScreen from "./components/screens/SettingsScreen";
-import ProfileScreen from "./components/screens/ProfileScreen";
-import LeaderboardScreen from "./components/screens/LeaderboardScreen";
+const StoreScreen = lazy(() => import("./components/screens/StoreScreen"));
+const StatsScreen = lazy(() => import("./components/screens/StatsScreen"));
+const SettingsScreen = lazy(() => import("./components/screens/SettingsScreen"));
+const ProfileScreen = lazy(() => import("./components/screens/ProfileScreen"));
+const LeaderboardScreen = lazy(() => import("./components/screens/LeaderboardScreen"));
 import { GameOverOverlay, PauseOverlay, TutorialOverlay, PrepOverlay } from "./components/overlays/Overlays";
 import { ModifiersModal } from "./components/ModifiersModal";
 import { type GameModifiers, loadModifiers, getModifierMultiplier } from "./game/modifiers";
@@ -34,8 +37,10 @@ import {
   type Stats,
 } from "./game/storage";
 import type { GameSummary } from "./game/types";
-import { loadProfile, saveProfile, type Profile } from "./game/profile";
+import { TITLES, loadProfile, saveProfile, type Profile } from "./game/profile";
 import { submitScore } from "./firebase/leaderboard";
+import { loadMissions, updateMissionsProgress } from "./game/missions";
+import { STORE_ITEMS } from "./game/catalog";
 import { getPlayerLevelProgress } from "./game/levels";
 import { useAuth } from "./firebase/auth";
 
@@ -67,12 +72,16 @@ export default function App() {
   const engineRef = useRef<Engine | null>(null);
   const phaseRef = useRef<Phase>("menu");
   const [phase, setPhase] = useState<Phase>("menu");
+  const [countdown, setCountdown] = useState<number | null>(null);
+  const countdownTimer = useRef<number | null>(null);
   const [prepMode, setPrepMode] = useState<GameMode | null>(null);
   const [screen, setScreen] = useState<Screen>("home");
   const [mode, setMode] = useState<GameMode>("arcade");
   const [name, setName] = useState(() => loadName());
   const nameRef = useRef(name);
   const [settings, setSettings] = useState<Settings>(() => loadSettings());
+  const systemReducedMotion = useReducedMotion();
+  const reduceMotion = settings.reducedMotion || !!systemReducedMotion;
   const [profile, setProfile] = useState<Profile>(() => loadProfile());
   const profileRef = useRef(profile);
   const [hud, setHud] = useState<HudState>(INITIAL_HUD);
@@ -91,7 +100,8 @@ export default function App() {
     modifiersRef.current = modifiers;
   }, [modifiers]);
 
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const [cloudLoaded, setCloudLoaded] = useState(false);
   const [showNamePopup, setShowNamePopup] = useState(false);
   const [tempName, setTempName] = useState("");
   const [dailyReward, setDailyReward] = useState<{ sparks: number; diamonds: number; streak: number } | null>(null);
@@ -99,60 +109,66 @@ export default function App() {
   const statsRef = useRef(stats);
 
   useEffect(() => {
-    // Check daily login
-    const reward = checkDailyLogin(stats);
+    if (!cloudLoaded) return;
+    const reward = checkDailyLogin(loadStats());
     if (reward) {
-      setStats(reward.nextStats);
+      statsRef.current = reward.nextStats; setStats(reward.nextStats);
       setDailyReward({ sparks: reward.rewardSparks, diamonds: reward.rewardDiamonds, streak: reward.nextStats.loginStreak || 1 });
     }
-  }, []);
+  }, [cloudLoaded]);
 
   useEffect(() => {
-    if (user && !localStorage.getItem("vector_name_set")) {
-      setTempName(user.displayName?.split(" ")[0] || "Operative");
-      setShowNamePopup(true);
-    }
-    
-    // Cloud Save Sync
-    if (user) {
-      getDoc(doc(db, "users", user.uid)).then((snap) => {
-        if (snap.exists()) {
-          const data = snap.data();
-          if (data.stats && data.stats.totalScore > (statsRef.current.totalScore || 0)) {
-            setStats(data.stats);
-            localStorage.setItem("vector_stats_v2", JSON.stringify(data.stats));
-          }
-          if (data.profile) {
-            setProfile(data.profile);
-            localStorage.setItem("vector_profile_v5", JSON.stringify(data.profile));
-          }
-          if (data.settings) {
-            setSettings(data.settings);
-            localStorage.setItem("vector_settings", JSON.stringify(data.settings));
-          }
-          if (data.missions) {
-            localStorage.setItem("vector_missions_v1", JSON.stringify(data.missions));
-          }
-          if (data.operativeName) {
-            setName(data.operativeName);
-            localStorage.setItem("vector_name", data.operativeName);
-          }
+    if (authLoading) return;
+    beginCloudSync();
+    if (!user) { setCloudLoaded(true); return; }
+    setCloudLoaded(false);
+    let cancelled = false;
+    const baseline = Object.fromEntries(Object.entries(SAVE_KEYS).map(([field, key]) => [field, localStorage.getItem(key)]));
+    let timer: ReturnType<typeof setTimeout>;
+    const timeout = new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new Error('Cloud restore timed out')), 6000); });
+    Promise.race([getDoc(doc(db, 'users', user.uid)), timeout]).then(snap => {
+      if (cancelled) return;
+      const data = snap.exists() ? snap.data() : {};
+      for (const [field, key] of Object.entries(SAVE_KEYS)) {
+        if (data[field] == null || baseline[field] !== localStorage.getItem(key) || phaseRef.current !== 'menu') continue;
+        const remoteTime = Number(data[field + 'UpdatedAt']) || 0;
+        const localTime = Number(localStorage.getItem(key + '_updatedAt')) || 0;
+        const legacyIsNewer = !remoteTime && (field !== 'stats' || (data.stats.totalScore ?? 0) >= loadStats().totalScore);
+        if (remoteTime < localTime && !legacyIsNewer) continue;
+        if (baseline[field]) localStorage.setItem(key + '_before_cloud_restore', baseline[field]);
+        localStorage.setItem(key, field === 'operativeName' ? String(data[field]) : JSON.stringify(data[field]));
+        localStorage.setItem(key + '_updatedAt', String(remoteTime));
+      }
+      statsRef.current = loadStats(); profileRef.current = loadProfile(); nameRef.current = loadName();
+      setStats(statsRef.current); setProfile(profileRef.current); setSettings(loadSettings()); setName(nameRef.current);
+      if (!user.isAnonymous && !data.operativeName && !localStorage.getItem('vector_name_set')) {
+        setTempName(user.displayName?.split(' ')[0] || 'Operative'); setShowNamePopup(true);
+      }
+      completeCloudSync(user.uid);
+      const patch: Record<string, unknown> = {};
+      for (const [field, key] of Object.entries(SAVE_KEYS)) {
+        const raw = localStorage.getItem(key);
+        if (raw) {
+          try { patch[field] = field === 'operativeName' ? raw : JSON.parse(raw); patch[field + 'UpdatedAt'] = Number(localStorage.getItem(key + '_updatedAt')) || Date.now(); } catch {}
         }
-      }).catch(console.warn);
-    }
-  }, [user]);
+      }
+      queueCloudSave(patch);
+    }).catch(err => {
+      if (!cancelled) console.warn('Cloud restore unavailable; local progress is available.', err);
+    }).finally(() => { clearTimeout(timer); if (!cancelled) setCloudLoaded(true); });
+    return () => { cancelled = true; clearTimeout(timer); beginCloudSync(); };
+  }, [user, authLoading]);
 
   useEffect(() => {
     phaseRef.current = phase;
   }, [phase]);
   useEffect(() => {
     nameRef.current = name;
-    saveName(name);
-  }, [name]);
+    if (cloudLoaded) saveName(name);
+  }, [name, cloudLoaded]);
   useEffect(() => {
     profileRef.current = profile;
-    saveProfile(profile);
-  }, [profile]);
+  }, [profile, cloudLoaded]);
   useEffect(() => {
     statsRef.current = stats;
   }, [stats]);
@@ -165,18 +181,22 @@ export default function App() {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const engine = new Engine(canvas, loadSettings(), {
-      onPhase: setPhase,
+      onPhase: (next) => { phaseRef.current = next; setPhase(next); if (next !== "playing") setHeld([]); },
       onHud: setHud,
       onOver: (sum) => {
+        if (sum.mode === "practice") {
+          sum.xpGained = 0; setSummary(sum); setHeld([]); return;
+        }
         if (sum.score > 0) {
           addScore(sum.mode, {
             score: sum.score,
             name: nameRef.current.trim().toUpperCase() || "ACE",
             date: new Date().toLocaleDateString(),
-          });
+          }, sum.challengeId);
         }
+        sum.xpGained = sum.score + 50 + Math.max(0, sum.bestStreak - loadStats().bestStreak) * 10;
         recordRun(sum.score, sum.bestStreak, sum.fastestMs, {
-          hits: sum.hits, misses: sum.misses, playSeconds: sum.playSeconds,
+          hits: sum.hits, misses: sum.misses, perfectHits: sum.perfectHits, modifierMultiplier: sum.modifierMultiplier, playSeconds: sum.playSeconds,
           avgMs: sum.avgReactionMs, mode: sum.mode, acc: sum.accuracy,
         });
         setScores(loadScores(sum.mode));
@@ -184,14 +204,7 @@ export default function App() {
         setStats(updatedStats);
         
         // Update Missions
-        import("./game/missions").then((m) => {
-          m.updateMissionsProgress(m.loadMissions(), {
-            runs: 1,
-            score: sum.score,
-            streak: sum.bestStreak,
-            perfectHits: sum.hits, // Simplification for perfect hits
-          });
-        });
+        updateMissionsProgress(loadMissions(), { runs: 1, score: sum.score, streak: sum.bestStreak, perfectHits: sum.perfectHits });
 
         setSummary(sum);
         setHeld([]);
@@ -202,9 +215,11 @@ export default function App() {
           submitScore(
             {
               mode: sum.mode,
+              challengeId: sum.challengeId,
               score: sum.score,
               streak: sum.bestStreak,
               userName: nameRef.current.trim() || "Ace",
+              title: TITLES.find(t => t.id === profileRef.current.titleId)?.name ?? "Operative",
               avatarId: profileRef.current.avatarId,
               frameId: profileRef.current.frameId,
               useGooglePfp: profileRef.current.useGooglePfp,
@@ -229,12 +244,12 @@ export default function App() {
 
   // settings persistence + live engine config
   useEffect(() => {
-    saveSettings(settings);
-    engineRef.current?.configure(settings);
+    if (cloudLoaded) saveSettings(settings);
+    engineRef.current?.configure({ ...settings, reducedMotion: reduceMotion });
     document.documentElement.setAttribute("data-theme", settings.uiMode || "dark");
     document.documentElement.setAttribute("data-color", settings.colorway || "cobalt");
     document.documentElement.setAttribute("data-text-size", settings.textSize || "medium");
-    if (settings.reducedMotion) {
+    if (reduceMotion) {
       document.documentElement.classList.add("reduce-game-motion");
     } else {
       document.documentElement.classList.remove("reduce-game-motion");
@@ -243,13 +258,14 @@ export default function App() {
     if (metaTheme) {
       metaTheme.setAttribute("content", settings.uiMode === "light" ? "#f6f6f8" : "#121418");
     }
-  }, [settings]);
+  }, [settings, cloudLoaded, reduceMotion]);
 
   useEffect(() => {
     profileRef.current = profile;
-    saveProfile(profile);
+    if (cloudLoaded) saveProfile(profile);
     engineRef.current?.setAudioPack(profile.audioPackId);
-  }, [profile]);
+    engineRef.current?.setArenaTheme(STORE_ITEMS.find(item => item.id === profile.arenaThemeId && profile.purchased.includes(item.id))?.themeSwatch);
+  }, [profile, cloudLoaded]);
 
   const updateProfile = useCallback((p: Profile) => setProfile(p), []);
 
@@ -277,17 +293,31 @@ export default function App() {
     }
   }, []);
 
+  const stopCountdown = useCallback(() => {
+    if (countdownTimer.current !== null) window.clearInterval(countdownTimer.current);
+    countdownTimer.current = null; setCountdown(null);
+  }, []);
+  useEffect(() => () => {
+    if (countdownTimer.current !== null) window.clearInterval(countdownTimer.current);
+  }, []);
   const start = useCallback((m?: GameMode) => {
     const engine = engineRef.current;
     if (!engine) return;
-    const mode = m ?? modeRef.current;
-    modeRef.current = mode;
-    setMode(mode);
-    engine.sound.ensure();
-    engine.sound.click();
-    engine.startGame(mode, modifiersRef.current);
-    setPhase("playing");
-  }, []);
+    stopCountdown();
+    const nextMode = m ?? modeRef.current;
+    modeRef.current = nextMode; setMode(nextMode);
+    const nextModifiers = { ...modifiersRef.current };
+    engine.toMenu(); engine.sound.ensure(); engine.sound.click();
+    phaseRef.current = 'countdown'; setPhase('countdown'); setCountdown(3);
+    let remaining = 3;
+    countdownTimer.current = window.setInterval(() => {
+      remaining--;
+      if (remaining > 0) { setCountdown(remaining); engine.sound.click(); }
+      else {
+        stopCountdown(); engine.startGame(nextMode, nextModifiers);
+      }
+    }, 1000);
+  }, [stopCountdown]);
 
   const modeRef = useRef(mode);
   const tutorialMode = useRef<GameMode | null>(null);
@@ -338,11 +368,20 @@ export default function App() {
   }, []);
 
   const goHome = useCallback(() => {
+    stopCountdown();
     engineRef.current?.toMenu();
     setScores(loadScores(modeRef.current));
     setScreen("home");
     setPhase("menu");
-  }, []);
+  }, [stopCountdown]);
+
+  useEffect(() => {
+    const cancelIfHidden = () => { if (phaseRef.current === "countdown") goHome(); };
+    const onVisibility = () => { if (document.hidden) cancelIfHidden(); };
+    window.addEventListener("blur", cancelIfHidden);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => { window.removeEventListener("blur", cancelIfHidden); document.removeEventListener("visibilitychange", onVisibility); };
+  }, [goHome]);
 
   const togglePause = useCallback(() => {
     const engine = engineRef.current;
@@ -404,7 +443,8 @@ export default function App() {
       if (e.defaultPrevented || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
       const target = e.target as HTMLElement | null;
       if (target?.closest("input, textarea, select, [contenteditable='true']")) return;
-      if (showTutorial) return;
+      if (phaseRef.current === "countdown" && e.key === "Escape") { e.preventDefault(); goHome(); return; }
+      if (showTutorial || prepMode || dailyReward || showNamePopup || showModifiersModal) return;
       const k = e.key;
       if ((k === "p" || k === "P" || k === "Escape") && (phaseRef.current === "playing" || phaseRef.current === "paused")) {
         togglePause();
@@ -420,19 +460,21 @@ export default function App() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [start, play, togglePause, onMute, showTutorial, screen]);
+  }, [start, play, togglePause, onMute, showTutorial, screen, prepMode, dailyReward, showNamePopup, showModifiersModal, goHome]);
 
   return (
+    <MotionConfig reducedMotion={reduceMotion ? "always" : "never"} transition={{ duration: .2, ease: [.22, 1, .36, 1] }}>
     <div
       data-theme={settings.uiMode}
       data-color={settings.colorway}
       data-text-size={settings.textSize || "medium"}
       className={`app-shell relative h-[100dvh] w-full select-none overflow-hidden ${
         settings.largeUi ? "large-game-ui" : ""
-      } ${settings.highContrast ? "high-contrast-game" : ""} ${settings.reducedMotion ? "reduce-game-motion" : ""} ${settings.compactHud ? "compact-hud" : ""} ${settings.colorBlind ? "color-blind" : ""}`}
+      } ${settings.highContrast ? "high-contrast-game" : ""} ${reduceMotion ? "reduce-game-motion" : ""} ${settings.compactHud ? "compact-hud" : ""} ${settings.colorBlind ? "color-blind" : ""}`}
     >
       <canvas ref={canvasRef} className={`game-canvas ${phase === "menu" ? "is-idle" : ""}`} />
 
+      {phase === "menu" && <PWAUpdateNotice />}
       {/* ---------- menu ---------- */}
       {phase === "menu" && (
         <>
@@ -444,14 +486,16 @@ export default function App() {
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div
                   key={screen}
-                  initial={settings.reducedMotion ? false : { opacity: 0, y: 14, filter: "blur(4px)" }}
+                  initial={reduceMotion ? false : { opacity: 0, y: 14, filter: "blur(4px)" }}
                   animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                  exit={settings.reducedMotion ? undefined : { opacity: 0, y: -10, filter: "blur(4px)" }}
+                  exit={reduceMotion ? undefined : { opacity: 0, y: -10, filter: "blur(4px)" }}
                   transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
                   className="w-full min-h-full"
                 >
+                  <Suspense fallback={<p className="p-8" role="status">Opening…</p>}>
                   {screen === "home" ? (
                     <HomeScreen
+                      keyboardEnabled={!prepMode && !showTutorial && !dailyReward && !showNamePopup && !showModifiersModal}
                       mode={mode}
                       onMode={setMode}
                       name={name}
@@ -461,7 +505,7 @@ export default function App() {
                       profile={profile}
                       onPlay={play}
                       onHowToPlay={howTo}
-                      reducedMotion={settings.reducedMotion}
+                      reducedMotion={reduceMotion}
                       showHints={settings.showHints}
                       onFullscreen={toggleFullscreen}
                       onProfile={() => setScreen("profile")}
@@ -470,8 +514,8 @@ export default function App() {
                       onUpdateProfile={updateProfile}
                       settings={settings}
                       modifiers={modifiers}
-                      modifierMultiplier={getModifierMultiplier(modifiers)}
-                      onOpenModifiers={() => setShowModifiersModal(true)}
+                      modifierMultiplier={mode === "practice" || mode === "daily" || mode === "weekly" ? 1 : getModifierMultiplier(modifiers)}
+                      onOpenModifiers={mode === "practice" || mode === "daily" || mode === "weekly" ? undefined : () => setShowModifiersModal(true)}
                     />
                   ) : screen === "leaderboard" ? (
                     <LeaderboardScreen
@@ -510,15 +554,16 @@ export default function App() {
                   ) : screen === "store" ? (
                     <StoreScreen stats={stats} onStats={setStats} profile={profile} onProfile={updateProfile} />
                   ) : screen === "stats" ? (
-                    <StatsScreen stats={stats} onLeaderboard={() => setScreen("leaderboard")} />
+                    <StatsScreen reducedMotion={reduceMotion} stats={stats} onLeaderboard={() => setScreen("leaderboard")} />
                   ) : (
                     <SettingsScreen settings={settings} onChange={updateSetting} onBack={() => setScreen("home")} />
                   )}
+                  </Suspense>
                 </motion.div>
               </AnimatePresence>
             </div>
           </div>
-          <Dock active={screen} onChange={setScreen} />
+          <Dock active={screen === "missions" ? "profile" : screen} onChange={setScreen} />
         </>
       )}
 
@@ -533,6 +578,7 @@ export default function App() {
           settings={settings}
           muted={muted}
           musicMuted={musicMuted}
+          onFinishPractice={() => engineRef.current?.finishPractice()}
           onPause={togglePause}
           onMute={onMute}
           onMusic={onMusic}
@@ -542,6 +588,14 @@ export default function App() {
         />
       )}
 
+      {phase === "countdown" && countdown !== null && (
+        <div className="start-countdown fixed inset-0 z-40 flex flex-col items-center justify-center gap-5 bg-slate-950 text-white" role="dialog" aria-modal="true" aria-label="Get ready">
+          <p className="text-xs font-bold uppercase tracking-[.25em] text-white/50">Get ready · {MODES[mode].label}</p>
+          <div className="countdown-number" role="status" aria-live="assertive" aria-atomic="true">{countdown}</div>
+          <p className="text-sm text-white/60">{mode === "coop" ? "Player 1: WASD · Player 2: arrows" : mode === "practice" ? "No timer. Learn at your own pace." : "Arrow keys, WASD, tap or swipe"}</p>
+          <button className="text-button text-white/70" onClick={goHome}>Cancel</button>
+        </div>
+      )}
       {/* prep menu */}
       <AnimatePresence>
         {prepMode && phase === "menu" && (
@@ -554,8 +608,8 @@ export default function App() {
             onStart={() => confirmPlay()}
             onCancel={() => setPrepMode(null)}
             settings={settings}
-            modifierMultiplier={getModifierMultiplier(modifiers)}
-            onOpenModifiers={() => setShowModifiersModal(true)}
+            modifierMultiplier={mode === "practice" || mode === "daily" || mode === "weekly" ? 1 : getModifierMultiplier(modifiers)}
+            onOpenModifiers={mode === "practice" || mode === "daily" || mode === "weekly" ? undefined : () => setShowModifiersModal(true)}
           />
         )}
       </AnimatePresence>
@@ -571,6 +625,7 @@ export default function App() {
           <PauseOverlay
             score={hud.score}
             mode={mode}
+            onFinishPractice={() => engineRef.current?.finishPractice()}
             onResume={togglePause}
             onRestart={start}
             onHome={goHome}
@@ -584,6 +639,7 @@ export default function App() {
           <GameOverOverlay
             summary={summary}
             stats={stats}
+            profile={profile}
             onAgain={start}
             onHome={goHome}
             onShare={share}
@@ -689,6 +745,7 @@ export default function App() {
         )}
       </AnimatePresence>
 
+      {user && !cloudLoaded && phase === "menu" && <div role="status" className="fixed inset-0 z-[250] grid place-items-center bg-slate-950/90 text-white"><p>Restoring your progress…</p></div>}
       <ModifiersModal
         isOpen={showModifiersModal}
         onClose={() => setShowModifiersModal(false)}
@@ -696,5 +753,6 @@ export default function App() {
         onChange={setModifiers}
       />
     </div>
+    </MotionConfig>
   );
 }

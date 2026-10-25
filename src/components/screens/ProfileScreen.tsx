@@ -4,7 +4,7 @@ import type { Profile } from "../../game/profile";
 import { TITLES } from "../../game/profile";
 import { STORE_ITEMS, type StoreItem } from "../../game/catalog";
 import type { Stats } from "../../game/storage";
-import { saveStats } from "../../game/storage";
+import { saveStats, loadStats } from "../../game/storage";
 import { saveProfile } from "../../game/profile";
 import { uiTap, uiConfirm, uiUnlock } from "../../game/haptics";
 import Icon from "../Icon";
@@ -75,26 +75,18 @@ export default function ProfileScreen({
   }, []);
 
   const handleClaimMission = (mission: Mission) => {
-    if (!missionsState) return;
-    uiTap();
-    // In real app we'd grant the rewards to global stats, for now just marking claimed
-    const next = { ...missionsState };
-    const tabList = next[mission.type] as Mission[];
-    const idx = tabList.findIndex(m => m.id === mission.id);
-    if (idx > -1) {
-      (tabList[idx] as any).claimed = true;
-      setMissionsState(next);
-      saveMissions(next);
-      
-      const newStats = { ...stats };
-      newStats.sparks = (newStats.sparks || 0) + mission.rewardXp;
-      newStats.diamonds = (newStats.diamonds || 0) + mission.rewardDiamonds;
-      saveStats(newStats);
-      onStats(newStats);
-      
-      setFeedback(`Earned ${mission.rewardXp} XP and ${mission.rewardDiamonds} Diamonds`);
-      setTimeout(() => setFeedback(""), 3000);
-    }
+    const current = loadMissions();
+    const stored = current[mission.type].find(m => m.id === mission.id);
+    if (!stored?.completed || stored.claimed) return;
+    const next = { ...current, [mission.type]: current[mission.type].map(m => m.id === stored.id ? { ...m, claimed: true } : m) };
+    saveMissions(next);
+    setMissionsState(next);
+    const latest = loadStats();
+    const newStats = { ...latest, bonusXp: (latest.bonusXp ?? 0) + stored.rewardXp, diamonds: latest.diamonds + stored.rewardDiamonds };
+    saveStats(newStats);
+    onStats?.(newStats);
+    uiUnlock();
+    setFeedback(`Earned ${stored.rewardXp} XP and ${stored.rewardDiamonds} Diamonds`);
   };
 
   const sparks = stats.sparks ?? 0;
@@ -150,6 +142,7 @@ export default function ProfileScreen({
       const targetStyle = item.apply?.bannerStyle || item.id.replace("sty-", "");
       return profile.bannerStyle === targetStyle;
     }
+    if (item.tab === "themes") return profile.arenaThemeId === item.id;
     if (item.tab === "audio") {
       return profile.audioPackId === item.apply?.audioPackId;
     }
@@ -167,6 +160,7 @@ export default function ProfileScreen({
     if (item.apply.titleId) next.titleId = item.apply.titleId;
     if (item.apply.bannerStyle) next.bannerStyle = item.apply.bannerStyle;
     if (item.apply.audioPackId) next.audioPackId = item.apply.audioPackId;
+    if (item.apply.arenaThemeId) next.arenaThemeId = item.apply.arenaThemeId;
 
     saveProfile(next);
     onProfile(next);
@@ -734,7 +728,7 @@ export default function ProfileScreen({
           {missionsState && (
             <div className="space-y-4">
               {missionsState[missionsTab].map(m => {
-                const isClaimed = (m as any).claimed;
+                const isClaimed = m.claimed;
                 const isComplete = m.completed;
                 const pct = Math.min(100, Math.round((m.progress / m.requirement) * 100));
 

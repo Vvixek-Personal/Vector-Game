@@ -15,6 +15,7 @@ interface Particle {
 }
 
 interface FloatText {
+  y0: number;
   x: number;
   y: number;
   vy: number;
@@ -75,7 +76,7 @@ export class Fx {
   }
 
   float(text: string, color: string, x: number, y: number, size = 22) {
-    this.floats.push({ x, y, vy: -46, life: 0, max: 0.95, text, color, size });
+    this.floats.push({ x, y, y0: y, vy: -46, life: 0, max: 0.95, text, color, size });
     if (this.floats.length > 10) this.floats.shift();
   }
 
@@ -155,8 +156,8 @@ export class Fx {
     this.flashWhite = Math.max(this.flashWhite, strength);
   }
 
-  render(ctx: CanvasRenderingContext2D) {
-    for (const p of this.particles) {
+  render(ctx: CanvasRenderingContext2D, showFloats = true, reducedMotion = false) {
+    for (const p of reducedMotion ? [] : this.particles) {
       if (p.life < 0) continue;
       const k = p.life / p.max;
       ctx.globalAlpha = 1 - k;
@@ -175,7 +176,7 @@ export class Fx {
     }
     ctx.globalAlpha = 1;
 
-    for (const f of this.floats) {
+    for (const f of showFloats ? this.floats : []) {
       const k = f.life / f.max;
       ctx.globalAlpha = 1 - k * k;
       ctx.font = `800 ${f.size}px "SF Pro Display", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif`;
@@ -184,7 +185,7 @@ export class Fx {
       ctx.fillStyle = f.color;
       ctx.shadowColor = f.color;
       ctx.shadowBlur = 12;
-      ctx.fillText(f.text, f.x, f.y);
+      ctx.fillText(f.text, f.x, reducedMotion ? f.y0 : f.y);
       ctx.shadowBlur = 0;
     }
     ctx.globalAlpha = 1;

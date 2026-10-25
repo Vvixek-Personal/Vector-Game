@@ -1,38 +1,31 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
-    // Test document used for verifying firestore connection
-    match /test/{docId} {
-      allow read: if true;
-    }
-
-    // Public Operative user profiles
-    match /users/{userId} {
-      allow get, list: if true;
-      allow create: if isOwner(userId)
-        && request.resource.data.userId == userId;
-      allow update: if isOwner(userId)
-        && request.resource.data.userId == userId;
+    function signedIn() { return request.auth != null; }
+    function owner(uid) { return signedIn() && request.auth.uid == uid; }
+    match /users/{uid} {
+      allow get: if owner(uid);
+      allow list: if false;
+      allow create: if owner(uid) && request.resource.data.userId == uid;
+      allow update: if owner(uid) && request.resource.data.userId == uid;
       allow delete: if false;
     }
-
-    // Real data leaderboard entries across all modes and overall
     match /leaderboard/{entryId} {
-      allow get, list: if true;
-      allow create, update: if isSignedIn()
-        && request.resource.data.userId == request.auth.uid
-        && request.resource.data.score is number
-        && request.resource.data.score >= 0
-        && request.resource.data.mode is string;
+      function validEntry() {
+        let d = request.resource.data;
+        return signedIn() && d.userId == request.auth.uid
+          && d.mode is string && d.mode.matches('(overall|arcade|coop|waves|memory|rush|blitz|sudden|zen|versus|daily_[0-9]{4}-[0-9]{2}-[0-9]{2}|weekly_[0-9]{4}_W[0-9]{1,2})')
+          && entryId == request.auth.uid + '_' + d.mode
+          && d.id == entryId && d.score is int && d.score >= 0
+          && d.streak is int && d.streak >= 0
+          && d.level is int && d.level >= 0 && d.level <= 100
+          && d.userName is string && d.userName.size() > 0 && d.userName.size() <= 30;
+      }
+      allow read: if true;
+      allow create: if validEntry();
+      allow update: if validEntry() && resource.data.userId == request.auth.uid
+        && request.resource.data.mode == resource.data.mode
+        && request.resource.data.score >= resource.data.score;
       allow delete: if false;
     }
   }

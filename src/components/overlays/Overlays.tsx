@@ -5,6 +5,8 @@ import type { GameSummary, GameMode } from "../../game/types";
 import { MODES } from "../../game/types";
 import { sparksForRun, spendSparks, type Stats, codeLabel, type Settings } from "../../game/storage";
 import type { Profile } from "../../game/profile";
+import { getPlayerLevelProgress, xpForStats } from "../../game/levels";
+import { AVATARS, isUnlocked } from "../../game/profile";
 import { STORE_ITEMS } from "../../game/catalog";
 import { uiConfirm, uiTap } from "../../game/haptics";
 import Avatar from "../Avatar";
@@ -15,14 +17,14 @@ const Shell = ({ children }: { children: React.ReactNode }) => (
     animate={{ opacity: 1 }}
     exit={{ opacity: 0 }}
     transition={{ duration: 0.2 }}
-    className="absolute inset-0 z-40 flex items-center justify-center bg-black/75 p-4 backdrop-blur-md"
+    role="dialog" aria-modal="true" aria-label="Game menu" className="game-dialog absolute inset-0 z-40 flex items-center justify-center overflow-y-auto bg-black/75 p-4 backdrop-blur-md"
   >
     <motion.div
       initial={{ scale: 0.92, opacity: 0, y: 16 }}
       animate={{ scale: 1, opacity: 1, y: 0 }}
       exit={{ scale: 0.94, opacity: 0, y: 8 }}
       transition={{ type: "spring", stiffness: 380, damping: 26 }}
-      className="w-full max-w-sm rounded-3xl border border-white/10 bg-[#0b0818]/95 p-6 text-center shadow-2xl"
+      className="my-auto max-h-full overflow-y-auto w-full max-w-sm rounded-3xl border border-white/10 bg-[#0b0818]/95 p-6 text-center shadow-2xl"
     >
       {children}
     </motion.div>
@@ -70,7 +72,7 @@ export function TutorialOverlay({ onDone }: { onDone: () => void }) {
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.94, opacity: 0, y: 8 }}
         transition={{ type: "spring", stiffness: 380, damping: 26 }}
-        className="w-full max-w-sm rounded-3xl border border-white/10 bg-[#0b0818]/95 p-6 text-center shadow-2xl"
+        className="my-auto max-h-full overflow-y-auto w-full max-w-sm rounded-3xl border border-white/10 bg-[#0b0818]/95 p-6 text-center shadow-2xl"
       >
         <div className="anim-pop text-3xl font-black text-cyan-300">{s.icon}</div>
         <h2 className="mt-2 text-[19px] font-extrabold text-white">{s.title}</h2>
@@ -104,12 +106,14 @@ export function PauseOverlay({
   score,
   mode,
   onResume,
+  onFinishPractice,
   onRestart,
   onHome,
 }: {
   score: number;
   mode: string;
   onResume: () => void;
+  onFinishPractice: () => void;
   onRestart: () => void;
   onHome: () => void;
 }) {
@@ -120,6 +124,7 @@ export function PauseOverlay({
         {MODES[mode as keyof typeof MODES].label.toUpperCase()} · {score.toLocaleString()} PTS
       </p>
       <div className="mt-5 space-y-2">
+        {mode === "practice" && <button onClick={onFinishPractice} className="btn w-full rounded-2xl border border-white/10 py-3 text-white">Finish practice</button>}
         <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} onClick={onResume} className="btn brand-grad w-full rounded-2xl py-3 text-[14px] font-black uppercase tracking-widest text-white">
           Resume
         </motion.button>
@@ -139,6 +144,7 @@ export function PauseOverlay({
 export function GameOverOverlay({
   summary,
   stats,
+  profile,
   onAgain,
   onHome,
   onShare,
@@ -146,6 +152,7 @@ export function GameOverOverlay({
 }: {
   summary: GameSummary;
   stats?: Stats;
+  profile?: Profile;
   onAgain: () => void;
   onHome: () => void;
   onShare: () => void;
@@ -153,6 +160,9 @@ export function GameOverOverlay({
 }) {
   const def = MODES[summary.mode];
   const versus = summary.versus;
+  const level = stats && profile ? getPlayerLevelProgress(stats, profile) : null;
+  const previousStreak = stats ? Math.max(0, ...stats.history.slice(1).map(r => r.streak)) : 0;
+  const xpGain = summary.xpGained ?? summary.score + 50;
 
   const averageReaction = stats && stats.reactionCount > 0 
     ? Math.round(stats.reactionTotal / stats.reactionCount) 
@@ -200,7 +210,7 @@ export function GameOverOverlay({
             </div>
             
             {/* Arcade Grade Stamp */}
-            {summary.rank && (
+            {summary.mode !== "practice" && summary.rank && (
               <motion.div
                 initial={{ scale: 2.2, opacity: 0, rotate: -20 }}
                 animate={{ scale: 1, opacity: 1, rotate: -5 }}
@@ -230,7 +240,7 @@ export function GameOverOverlay({
               <div className="anim-pop mt-1.5 text-[12px] font-black tracking-[0.2em] text-amber-300">NEW PERSONAL BEST</div>
             ) : (
               <div className="mt-1.5 text-[11px] font-bold tracking-[0.2em] text-white/30">
-                BEST {summary.best.toLocaleString()}
+                {summary.mode === "practice" ? "UNRANKED · TRAINING ONLY" : `BEST ${summary.best.toLocaleString()}`}
               </div>
             )}
             {summary.modifierMultiplier && summary.modifierMultiplier > 1 && (
@@ -248,7 +258,7 @@ export function GameOverOverlay({
             ["ACC", `${summary.accuracy}%`],
             ["AVG", summary.avgReactionMs ? `${summary.avgReactionMs}ms` : "—"],
             ["STREAK", String(summary.bestStreak)],
-            [<Sparkles size={12} className="inline-block" key="spark" />, `+${sparksForRun(summary.score, summary.bestStreak)}`],
+            [<Sparkles size={12} className="inline-block" key="spark" />, `+${summary.mode === "practice" ? 0 : sparksForRun(summary.score, summary.bestStreak)}`],
           ].map(([k, v], i) => (
             <motion.div
               key={i}
@@ -264,18 +274,18 @@ export function GameOverOverlay({
         </div>
 
         {/* Level XP Progress Bar */}
-        {stats && !versus && (
+        {stats && !versus && summary.mode !== "practice" && (
           <div className="mt-3 p-2.5 rounded-2xl bg-white/[0.03] border border-white/5 text-left">
             <div className="flex items-center justify-between text-[11px] font-bold text-white/70">
               <span>Operative Rank Level</span>
               <span className="text-sky-400 font-extrabold">
-                +{Math.round((summary.score * (summary.modifierMultiplier || 1)) / 10)} XP Gained
+                +{xpGain.toLocaleString()} XP Gained
               </span>
             </div>
             <div className="mt-1.5 h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
-                animate={{ width: `${Math.min(100, (((stats.totalScore || 0) % 2000) / 2000) * 100)}%` }}
+                animate={{ width: `${(level?.progress ?? 0) * 100}%` }}
                 transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
                 className="h-full bg-gradient-to-r from-sky-400 to-indigo-500 rounded-full"
               />
@@ -348,7 +358,7 @@ export function PrepOverlay({
   const cycleAvatar = () => {
     uiTap();
     const ownedAvatars = STORE_ITEMS.filter(i => i.tab === "avatars" && profile.purchased.includes(i.id)).map(i => i.apply?.avatarId).filter(Boolean) as string[];
-    const all = ["default", "spark", "prism", "diamond", ...ownedAvatars];
+    const all = [...new Set([...AVATARS.filter(a => isUnlocked(a.rule, stats)).map(a => a.id), ...ownedAvatars])];
     const currentIndex = all.indexOf(profile.avatarId);
     const next = all[(currentIndex + 1) % all.length];
     onUpdateProfile({ ...profile, avatarId: next });
@@ -357,7 +367,7 @@ export function PrepOverlay({
   return (
     <Shell>
       <div className="relative">
-        <button onClick={onCancel} className="absolute -right-2 -top-2 text-white/40 hover:text-white p-2 rounded-full hover:bg-white/10 transition">
+        <button aria-label="Close loadout" onClick={onCancel} className="absolute -right-2 -top-2 text-white/40 hover:text-white p-2 rounded-full hover:bg-white/10 transition">
           <X size={18} />
         </button>
         <h2 className="text-xl font-bold mb-1">Loadout: {def.label}</h2>
