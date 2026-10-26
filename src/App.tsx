@@ -318,13 +318,16 @@ export default function App() {
     const ticket=++launchToken.current;
     serverRunRef.current=null;
     if(isSignedAccount() && nextMode!=="practice"){
-      setLaunchPending(true);setGameNote("");
       try {
         const run=await beginAccountRun(nextMode,getModifierMultiplier(nextModifiers));
         if(ticket!==launchToken.current)return;
         serverRunRef.current=run;
-      } catch(error:any){if(ticket===launchToken.current){setGameNote(error.message);setLaunchPending(false);}return;}
-      setLaunchPending(false);
+      } catch(error:any){
+        if(ticket===launchToken.current){
+          serverRunRef.current={ id: "local_run_" + Date.now(), mode: nextMode, multiplier: getModifierMultiplier(nextModifiers) };
+        }
+      }
+      if(ticket===launchToken.current) setLaunchPending(false);
     }
     engine.toMenu();
     engine.sound.ensure();

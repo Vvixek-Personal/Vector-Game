@@ -30,7 +30,12 @@ export async function signInWithGoogle(): Promise<User> {
     const result = await signInWithPopup(auth, googleProvider);
     const user = result.user;
 
-    // Account migration is handled atomically by bootstrapAccount.
+    // Immediately trigger cloud profile sync for Google user
+    try {
+      await syncUserProfileToCloud(user);
+    } catch {
+      /* ignore background profile sync failure */
+    }
 
     return user;
   } catch (error: any) {
@@ -40,6 +45,12 @@ export async function signInWithGoogle(): Promise<User> {
     }
     if (error?.code === "auth/cancelled-popup-request" || error?.code === "auth/popup-closed-by-user") {
       throw new Error("Sign-in popup was closed.");
+    }
+    if (error?.code === "auth/network-request-failed") {
+      throw new Error("Network request failed. Please check your internet connection.");
+    }
+    if (error?.code === "auth/unauthorized-domain") {
+      throw new Error("Current app domain is not yet authorized in Firebase Auth settings.");
     }
     throw error;
   }

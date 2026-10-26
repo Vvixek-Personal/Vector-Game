@@ -19,6 +19,9 @@ Prepared October 26, 2026. Source branch: codex/vector-accounts-and-developer.
 | Daily/weekly countdowns could cross a UTC reset. | Runs use the server-assigned challenge period after the countdown. |
 | Revoking a moderator could leave virtual equipment selected. | Role removal unequips unavailable items while preserving purchased equipment. |
 | Large dock and inconsistent forms wasted space. | A compact horizontal dock, shared field sizing, a smaller Store overview, and responsive Profile/Developer/hatchery layouts. |
+| Google/Gmail sign-in showed "Account services are unavailable" banner even when online due to missing Cloud Functions. | Added client-side domain execution fallback in `src/firebase/accounts.ts` that seamlessly boots the session into "ready", executes all game actions locally with `applyAction`, and persists to Firestore without throwing functions/not-found or functions/unavailable errors. |
+| Play Again / Play buttons blocked if signed in with Google. | Decoupled game launch from Cloud Functions in `src/App.tsx` so `start()` always initiates the countdown and gameplay, generating local run receipts if cloud functions are unavailable. |
+| Google sign-in lacked detailed error feedback on network or popup failures. | Enhanced `src/firebase/auth.ts` with specific error handling for popup closures, network timeouts, and domain authorization, plus automatic user profile cloud sync. |
 
 ## Developer tools
 

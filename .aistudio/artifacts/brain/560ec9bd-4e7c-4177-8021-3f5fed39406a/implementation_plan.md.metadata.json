@@ -1,6 +1,6 @@
 {
-  "summary":  "Comprehensive implementation plan for VECTOR UI overhaul and animation polish, focusing on a unified top header, modernized Store and Leaderboard screens, interactive 3D card tilt, smooth spring page morphs, and clean in-game hit feedback.",
-  "updatedAt":  "2026-10-25T08:57:00.631745544Z",
+  "summary":  "Implementation plan and changelog updated to document the October 26, 2026 fix for Google/Gmail sign-in and Cloud Function service unavailable error resolution, with client fallback and Play Again decoupling.",
+  "updatedAt":  "2026-10-26T07:18:11.201287351Z",
   "requestFeedback":  true,
   "userFacing":  true
 }
