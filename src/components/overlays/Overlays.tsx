@@ -1,3 +1,5 @@
+import { requestStoreAction } from "../../game/economy";
+import { ownsStoreItem } from "../../game/store";
 import React, { useState } from "react";
 import { Sparkles, X } from "lucide-react";
 import { motion } from "motion/react";
@@ -224,7 +226,7 @@ export function GameOverOverlay({
     ["Acc", `${summary.accuracy}%`, "accuracy"],
     ["Avg", summary.avgReactionMs ? `${summary.avgReactionMs} ms` : "—", "reaction"],
     ["Streak", String(summary.bestStreak), "streak"],
-    ["Sparks", `+${summary.mode === "practice" ? 0 : sparksForRun(summary.score, summary.bestStreak)}`, "sparks"],
+    ["Sparks", summary.rewardPending ? "Saving…" : `+${summary.mode === "practice" ? 0 : sparksForRun(summary.score, summary.bestStreak)}`, "sparks"],
   ];
 
   return (
@@ -297,7 +299,7 @@ export function GameOverOverlay({
           <div className="flex items-baseline justify-between gap-2">
             <span className="t-caption">Level {level?.currentLevel ?? 1}</span>
             <span className="num text-[12px] font-semibold" style={{ color: "var(--brand)" }}>
-              +{xpGain.toLocaleString()} XP
+              {summary.rewardPending ? "Rewards pending" : "+"+xpGain.toLocaleString()+" XP"}
             </span>
           </div>
           <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full" style={{ background: "var(--surface-raised)" }}>
@@ -312,6 +314,7 @@ export function GameOverOverlay({
         </div>
       )}
 
+      {summary.rewardPending&&<p className="t-caption mt-3 text-center" role="status">Your run is kept on this device while account rewards save. Reconnect if you are offline.</p>}
       {reactionNote && !versus && <p className="t-caption mt-3 text-center">{reactionNote}</p>}
 
       <div className="dialog-actions mt-5">
@@ -358,17 +361,12 @@ export function PrepOverlay({
 }) {
   const def = MODES[mode];
 
-  const cycleAvatar = () => {
-    uiTap();
-    const ownedAvatars = STORE_ITEMS.filter((i) => i.tab === "avatars" && profile.purchased.includes(i.id))
-      .map((i) => i.apply?.avatarId)
-      .filter(Boolean) as string[];
-    const all = [
-      ...new Set([...AVATARS.filter((a) => isUnlocked(a.rule, stats)).map((a) => a.id), ...ownedAvatars]),
-    ];
-    const currentIndex = all.indexOf(profile.avatarId);
-    const next = all[(currentIndex + 1) % all.length];
-    onUpdateProfile({ ...profile, avatarId: next });
+  const cycleAvatar = async () => {
+    const choices=STORE_ITEMS.filter(item=>item.tab==="avatars" && ownsStoreItem(item,profile,stats));
+    if(!choices.length)return;
+    const index=choices.findIndex(item=>item.apply?.avatarId===profile.avatarId);
+    const result=await requestStoreAction(choices[(index+1)%choices.length].id,"equip");
+    if(result.ok){uiTap();onUpdateProfile(result.profile);}
   };
 
   return (

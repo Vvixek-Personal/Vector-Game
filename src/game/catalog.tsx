@@ -10,6 +10,8 @@ export type Currency = "sparks" | "diamonds";
 
 export interface StoreItem {
   id: string;
+  active?: boolean;
+  unlockOnly?: boolean;
   tab: StoreTab;
   name: string;
   desc: string;

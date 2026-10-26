@@ -1,3 +1,4 @@
+import { accountAction, isSignedAccount } from "../../firebase/accounts";
 import { safeStorage as localStorage } from "../../game/persistence";
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
@@ -90,21 +91,27 @@ export const LuckySpinView: React.FC<Props> = ({
     window.setTimeout(() => setPointerBounce(false), 120);
   };
 
-  const handleSpin = (costType: "free" | "sparks" | "diamonds") => {
+  const handleSpin = async (costType: "free" | "sparks" | "diamonds") => {
     if (spinningRef.current) return;
+    let remoteResult:any=null;
+    if(isSignedAccount()){
+      spinningRef.current=true;setSpinning(true);
+      try { remoteResult=await accountAction("spin",{currency:costType});setCooldownRemaining(getRemainingFreeSpinMs()); }
+      catch(error:any){spinningRef.current=false;setSpinning(false);onMessage(error.message);return;}
+    }
 
-    if (costType === "free") {
+    if (!remoteResult && costType === "free") {
       if (!canFreeSpin()) return;
       recordFreeSpinUsed();
       setCooldownRemaining(getRemainingFreeSpinMs());
-    } else if (costType === "sparks") {
+    } else if (!remoteResult && costType === "sparks") {
       const next = spendSparks(150);
       if (!next) {
         onMessage("Extra spins cost 150 Sparks.");
         return;
       }
       onStats(next);
-    } else if (costType === "diamonds") {
+    } else if (!remoteResult && costType === "diamonds") {
       const next = spendDiamonds(5);
       if (!next) {
         onMessage("Premium spins cost 5 Diamonds.");
@@ -119,10 +126,10 @@ export const LuckySpinView: React.FC<Props> = ({
     setReward(null);
     setHighlightedIndex(null);
 
-    const winningIndex = pickSpinRewardIndex();
+    const winningIndex = remoteResult ? remoteResult.spinIndex : pickSpinRewardIndex();
     // Settle before animation so navigation cannot lose a paid reward.
     const wonReward = SPIN_SLICES[winningIndex];
-    const result = applySpinReward(wonReward, loadStats(), loadProfile());
+    const result = remoteResult ? {nextStats:loadStats(),nextProfile:loadProfile(),message:remoteResult.message} : applySpinReward(wonReward, loadStats(), loadProfile());
     onStats(result.nextStats);
     onProfile(result.nextProfile);
     const nextHistory = [wonReward.label + " " + wonReward.sublabel, ...history.slice(0, 9)];

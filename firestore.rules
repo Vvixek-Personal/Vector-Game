@@ -3,30 +3,36 @@ service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
     function owner(uid) { return signedIn() && request.auth.uid == uid; }
+    function developer() {
+      return signedIn() && (
+        (request.auth.token.email == 'personal.me.vivek@gmail.com' && request.auth.token.email_verified == true)
+        || (exists(/databases/$(database)/documents/accounts/$(request.auth.uid))
+          && get(/databases/$(database)/documents/accounts/$(request.auth.uid)).data.developerUntil > request.time.toMillis())
+      );
+    }
+    match /accounts/{uid} {
+      allow get: if owner(uid) || developer();
+      allow list: if developer();
+      allow write: if false;
+    }
     match /users/{uid} {
-      allow get: if owner(uid);
-      allow list: if false;
-      allow create: if owner(uid) && request.resource.data.userId == uid;
-      allow update: if owner(uid) && request.resource.data.userId == uid;
+      allow get: if owner(uid) || developer();
+      allow list: if developer();
+      allow create: if owner(uid) && request.resource.data.userId == uid
+        && request.resource.data.keys().hasOnly(['userId','settings','settingsUpdatedAt','preferences','preferencesUpdatedAt','updatedAt']);
+      allow update: if owner(uid) && request.resource.data.userId == uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['userId','settings','settingsUpdatedAt','preferences','preferencesUpdatedAt','updatedAt']);
       allow delete: if false;
     }
-    match /leaderboard/{entryId} {
-      function validEntry() {
-        let d = request.resource.data;
-        return signedIn() && d.userId == request.auth.uid
-          && d.mode is string && d.mode.matches('(overall|arcade|coop|waves|memory|rush|blitz|sudden|zen|versus|daily_[0-9]{4}-[0-9]{2}-[0-9]{2}|weekly_[0-9]{4}_W[0-9]{1,2})')
-          && entryId == request.auth.uid + '_' + d.mode
-          && d.id == entryId && d.score is int && d.score >= 0
-          && d.streak is int && d.streak >= 0
-          && d.level is int && d.level >= 0 && d.level <= 100
-          && d.userName is string && d.userName.size() > 0 && d.userName.size() <= 30;
-      }
-      allow read: if true;
-      allow create: if validEntry();
-      allow update: if validEntry() && resource.data.userId == request.auth.uid
-        && request.resource.data.mode == resource.data.mode
-        && request.resource.data.score >= resource.data.score;
-      allow delete: if false;
+    match /catalog/{id} { allow read: if true; allow write: if false; }
+    match /players/{uid} { allow read: if signedIn(); allow write: if false; }
+    match /gifts/{id} {
+      allow read: if signedIn() && (resource.data.sender == request.auth.uid || resource.data.recipient == request.auth.uid || developer());
+      allow write: if false;
     }
+    match /feedback/{id} { allow read: if signedIn() && (resource.data.uid == request.auth.uid || developer()); allow write: if false; }
+    match /ledger/{id} { allow read: if developer(); allow write: if false; }
+    match /leaderboard/{id} { allow read: if true; allow write: if false; }
+    match /{document=**} { allow read, write: if false; }
   }
 }

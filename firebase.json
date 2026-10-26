@@ -1,0 +1,49 @@
+{
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "vector-game",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "test",
+        "*.log",
+        ".secret.local",
+        ".env.local",
+        ".env.*.local"
+      ],
+      "predeploy": [
+        "node --import tsx scripts/export-domain.mjs"
+      ]
+    }
+  ],
+  "firestore": [
+    {
+      "database": "ai-studio-vectorgame-560ec9bd-4e7c-4177-8021-3f5fed39406a",
+      "rules": "firestore.rules",
+      "indexes": "firestore.indexes.json"
+    }
+  ],
+  "storage": {
+    "rules": "storage.rules"
+  },
+  "emulators": {
+    "auth": {
+      "port": 9099
+    },
+    "firestore": {
+      "port": 8080
+    },
+    "functions": {
+      "port": 5001
+    },
+    "ui": {
+      "enabled": false,
+      "port": 4000
+    },
+    "singleProjectMode": true,
+    "storage": {
+      "port": 9199
+    }
+  }
+}

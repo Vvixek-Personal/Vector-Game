@@ -30,8 +30,7 @@ export async function signInWithGoogle(): Promise<User> {
     const result = await signInWithPopup(auth, googleProvider);
     const user = result.user;
 
-    // Save or update user profile in Firestore
-    await syncUserProfileToCloud(user);
+    // Account migration is handled atomically by bootstrapAccount.
 
     return user;
   } catch (error: any) {
@@ -59,6 +58,8 @@ export async function signInAsGuest(): Promise<User> {
 
 // Sign out
 export async function signOut(): Promise<void> {
+  const { flushCloudSave } = await import("./cloudSave");
+  try { await Promise.race([flushCloudSave(),new Promise((_,reject)=>setTimeout(()=>reject(new Error("Sync timeout")),4000))]); } catch { /* Per-account device save is retained. */ }
   await firebaseSignOut(auth);
 }
 

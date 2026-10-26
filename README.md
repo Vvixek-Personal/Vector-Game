@@ -1,18 +1,19 @@
-# VECTOR 1.2 — play your way
+# VECTOR 1.3 — play your way
 
 A browser reflex game with 12 modes, local progression, optional Firebase sign-in, and offline installation.
 
-## What’s new in 1.2
+## What’s new in 1.3
 
-- A redesigned home with a searchable mode library, saved favorites, personal progress, and quick Daily/Weekly launches.
-- Eight illustrated hero avatars: Spider-Man, Miles Morales, Spider-Gwen, Iron Man, Black Panther, Batman, Deadpool, and Vector Sentinel. All render as local SVGs and work offline.
-- A rebuilt store with Discover, My collection, Wishlist, Activities, and Exchange sections. Search, rarity/currency filters, price sorting, affordability controls, and profile previews help you find a look.
-- A confirmation screen shows your exact balance after a purchase or exchange. Starter, earned, and equivalent owned cosmetics equip without a second charge.
-- A new scoreboard separates Global rankings from On this device. Global boards have search, pagination, tied places, player previews, cached/offline status, and refresh. Device boards show saved bests without sign-in.
-- Profile and settings share the new navigation style. Tabs support arrow keys, Home and End; item dialogs trap focus, close with Escape, and return focus to their opener.
-- Existing gameplay, settings, audio, and the repository’s recent anime/cartoon additions are preserved.
+- The original swipe carousel Play screen is back, with Practice, countdowns, and hit feedback preserved.
+- A shorter dock and consistent form controls make the updated Store, Profile, Gifts, and hatchery easier to use on phones.
+- Account saves keep each player's wallet, inventory, name, and claims separate from guest and other account saves. Legacy cloud progress migrates once. Daily rewards use one UTC day.
+- One name change is free per signed-in account; later changes cost **100 Diamonds**. Developers have unlimited free changes.
+- A smoother level curve starts at 500 XP, with 100 milestone rewards, mission claims, and collection previews.
+- Purchases and exchanges check current server prices. Gift transfers, returns, locks, spin rewards, hatchery payments, and balances settle on the server for signed-in players.
+- Tune → Developer contains player, wallet, inventory, role, custom-title, Store-editor, image-upload, feedback, and application-data tools. Verified owner email or a server master password is required. Moderator access includes current/future Store cosmetics, subject to individual restrictions.
+- Existing eight hero portraits, analytics, offline guest play, and all 12 game modes remain available.
 
-Wishlist and favorite modes are saved with your profile. Daily/Weekly countdowns follow the existing UTC score buckets; the weekly format remains compatible with previous saves.
+**Activation:** the new signed-in features require deploying the included Firebase backend and rules. See [Firebase setup](docs/FIREBASE-SETUP.md). The production Firebase project has not been modified by this local upgrade.
 
 ## Play on Windows
 
@@ -75,10 +76,6 @@ Serve **dist/** over HTTPS for installation on a real device. Localhost also sup
 
 ## Firebase
 
-The original project's public Firebase configuration is retained. Its owner must enable Google sign-in and authorize the hosting domain. Review and deploy **firestore.rules** and **firestore.indexes.json** to the designated Firestore database before relying on the revised access controls. This package does not deploy or modify the live project.
+Read [Firebase setup](docs/FIREBASE-SETUP.md) for the verified owner account, master password, migration, emulator checks, and coordinated release steps. Guest progress is local; signed-in economy and inventory changes require the deployed account service. No production master password is bundled.
 
-Cloud restoration waits before uploading, keeps a local backup before replacement, and blocks uploads if the initial cloud read fails. Local play remains available. Sign-in, cloud restoration and deployed rules still need verification with the project owner.
-
-Scores and currency are calculated on the client. Strong anti-cheat requires a trusted backend and is outside this local repair pass. Existing historical totals cannot always be reconstructed from old limited history.
-
-See **AUDIT.md** and **REPAIR-REPORT.md** for changes, validation and remaining limitations.
+See **AUDIT.md**, **REPAIR-REPORT.md**, and **UPGRADE-1.3.md** for the repair history and this upgrade's validation.

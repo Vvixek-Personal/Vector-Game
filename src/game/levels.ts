@@ -5,6 +5,7 @@
 import type { Stats } from "./storage";
 import type { Profile } from "./profile";
 import { STORE_ITEMS, type StoreItem } from "./catalog";
+import { xpForLevel as levelXp, xpForStats as statsXp } from "../../functions/src/progression.mjs";
 
 export interface LevelRewardDef {
   level: number;
@@ -13,18 +14,11 @@ export interface LevelRewardDef {
   diamonds?: number;
 }
 
-// XP required for each level: smooth, rewarding curve (Level 0 is 0 XP, Level 1 is 100 XP)
-export function xpForLevel(level: number): number {
-  if (level <= 0) return 0;
-  return 100000 * level; // 100,000 XP per level as requested
-}
+// XP required for each level: smooth, rewarding curve (Level 0 is 0 XP, Level 1 is 500 XP)
+export function xpForLevel(level: number): number { return levelXp(level); }
+export function xpForStats(stats: Stats): number { return statsXp(stats); }
 
-// Player's lifetime XP calculated from total score, runs, and streaks
-export function xpForStats(stats: Stats): number {
-  return Math.max(0, (stats.totalScore ?? 0) + (stats.runs ?? 0) * 50 + (stats.bestStreak ?? 0) * 10 + (stats.bonusXp ?? 0));
-}
-
-// 50 Handcrafted Level Rewards matching real STORE_ITEMS
+// Stable milestone rewards matching real STORE_ITEMS
 // Every level gives a store item. Every 10th level also grants 10 Diamonds!
 export const LEVEL_REWARDS: LevelRewardDef[] = [
   { level: 1, xpRequired: xpForLevel(1), storeItemId: "cto-bean" }, // Cartoon Avatar Bean
@@ -65,6 +59,13 @@ export const LEVEL_REWARDS: LevelRewardDef[] = [
   { level: 90, xpRequired: xpForLevel(90), storeItemId: "ban-aurora", diamonds: 80 },
   { level: 100, xpRequired: xpForLevel(100), storeItemId: "ani-valkyrie", diamonds: 100 },
 ];
+
+// Every level has a real reward; existing milestone item IDs stay stable.
+const rewardPool = STORE_ITEMS.filter(item => !item.pack && !item.unlockOnly && item.currency === "sparks");
+for (let level = 1; level <= 100; level++) {
+  if (!LEVEL_REWARDS.some(reward => reward.level === level)) LEVEL_REWARDS.push({level,xpRequired:xpForLevel(level),storeItemId:rewardPool[(level * 7) % rewardPool.length].id,...(level % 10 === 0 ? {diamonds:10 + Math.floor(level / 10) * 5} : {})});
+}
+LEVEL_REWARDS.sort((a,b)=>a.level-b.level);
 
 export interface PlayerLevelProgress {
   currentLevel: number;

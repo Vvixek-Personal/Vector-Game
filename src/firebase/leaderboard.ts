@@ -20,6 +20,9 @@ import { TITLES } from "../game/profile";
 import { scoreBucket, getDailyId, getWeeklyId } from "../game/storage";
 
 export interface LeaderboardRecord {
+  role?: "player"|"moderator"|"developer";
+  ownerAccount?:boolean;
+  developerUntil?:number;
   id: string;
   userId: string;
   userName: string;

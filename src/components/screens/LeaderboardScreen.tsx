@@ -8,6 +8,7 @@ import { getDailyId, getWeeklyId, loadScores, type Stats } from "../../game/stor
 import { BOARD_MODES, challengeWindow, deviceScoreRows, pointsToNextPlace, rankRecords, recordDate, remainingTime, validBoardMode, type BoardMode } from "../../game/scoreboard";
 import { uiTap } from "../../game/haptics";
 import Avatar from "../Avatar";
+import RoleBadge from "../RoleBadge";
 import AppHeader from "../AppHeader";
 import GoogleAuthButton from "../GoogleAuthButton";
 import SegmentedTabs from "../shared/SegmentedTabs";
@@ -15,10 +16,11 @@ import Modal from "../shared/Modal";
 import "../../collection.css";
 
 interface Props { initialMode?: string; stats: Stats; onSelectMode?: (mode: GameMode) => void }
+function visibleRole(record:LeaderboardRecord){return record.role==="developer"&&!record.ownerAccount&&!(Number(record.developerUntil)>Date.now())?"player":record.role||"player";}
 function PlayerAvatar({ record, size = 36 }: { record: LeaderboardRecord; size?: number }) {
   const [failed, setFailed] = useState(false);
   const profile: Profile = { ...DEFAULT_PROFILE, avatarId: record.avatarId || "spark", frameId: record.frameId || "none" };
-  if (record.useGooglePfp && record.userPhoto && !failed) return <img className="v-player-photo" src={record.userPhoto} width={size} height={size} alt="" referrerPolicy="no-referrer" onError={() => setFailed(true)}/>;
+  if (visibleRole(record)==="developer" && record.useGooglePfp && record.userPhoto && !failed) return <img className="v-player-photo" src={record.userPhoto} width={size} height={size} alt="" referrerPolicy="no-referrer" onError={() => setFailed(true)}/>;
   return <Avatar profile={profile} name={record.userName} size={size}/>;
 }
 
@@ -131,7 +133,7 @@ export default function LeaderboardScreen({ initialMode = "overall", stats, onSe
           : !filtered.length ? <div className="v-empty"><Search size={30}/><h3>No player found in this snapshot.</h3><p>Search covers the loaded top 50. Try another name or clear the search.</p><button className="v-button" onClick={() => setQuery("")}>Clear search</button></div>
           : <><div className="v-score-table-wrap"><table className="v-score-table"><caption className="sr-only">{boardLabel} global rankings. Equal scores share a place.</caption><thead><tr><th scope="col">Place</th><th scope="col">Player</th><th scope="col" className="v-streak-col">Streak</th><th scope="col">Score</th></tr></thead><tbody>
             {visible.map(record => <tr key={record.id} data-current-player={record.userId === user?.uid ? "true" : undefined}>
-              <td className="v-rank">#{record.rank}</td><td><button className="v-player-button" onClick={() => { uiTap(); setViewing(record); }} aria-label={"View " + record.userName + " profile"}><PlayerAvatar record={record}/><span><strong>{record.userName || "Operative"}{record.userId === user?.uid && <em>YOU</em>}</strong><small>Lv. {record.level ?? 0}{record.title ? " · " + record.title : ""}</small></span></button></td>
+              <td className="v-rank">#{record.rank}</td><td><button className="v-player-button" onClick={() => { uiTap(); setViewing(record); }} aria-label={"View " + record.userName + " profile"}><PlayerAvatar record={record}/><span><strong>{record.userName || "Operative"}<RoleBadge role={visibleRole(record)}/>{record.userId === user?.uid && <em>YOU</em>}</strong><small>Lv. {record.level ?? 0}{record.title ? " · " + record.title : ""}</small></span></button></td>
               <td className="v-streak-col">{record.streak ?? 0}×</td><td className="v-score-number">{record.score.toLocaleString()}</td>
             </tr>)}
           </tbody></table></div>
@@ -151,7 +153,7 @@ export default function LeaderboardScreen({ initialMode = "overall", stats, onSe
       </>}
     </section>
     {viewing && <Modal title={viewing.userName || "Player profile"} onClose={() => setViewing(null)} className="v-player-dialog">
-      <div className="v-profile-preview"><PlayerAvatar record={viewing} size={86}/><h3>{viewing.userName}</h3><p>Level {viewing.level ?? 0} · {viewing.title || "Operative"}</p>
+      <div className="v-profile-preview"><PlayerAvatar record={viewing} size={86}/><h3>{viewing.userName} <RoleBadge role={visibleRole(viewing)}/></h3><p>Level {viewing.level ?? 0} · {viewing.title || "Operative"}</p>
         <div className="v-player-stats"><div><Trophy size={17}/><strong>{viewing.score.toLocaleString()}</strong><span>{boardLabel} points</span></div><div><Flame size={17}/><strong>{viewing.streak ?? 0}×</strong><span>Best streak</span></div></div><p className="v-footnote">Best updated · {recordDate(viewing.updatedAt)}</p>
       </div>
     </Modal>}

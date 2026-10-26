@@ -183,3 +183,14 @@ test('name sanitization strips HTML tags, control chars, trims, truncates and de
   saveName('  <b>Cypher</b>\x00  ');
   assert.equal(loadName(), 'Cypher');
 });
+
+test('legacy local dates ahead of UTC do not receive a duplicate reward',()=>{
+  const now=new Date(),tomorrow=new Date(now.getTime()+86400000).toISOString().slice(0,10);
+  saveStats({...loadStats(),sparks:75,diamonds:5,lastLoginDate:tomorrow,loginStreak:3});
+  assert.equal(checkDailyLogin(loadStats()),null);assert.equal(loadStats().sparks,75);
+  assert.equal(loadStats().lastLoginDate,now.toISOString().slice(0,10));
+});
+
+test('server challenge period remains stable when the countdown crosses a reset',()=>{
+ for(const [mode,period] of [['daily','2000-01-01'],['weekly','2000_W0']]){const run=engine(mode);run.e.startGame(mode,{},period);assert.equal(run.finish().challengeId,period);}
+});

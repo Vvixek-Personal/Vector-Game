@@ -235,6 +235,7 @@ export interface HudState {
 }
 
 export interface GameSummary {
+  rewardPending?: boolean;
   challengeId?: string;
   mode: GameMode;
   score: number;

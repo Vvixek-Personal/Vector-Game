@@ -309,7 +309,7 @@ export class Engine {
     if (this.phase === "paused" || this.phase === "over") this.render();
   }
 
-  startGame(mode: GameMode, modifiers?: GameModifiers) {
+  startGame(mode: GameMode, modifiers?: GameModifiers, sessionChallengeId?: string) {
     if (this.destroyed) return;
     this.stopRendering();
     this.pausedAt = 0;
@@ -317,7 +317,9 @@ export class Engine {
     this.def = MODES[mode];
     this.modifiers = mode === "practice" || mode === "daily" || mode === "weekly" ? {} : modifiers ? { ...modifiers } : {};
     
-    this.challengeId = mode === "daily" ? getDailyId() : mode === "weekly" ? getWeeklyId() : undefined;
+    const suppliedDaily=mode==="daily"&&/^\d{4}-\d{2}-\d{2}$/.test(sessionChallengeId||"");
+    const suppliedWeekly=mode==="weekly"&&/^\d{4}_W\d{1,2}$/.test(sessionChallengeId||"");
+    this.challengeId = suppliedDaily||suppliedWeekly ? sessionChallengeId : mode === "daily" ? getDailyId() : mode === "weekly" ? getWeeklyId() : undefined;
     const seed = mode === "weekly" ? weeklySeed(this.challengeId) : (this.def.seeded ? dailySeed(this.challengeId) : Math.floor(Math.random() * 1e9) + 1);
     this.rng = new Rng(seed);
 
