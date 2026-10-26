@@ -4,8 +4,9 @@ import { playHaptic, uiTap } from "../../game/haptics";
 import { Seg, Toggle } from "../ui";
 import Icon, { type IconName } from "../Icon";
 import AppHeader from "../AppHeader";
+import DeveloperPanel from "../developer/DeveloperPanel";
 
-type Tab = "look" | "controls" | "feel";
+type Tab = "look" | "controls" | "feel" | "developer";
 interface Props {
   settings: Settings;
   onChange: <K extends keyof Settings>(key: K, value: Settings[K]) => void;
@@ -18,6 +19,7 @@ const TABS: { id: Tab; label: string; icon: IconName }[] = [
   { id: "look", label: "Appearance", icon: "sun" },
   { id: "controls", label: "Controls", icon: "keyboard" },
   { id: "feel", label: "Feedback", icon: "touch" },
+  { id: "developer", label: "Developer", icon: "settings" },
 ];
 
 function SettingRow({ label, description, children, key }: { label: string; description?: string; children: ReactNode; key?: string | number }) {
@@ -66,6 +68,7 @@ export default function SettingsScreen({ settings, onChange, onBack }: Props) {
       <div className="settings-layout">
         <nav className="settings-tabs" role="tablist" aria-label="Settings categories">{TABS.map((item) => <button key={item.id} id={`tab-${item.id}`} className={`settings-tab ${tab === item.id ? "active" : ""}`} role="tab" aria-selected={tab === item.id} aria-controls={`pane-${item.id}`} onClick={() => changeTab(item.id)}><Icon name={item.icon} size={19} />{item.label}</button>)}</nav>
         <div key={tab} className="settings-pane" role="tabpanel" id={`pane-${tab}`} aria-labelledby={`tab-${tab}`}>
+          {tab === "developer" && <DeveloperPanel/>}
           {tab === "look" && <>
             <Section title="Appearance">
               <div className="appearance-options">{(["light", "dark"] as const).map((theme) => <button key={theme} className="appearance-option" aria-pressed={settings.uiMode === theme} onClick={() => { uiTap(); onChange("uiMode", theme); }}><span className={`appearance-preview ${theme}`} aria-hidden="true"><i /><b /></span><span>{theme === "light" ? "Light" : "Dark"}{settings.uiMode === theme && <Icon name="check" size={16} />}</span></button>)}</div>

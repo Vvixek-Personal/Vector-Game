@@ -8,6 +8,7 @@ import { Gem, AudioLines } from "lucide-react";
 
 export function ItemArt({ item, large = false }: { item: StoreItem; large?: boolean }) {
   const size = large ? 132 : 88;
+  if (item.photo) return <img className="custom-item-art" src={item.photo} alt="" style={{width:size,height:size,objectFit:"cover",borderRadius:"20%"}} loading="lazy"/>;
   if (item.hero) return <HeroAvatar id={item.hero} size={size}/>;
   if (item.anime) return <AnimeAvatar id={item.anime} size={size}/>;
   if (item.cartoon) return <CartoonAvatar id={item.cartoon} size={size}/>;
@@ -22,7 +23,7 @@ export function ItemArt({ item, large = false }: { item: StoreItem; large?: bool
 }
 export function LoadoutPreview({ item, profile, name }: { item?: StoreItem; profile: Profile; name: string }) {
   const preview = { ...profile, ...item?.apply };
-  const title = TITLES.find(t => t.id === preview.titleId)?.name ?? "Rookie";
+  const title = preview.customTitles?.find(t=>t.id===preview.titleId)?.name ?? TITLES.find(t => t.id === preview.titleId)?.name ?? "Rookie";
   return <div className="v-loadout-preview" style={{ background: bannerFor(preview).css }}>
     <span className="profile-hero-pattern" data-pattern={preview.bannerStyle}/>
     <Avatar profile={preview} name={name} size={70}/>

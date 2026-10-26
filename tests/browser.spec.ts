@@ -5,13 +5,13 @@ test.beforeEach(async ({page}) => {
   await page.addInitScript(() => {
     localStorage.setItem('vector_tutorial_seen_v2','1');
     const d=new Date();
-    if (!localStorage.getItem('vector_stats_v5')) localStorage.setItem('vector_stats_v5',JSON.stringify({ sparks: 3000, diamonds: 50, lastLoginDate: d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(), loginStreak: 2 }));
+    if (!localStorage.getItem('vector_stats_v5')) localStorage.setItem('vector_stats_v5',JSON.stringify({ sparks: 3000, diamonds: 50, lastLoginDate: d.toISOString().slice(0,10), loginStreak: 2 }));
   });
 });
 
 test('desktop navigation, settings persistence, game and pause', async ({page}) => {
   const errors=[]; page.on('pageerror',e=>errors.push(e.message));
-  await page.goto('/');
+  await page.goto('/',{waitUntil:'domcontentloaded'});
   await expect(page.getByRole('button',{name:'Play Arcade',exact:true})).toBeVisible();
   await page.screenshot({path:'test-results/desktop-home.png',fullPage:true});
   await page.getByRole('button',{name:'Tune',exact:true}).click();
@@ -40,7 +40,7 @@ test('desktop navigation, settings persistence, game and pause', async ({page}) 
 
 test('phone home, Memory hints and small-screen pause', async ({page}) => {
   const errors=[]; page.on('pageerror',e=>errors.push(e.message));
-  await page.setViewportSize({width:390,height:844}); await page.goto('/');
+  await page.setViewportSize({width:390,height:844}); await page.goto('/',{waitUntil:'domcontentloaded'});
   await page.screenshot({path:'test-results/phone-home.png',fullPage:true});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
   await page.getByRole('button',{name:'Select Memory',exact:true}).click();
@@ -56,7 +56,7 @@ test('phone home, Memory hints and small-screen pause', async ({page}) => {
 });
 
 test('paid spin persists payment and reward when immediately navigating away', async ({page}) => {
-  await page.goto('/'); await page.getByRole('button',{name:'Store',exact:true}).click();
+  await page.goto('/',{waitUntil:'domcontentloaded'}); await page.getByRole('button',{name:'Store',exact:true}).click();
   await page.getByRole('button',{name:/Spin/}).first().click();
   const before=await page.evaluate(()=>JSON.parse(localStorage.getItem('vector_stats_v5')));
   const paid=page.getByRole('button').filter({hasText:/150/}).last();
@@ -80,7 +80,7 @@ async function seedAnalytics(page) {
 }
 
 test('practice countdown can cancel and real practice gives feedback without rewards',async({page})=> {
-  const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto('/');
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto('/',{waitUntil:'domcontentloaded'});
   await page.getByRole('button',{name:'Select Practice',exact:true}).click();await page.getByRole('button',{name:'Play Practice',exact:true}).click();
   const before=await page.evaluate(()=>JSON.parse(localStorage.getItem('vector_stats_v5')));
   await page.getByRole('button',{name:'Start Run',exact:true}).click();
@@ -104,7 +104,7 @@ test('practice countdown can cancel and real practice gives feedback without rew
 });
 
 test('analytics empty state and one measured run never invent results',async({page})=> {
-  await page.goto('/');await page.getByRole('button',{name:'Stats',exact:true}).click();
+  await page.goto('/',{waitUntil:'domcontentloaded'});await page.getByRole('button',{name:'Stats',exact:true}).click();
   await expect(page.getByText('No score data yet',{exact:true})).toBeVisible();await expect(page.locator('[data-chart-point]')).toHaveCount(0);
   await page.evaluate(()=> {const s=JSON.parse(localStorage.getItem('vector_stats_v5'));s.runs=1;s.history=[{score:1234,mode:'arcade',acc:75,sparks:100,streak:5,date:'Today'}];localStorage.setItem('vector_stats_v5',JSON.stringify(s));});
   await page.reload();await page.getByRole('button',{name:'Stats',exact:true}).click();
@@ -114,7 +114,7 @@ test('analytics empty state and one measured run never invent results',async({pa
 });
 
 test('analytics filters, keyboard chart, light theme and reduced-motion display work',async({page})=> {
-  const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto('/');await seedAnalytics(page);
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto('/',{waitUntil:'domcontentloaded'});await seedAnalytics(page);
   await page.getByRole('button',{name:'Stats',exact:true}).click();
   await expect(page.locator('[data-chart-point]')).toHaveCount(10);
   await page.getByLabel('Analytics game mode').selectOption('arcade');await page.getByLabel('Analytics run range').selectOption('5');
@@ -134,7 +134,7 @@ test('analytics filters, keyboard chart, light theme and reduced-motion display 
 });
 
 test('phone analytics controls and recent run table remain usable',async({page})=> {
-  await page.setViewportSize({width:390,height:844});await page.goto('/');await seedAnalytics(page);await page.getByRole('button',{name:'Stats',exact:true}).click();
+  await page.setViewportSize({width:390,height:844});await page.goto('/',{waitUntil:'domcontentloaded'});await seedAnalytics(page);await page.getByRole('button',{name:'Stats',exact:true}).click();
   await expect(page.getByLabel('Analytics game mode')).toBeVisible();
   await page.getByRole('button',{name:'Reaction',exact:true}).click();await expect(page.locator('[data-chart-point]')).toHaveCount(10);
   await page.getByRole('group',{name:'Reaction time history. Use left and right arrow keys to inspect runs.'}).scrollIntoViewIfNeeded();

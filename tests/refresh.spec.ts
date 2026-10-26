@@ -7,12 +7,12 @@ test.beforeEach(async ({ page }) => {
     localStorage.setItem("vector_tutorial_seen_v2", "1");
     if (!localStorage.getItem("vector_stats_v5")) {
       const d = new Date();
-      localStorage.setItem("vector_stats_v5", JSON.stringify({ sparks: 12000, diamonds: 100, lastLoginDate: d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate(), loginStreak: 2 }));
+      localStorage.setItem("vector_stats_v5", JSON.stringify({ sparks: 12000, diamonds: 100, lastLoginDate: d.toISOString().slice(0,10), loginStreak: 2 }));
     }
   });
 });
 async function store(page: Page) {
-  await page.goto("/"); await page.getByRole("button", { name: "Store", exact: true }).click();
+  await page.goto("/",{waitUntil:"domcontentloaded"}); await page.getByRole("button", { name: "Store", exact: true }).click();
   await expect(page.getByLabel("Search store")).toBeVisible();
 }
 test("hero preview, purchase, wishlist and collection persist with the right balance", async ({ page }) => {
@@ -70,34 +70,25 @@ test("exchange confirms exact balances and closes after one conversion", async (
   expect(stats.sparks).toBe(2000); expect(stats.diamonds).toBe(200);
   await expect(dialog).toHaveCount(0);
 });
-test("home mode search and favorites persist without changing the game rules", async({page})=>{
-  await page.addInitScript(()=>{const stats=JSON.parse(localStorage.getItem("vector_stats_v5")!);stats.history=[{score:42,mode:"arcade",date:"Legacy"}];localStorage.setItem("vector_stats_v5",JSON.stringify(stats));});
-  await page.goto("/");
-  await expect(page.locator(".v-explore-stack")).not.toContainText("NaN");
-  await expect(page.getByRole("button",{name:"Select Practice",exact:true})).toBeVisible();
-  await page.getByRole("button",{name:"Save Practice to favorites",exact:true}).click();
-  await page.getByRole("tab",{name:/Favorites/}).click();
-  await expect(page.locator(".v-mode-card")).toHaveCount(1);
+test("restored swipe carousel supports keyboard and mode selection",async({page})=>{
+  await page.goto("/",{waitUntil:"domcontentloaded"});
+  await expect(page.getByRole("region",{name:"Game modes",exact:true})).toBeVisible();
   await page.getByRole("button",{name:"Select Practice",exact:true}).click();
   await expect(page.getByRole("button",{name:"Play Practice",exact:true})).toBeVisible();
-  await expect(page.getByText("Unranked · no currency or XP",{exact:true})).toBeVisible();
-  await page.reload(); await expect(page.getByRole("button",{name:"Play Arcade",exact:true})).toBeVisible();
-  await page.getByRole("tab",{name:/Favorites/}).click();
-  await expect(page.getByRole("tab",{name:/Favorites/})).toHaveAttribute("aria-selected","true");
-  await expect(page.locator(".v-mode-card")).toHaveCount(1);
-  await page.getByRole("tab",{name:"All modes",exact:true}).click();
-  await page.getByLabel("Search game modes").fill("memory");
-  await expect(page.locator(".v-mode-card")).toHaveCount(1);
-  await expect(page.getByRole("button",{name:"Select Memory",exact:true})).toBeVisible();
-  await page.getByLabel("Search game modes").fill("");
+  await expect(page.getByText("Training mode",{exact:true})).toBeVisible();
+  await page.getByRole("button",{name:"Select Memory",exact:true}).click();
+  await expect(page.getByRole("button",{name:"Play Memory",exact:true})).toBeVisible();
+  await page.keyboard.press("ArrowRight");
+  await expect(page.getByRole("button",{name:"Play Memory",exact:true})).toHaveCount(0);
   await page.screenshot({path:"test-results/refresh-home-desktop.png",fullPage:true});
 });
+
 test("device scoreboard works offline and does not mix practice into rankings",async({page})=>{
   await page.addInitScript(()=>{
     const today=new Date().toISOString().slice(0,10);
     localStorage.setItem("vector_scores_v5",JSON.stringify({arcade:[{score:800,name:"Ace",date:"Today"},{score:800,name:"Ace",date:"Yesterday"},{score:400,name:"Ace",date:"Earlier"}],blitz:[{score:600,name:"Ace",date:"Today"}],["daily_"+today]:[{score:250,name:"Ace",date:"Today"}],daily_2000:[{score:9000,name:"Old",date:"Past"}],practice:[{score:10000,name:"Training",date:"Today"}]}));
   });
-  await page.goto("/");await page.getByRole("button",{name:"Ranks",exact:true}).click();
+  await page.goto("/",{waitUntil:"domcontentloaded"});await page.getByRole("button",{name:"Ranks",exact:true}).click();
   await page.getByRole("tab",{name:"On this device",exact:true}).click();
   await page.getByLabel("Scoreboard game mode").selectOption("overall");
   await expect(page.locator(".v-device-table tbody tr")).toHaveCount(3);
@@ -118,7 +109,7 @@ async function mockRankings(page:Page,cached=false) {
     'export function subscribeToLeaderboard(mode,callback){queueMicrotask(()=>callback('+JSON.stringify(records)+'.map(r=>({...r,mode})),{fromCache:'+cached+'}));return ()=>{}} export async function submitScoreToCloud(){return false} export const submitScore=submitScoreToCloud;'}));
 }
 test("global search and pagination preserve tied places and profile focus",async({page})=>{
-  await mockRankings(page); await page.goto("/"); await page.getByRole("button",{name:"Ranks",exact:true}).click();
+  await mockRankings(page); await page.goto("/",{waitUntil:"domcontentloaded"}); await page.getByRole("button",{name:"Ranks",exact:true}).click();
   await expect(page.locator(".v-live-status")).toContainText("Live snapshot");
   await expect(page.locator(".v-score-table tbody tr")).toHaveCount(10);
   await expect(page.locator(".v-score-table tbody .v-rank").first()).toHaveText("#1");
@@ -135,13 +126,13 @@ test("global search and pagination preserve tied places and profile focus",async
   await page.screenshot({path:"test-results/refresh-rankings-desktop.png",fullPage:true});
 });
 test("cached rankings never claim to be a live snapshot",async({page})=>{
-  await mockRankings(page,true); await page.goto("/"); await page.getByRole("button",{name:"Ranks",exact:true}).click();
+  await mockRankings(page,true); await page.goto("/",{waitUntil:"domcontentloaded"}); await page.getByRole("button",{name:"Ranks",exact:true}).click();
   await expect(page.locator(".v-live-status")).toContainText("Cached snapshot");
   await expect(page.locator(".v-connection-note")).toContainText("Places may have changed");
 });
 test("phone layouts fit, character previews scroll, and both themes stay readable",async({page})=>{
   const errors:string[]=[];page.on("pageerror",e=>errors.push(e.message));
-  await page.setViewportSize({width:390,height:844});await mockRankings(page);await page.goto("/");
+  await page.setViewportSize({width:390,height:844});await mockRankings(page);await page.goto("/",{waitUntil:"domcontentloaded"});
   await page.screenshot({path:"test-results/refresh-home-phone.png",fullPage:true});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
   await page.getByRole("button",{name:"Store",exact:true}).click();await page.getByRole("tab",{name:"Avatars",exact:true}).click();
@@ -162,20 +153,20 @@ test("phone layouts fit, character previews scroll, and both themes stay readabl
   expect(errors).toEqual([]);
 });
 
-test("profile can equip the new heroes and edit a name on a phone",async({page})=>{
+test("phone profile shows progression, inventory and account-only name changes",async({page})=>{
   await page.setViewportSize({width:390,height:844});
-  await page.addInitScript(()=>localStorage.setItem("vector_profile_v5",JSON.stringify({
-    avatarId:"hero-spider",purchased:["hero-spider","hero-miles"],bannerId:"dusk",frameId:"none",titleId:"rookie"
-  })));
-  await page.goto("/");await page.getByRole("button",{name:"Open your profile and level progression",exact:true}).click();
+  await page.addInitScript(()=>localStorage.setItem("vector_profile_v5",JSON.stringify({avatarId:"hero-spider",purchased:["hero-spider","hero-miles"],bannerId:"dusk",frameId:"none",titleId:"rookie"})));
+  await page.goto("/",{waitUntil:"domcontentloaded"});await page.getByRole("button",{name:"Open your profile and level progression",exact:true}).click();
   await expect(page.getByRole("tab",{name:"Collection",exact:true})).toHaveAttribute("aria-selected","true");
-  await expect(page.getByRole("button",{name:"Edit player name",exact:true})).toBeVisible();
   await page.getByRole("button",{name:"Edit player name",exact:true}).click();
-  await page.getByRole("textbox",{name:"Player name",exact:true}).fill("Hero Ace");await page.getByRole("textbox",{name:"Player name",exact:true}).press("Enter");
-  await expect(page.getByRole("heading",{name:/^Hero Ace/})).toBeVisible();
+  await expect(page.getByRole("dialog")).toContainText("later changes cost 100 Diamonds");
+  await expect(page.getByRole("textbox",{name:"Player name",exact:true})).toHaveCount(0);
+  await page.keyboard.press("Escape");
+  await page.getByRole("tab",{name:"Progress",exact:true}).click();
+  await page.getByRole("button",{name:"Show all 100 milestones",exact:true}).click();
+  await expect(page.locator(".milestone-grid>article")).toHaveCount(100);
   await page.screenshot({path:"test-results/refresh-profile-phone.png",fullPage:true});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
-  const tab=page.getByRole("tab",{name:"Collection",exact:true});await tab.focus();await page.keyboard.press("End");
-  await expect(page.getByRole("tab",{name:"Missions",exact:true})).toHaveAttribute("aria-selected","true");
-  await expect(page.getByRole("tabpanel",{name:"tasks",exact:true})).toBeVisible();
+  await page.getByRole("tab",{name:"Gifts",exact:true}).click();
+  await expect(page.getByRole("tabpanel",{name:"gifts",exact:true})).toContainText("Sign in");
 });

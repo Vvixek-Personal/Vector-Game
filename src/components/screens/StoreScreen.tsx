@@ -1,11 +1,15 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef } from "react";
 import { Search, Heart, Sparkles, Gem, ArrowUpRight, Check, Disc, Egg, SlidersHorizontal, Layers, ShoppingBag, X } from "lucide-react";
 import { STORE_ITEMS, type StoreItem, type StoreTab } from "../../game/catalog";
 import { loadProfile, saveProfile, type Profile } from "../../game/profile";
 import { loadName, type Stats } from "../../game/storage";
-import { canAffordItem, filterStoreItems, isStoreItemEquipped, ownsStoreItem, transactStoreItem, type StoreFilters } from "../../game/store";
+import { canAffordItem, filterStoreItems, isStoreItemEquipped, ownsStoreItem, type StoreFilters } from "../../game/store";
 import { uiTap, uiUnlock } from "../../game/haptics";
 import AppHeader from "../AppHeader";
+import { requestStoreAction } from "../../game/economy";
+import { useCatalog } from "../../firebase/catalog";
+import GiftsPanel from "../GiftsPanel";
+import { Gift } from "lucide-react";
 import Modal from "../shared/Modal";
 import SegmentedTabs from "../shared/SegmentedTabs";
 import { ItemArt, LoadoutPreview } from "../store/ItemPreview";
@@ -14,14 +18,14 @@ import { IncubatorView } from "../store/IncubatorView";
 import "../../collection.css";
 
 interface Props { stats: Stats; onStats: (stats: Stats) => void; profile: Profile; onProfile: (profile: Profile) => void }
-type Section = "browse" | "collection" | "wishlist" | "activities" | "exchange";
+type Section = "browse" | "collection" | "wishlist" | "activities" | "exchange" | "gifts";
 const categories = [
   { id: "all", label: "All items" }, { id: "avatars", label: "Avatars" }, { id: "banners", label: "Banners" },
   { id: "frames", label: "Frames" }, { id: "themes", label: "Arena themes" }, { id: "styles", label: "Patterns" },
   { id: "titles", label: "Titles" }, { id: "audio", label: "Audio" },
 ];
 const initialFilters: StoreFilters = { view: "browse", tab: "all", query: "", currency: "all", rarity: "all", affordable: false, sort: "featured" };
-const collectibles = STORE_ITEMS.filter(item => !item.pack);
+
 
 function Price({ item }: { item: StoreItem }) {
   return <span className={"v-price " + item.currency}>
@@ -32,6 +36,10 @@ function Price({ item }: { item: StoreItem }) {
 }
 
 export default function StoreScreen({ stats, onStats, profile, onProfile }: Props) {
+  const catalogVersion=useCatalog();
+  const collectibles=STORE_ITEMS.filter(item=>!item.pack);
+  const [checkoutBusy,setCheckoutBusy]=useState(false);
+  const checkout=useRef<{busy:boolean;itemId:string;id:string}>({busy:false,itemId:"",id:""});
   const [section, setSection] = useState<Section>("browse");
   const [activity, setActivity] = useState<"spin" | "incubator">("spin");
   const [filters, setFilters] = useState(initialFilters);
@@ -42,7 +50,7 @@ export default function StoreScreen({ stats, onStats, profile, onProfile }: Prop
   const isCatalog = ["browse", "collection", "wishlist"].includes(section);
   const visibleItems = useMemo(() => filterStoreItems(collectibles, profile, stats, {
     ...filters, view: isCatalog ? section as StoreFilters["view"] : "browse",
-  }), [filters, section, profile, stats]);
+  }), [filters, section, profile, stats, catalogVersion]);
   const patch = (value: Partial<StoreFilters>) => setFilters(previous => ({ ...previous, ...value }));
   const changeSection = (value: Section) => { uiTap(); setSection(value); };
   const openActivity = (value: "spin" | "incubator") => { setActivity(value); changeSection("activities"); };
@@ -53,14 +61,18 @@ export default function StoreScreen({ stats, onStats, profile, onProfile }: Prop
     saveProfile(next); onProfile(next); uiTap();
     setNote(wished ? item.name + " removed from your wishlist." : item.name + " saved to your wishlist.");
   };
-  const confirm = (item: StoreItem) => {
-    const result = transactStoreItem(item.id, ownsStoreItem(item, profile, stats) ? "equip" : "buy");
-    if (result.ok === false) { setNote(result.reason); return; }
+  const confirm = async (item: StoreItem) => {
+    if(checkout.current.busy)return;
+    if(checkout.current.itemId!==item.id)checkout.current={busy:false,itemId:item.id,id:crypto.randomUUID()};
+    checkout.current.busy=true;setCheckoutBusy(true);
+    const result = await requestStoreAction(item.id, ownsStoreItem(item, profile, stats) ? "equip" : "buy",checkout.current.id,{cost:item.cost,currency:item.currency});
+    checkout.current.busy=false;setCheckoutBusy(false);
+    if (result.ok === false) { setNote(result.reason);if(result.reason.toLowerCase().includes("price"))setPeek(STORE_ITEMS.find(current=>current.id===item.id)||item); return; }
     onStats(result.stats); onProfile(result.profile);
     if (result.kind === "equipped") uiTap(); else uiUnlock();
     setNote(result.kind === "exchanged" ? "+" + item.pack?.diamonds + " Diamonds added."
       : result.kind === "equipped" ? item.name + " equipped." : item.name + " unlocked and equipped.");
-    setPeek(null);
+    setPeek(null);checkout.current={busy:false,itemId:"",id:""};
   };
   const peekOwned = peek ? ownsStoreItem(peek, profile, stats) : false;
   const peekEquipped = peek ? peekOwned && isStoreItemEquipped(peek, profile) : false;
@@ -68,36 +80,24 @@ export default function StoreScreen({ stats, onStats, profile, onProfile }: Prop
   const shortage = peek ? Math.max(0, peek.cost - (peek.currency === "diamonds" ? stats.diamonds : stats.sparks)) : 0;
 
   return <div className="collection-page">
-    <AppHeader title="Store" subtitle="Make your mark"/>
-    <section className="v-store-hero">
-      <div>
-        <p className="v-eyebrow"><Layers size={13}/> YOUR VECTOR, YOUR WAY</p>
-        <h1>A look that<br/>moves with you<span>.</span></h1>
-        <p>Find your next favorite. Preview it, make it yours, and take it into the arena.</p>
-        <div className="v-collection-progress"><span><b>{ownedCount}</b> / {collectibles.length} available in your collection</span>
-          <div role="progressbar" aria-label="Collection completion" aria-valuenow={ownedCount} aria-valuemin={0} aria-valuemax={collectibles.length}><i style={{ width: ownedCount / collectibles.length * 100 + "%" }}/></div>
-        </div>
-      </div>
-      <div className="v-store-wallet">
-        <div className="v-wallet-top"><span>YOUR BALANCE</span><span>Earned in game</span></div>
-        <div className="v-wallet-amounts"><div><Sparkles size={20}/><strong data-testid="spark-balance">{stats.sparks.toLocaleString()}</strong><span>Sparks</span></div>
-          <div><Gem size={20}/><strong data-testid="diamond-balance">{stats.diamonds.toLocaleString()}</strong><span>Diamonds</span></div></div>
-        <button className="v-text-button" onClick={() => changeSection("exchange")}>Exchange Sparks for Diamonds <ArrowUpRight size={15}/></button>
-        <div className="v-wallet-links"><button onClick={() => openActivity("spin")}><Disc size={16}/> Lucky Spin <ArrowUpRight size={14}/></button>
-          <button onClick={() => openActivity("incubator")}><Egg size={16}/> Incubator <ArrowUpRight size={14}/></button></div>
-      </div>
+    <AppHeader title="Store" subtitle="Looks, rewards and gifts" sparks={stats.sparks} diamonds={stats.diamonds}/>
+    <section className="store-overview">
+      <div><p className="v-eyebrow">THE COLLECTION</p><h1>Make it yours.</h1><p>Preview a new look, find your favorites, or share something with a friend.</p><small>{ownedCount} / {collectibles.length} items available in your collection</small></div>
+      <div className="store-shortcuts"><button onClick={()=>openActivity("spin")}><Disc size={18}/><span>Lucky Spin<small>Daily wheel & rewards</small></span><ArrowUpRight size={14}/></button><button onClick={()=>openActivity("incubator")}><Egg size={18}/><span>Incubator<small>Hatch your next find</small></span><ArrowUpRight size={14}/></button></div>
     </section>
+
 
     <SegmentedTabs label="Store sections" value={section} onChange={changeSection} panelId="store-content" className="v-primary-tabs" options={[
       { id: "browse", label: "Discover", icon: <ShoppingBag size={16}/> },
       { id: "collection", label: "My collection", icon: <Layers size={16}/>, count: ownedCount },
       { id: "wishlist", label: "Wishlist", icon: <Heart size={16}/>, count: wishCount },
+      { id: "gifts", label: "Gifts", icon: <Gift size={16}/> },
       { id: "activities", label: "Activities", icon: <Disc size={16}/> },
       { id: "exchange", label: "Exchange", icon: <Gem size={16}/> },
     ]}/>
     <div className="v-notice" role="status" aria-live="polite">{note || "Cosmetics change your look and sound. Your scores stay skill based."}</div>
 
-    <section id="store-content" role="tabpanel" aria-label={section === "browse" ? "Discover items" : section === "collection" ? "My collection" : section === "wishlist" ? "Wishlist" : section === "activities" ? "Store activities" : "Currency exchange"}>
+    <section id="store-content" role="tabpanel" aria-label={section === "browse" ? "Discover items" : section === "collection" ? "My collection" : section === "wishlist" ? "Wishlist" : section === "activities" ? "Store activities" : section === "gifts" ? "Gifts" : "Currency exchange"}>
       {isCatalog && <>
         <SegmentedTabs label="Item categories" value={filters.tab} onChange={value => patch({ tab: value })} panelId="store-grid-panel" className="v-category-tabs" options={categories}/>
         <div className="v-store-toolbar">
@@ -126,6 +126,7 @@ export default function StoreScreen({ stats, onStats, profile, onProfile }: Prop
         </div>
       </>}
 
+      {section === "gifts" && <GiftsPanel/>}
       {section === "activities" && <div className="v-activity-panel">
         <div className="v-section-heading"><div><p className="v-eyebrow">A LITTLE DISCOVERY</p><h2>Something good is waiting.</h2><p>Visit the wheel or check on your incubating eggs.</p></div></div>
         <SegmentedTabs<"spin" | "incubator"> label="Store activities" value={activity} onChange={setActivity} panelId="activity-content" options={[{ id: "spin", label: "Lucky Spin", icon: <Disc size={16}/> }, { id: "incubator", label: "Incubator", icon: <Egg size={16}/> }]}/>
@@ -142,7 +143,7 @@ export default function StoreScreen({ stats, onStats, profile, onProfile }: Prop
       </>}
     </section>
 
-    {peek && <Modal title={peek.pack ? "Review exchange" : peek.name} onClose={() => setPeek(null)} className="v-item-dialog">
+    {peek && <Modal title={peek.pack ? "Review exchange" : peek.name} onClose={() => !checkoutBusy && setPeek(null)} className="v-item-dialog">
       <div className="v-preview-layout"><div className={"v-preview-stage " + (peek.themeSwatch ? "is-arena" : "")}>
         {["avatars", "frames", "banners", "styles", "titles"].includes(peek.tab) ? <LoadoutPreview item={peek} profile={profile} name={loadName()}/> : <ItemArt item={peek} large/>}
       </div><div className="v-preview-details"><span className={"v-rarity rarity-" + (peek.rarity ?? "common")}>{peek.rarity ?? "common"} · {peek.tab === "diamonds" ? "exchange" : peek.tab}</span>
@@ -152,8 +153,8 @@ export default function StoreScreen({ stats, onStats, profile, onProfile }: Prop
           {!peekOwned && <div><span>{shortage ? "Still needed" : "Balance after"}</span><strong>{(shortage || remaining).toLocaleString()} {peek.currency === "diamonds" ? "Diamonds" : "Sparks"}</strong></div>}
           {peek.pack && <div><span>Diamonds after</span><strong>{(stats.diamonds + (peek.pack.diamonds ?? 0)).toLocaleString()}</strong></div>}
         </div>
-        <button className="v-button v-button-primary" disabled={peekEquipped || (!peekOwned && !canAffordItem(peek, stats))} onClick={() => confirm(peek)}>
-          {peekEquipped ? <><Check size={16}/> Equipped</> : peekOwned ? "Equip item" : shortage ? "Keep playing to unlock" : peek.pack ? "Confirm exchange" : "Buy & equip"}
+        <button className="v-button v-button-primary" disabled={checkoutBusy || peekEquipped || (!peekOwned && (!canAffordItem(peek, stats) || peek.active===false || profile.inventoryRules?.[peek.id]==="locked"))} onClick={() => confirm(peek)}>
+          {checkoutBusy ? "Saving…" : profile.inventoryRules?.[peek.id]==="locked" ? "Locked by developer" : peek.active===false&&!peekOwned ? "Not currently for sale" : peekEquipped ? <><Check size={16}/> Equipped</> : peekOwned ? "Equip item" : shortage ? "Keep playing to unlock" : peek.pack ? "Confirm exchange" : "Buy & equip"}
         </button>
         <p className="v-footnote">{peekOwned ? "Equip any owned item whenever you like." : peek.pack ? "Your new Diamonds will be available immediately." : "Purchase once. Keep it in your collection."}</p>
       </div></div>

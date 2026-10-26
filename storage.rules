@@ -1,0 +1,8 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /catalog-images/{path=**} { allow read: if true; allow write: if false; }
+    match /profile-images/{path=**} { allow read: if true; allow write: if false; }
+    match /{path=**} { allow read, write: if false; }
+  }
+}

@@ -27,5 +27,15 @@
       "vite-plugin-pwa/client",
       "node"
     ]
-  }
+  },
+  "include": [
+    "src",
+    "tests",
+    "*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "functions/node_modules"
+  ]
 }

@@ -65,6 +65,10 @@ export interface Profile {
   frameId: string;
   titleId: string;
   purchased: string[];
+  accessRole?: "guest" | "player" | "moderator" | "developer";
+  inventoryRules?: Record<string, "removed" | "locked" | "gifted">;
+  customTitles?: {id:string;name:string;color:string;assignedAt?:number}[];
+  customPhotoURL?: string | null;
   wishlist?: string[];
   favoriteModes?: GameMode[];
   claimedLevels?: number[];
@@ -127,6 +131,13 @@ export const AVATARS: AvatarDef[] = [
   { id: "comet", name: "Comet", glyph: "☄", from: "#fde68a", to: "#38bdf8", rule: () => shopOnly() },
 ];
 
+// Keep starter and earned avatar identities in the same inventory registry.
+for (const avatar of AVATARS) {
+  if (!STORE_ITEMS.some(item=>item.apply?.avatarId===avatar.id)) STORE_ITEMS.push({
+    id:"earned-"+avatar.id,tab:"avatars",name:avatar.name,desc:avatar.rule({runs:0,totalScore:0,bestStreak:0,fastestMs:9999,sparksEarned:0} as Stats).label,
+    cost:0,currency:"sparks",rarity:"common",preview:avatar.glyph,apply:{avatarId:avatar.id},unlockOnly:true,
+  });
+}
 export const BANNERS: BannerDef[] = [
   { id: "dusk", name: "Dusk", css: "linear-gradient(120deg,#2b3350,#4c3a6b 55%,#7a4a6e)", dark: true, rule: () => always() },
   { id: "tide", name: "Tide", css: "linear-gradient(120deg,#123a4a,#1d6d7a 55%,#2dd4bf)", dark: true, rule: () => always() },
@@ -277,7 +288,11 @@ export function loadProfile(): Profile {
     const p = JSON.parse(raw) as Partial<Profile>;
     const patterns: BannerPattern[] = ["waves", "grid", "orbits", "rays", "dots", "plain"];
     return {
-      avatarId: typeof p.avatarId === "string" ? p.avatarId : "spark",
+      accessRole: ["player","moderator","developer"].includes(p.accessRole) ? p.accessRole : "guest",
+    inventoryRules: p.inventoryRules && typeof p.inventoryRules === "object" ? Object.fromEntries(Object.entries(p.inventoryRules).filter(([id,value]) => ["removed","locked","gifted"].includes(value))) as Profile["inventoryRules"] : {},
+    customTitles: Array.isArray(p.customTitles) ? p.customTitles.filter(t=>t && typeof t.id === "string" && typeof t.name === "string").slice(0,30) : [],
+    customPhotoURL: typeof p.customPhotoURL === "string" && p.customPhotoURL.startsWith("https://firebasestorage.googleapis.com/") ? p.customPhotoURL : null,
+    avatarId: typeof p.avatarId === "string" ? p.avatarId : "spark",
       customAvatar: {
         glyph: typeof p.customAvatar?.glyph === "string" && p.customAvatar.glyph ? p.customAvatar.glyph.slice(0, 2) : "▲",
         from: typeof p.customAvatar?.from === "string" ? p.customAvatar.from : "#a8b7f2",
@@ -290,8 +305,8 @@ export function loadProfile(): Profile {
         pattern: patterns.includes(p.customBanner?.pattern as BannerPattern) ? (p.customBanner as Profile["customBanner"]).pattern : "waves",
       },
     bannerStyle: (["waves", "grid", "orbits", "rays", "dots", "plain"] as BannerPattern[]).includes(p.bannerStyle as BannerPattern) ? (p.bannerStyle as BannerPattern) : "waves",
-    frameId: sanitizeId(FRAMES, p.frameId, "none"),
-    titleId: sanitizeId(TITLES, p.titleId, "rookie"),
+    frameId: typeof p.frameId === "string" && /^[A-Za-z0-9_-]{1,100}$/.test(p.frameId) ? p.frameId : "none",
+    titleId: typeof p.titleId === "string" && /^[A-Za-z0-9_-]{1,100}$/.test(p.titleId) ? p.titleId : "rookie",
     purchased: Array.isArray(p.purchased)
       ? p.purchased.filter((id): id is string => typeof id === "string")
       : [],
@@ -320,7 +335,10 @@ export function saveProfile(p: Profile) {
 
 import { ANIME_CHARACTERS, type AnimeId } from "../components/AnimeAvatar";
 
-export function avatarFor(profile: Profile): { glyph: string; from: string; to: string; name: string; cartoon?: string; anime?: string; hero?: string } {
+export function avatarFor(profile: Profile): { glyph: string; from: string; to: string; name: string; cartoon?: string; anime?: string; hero?: string; photo?: string } {
+  if (profile.accessRole === "developer" && profile.customPhotoURL) return {glyph:"",from:"#27304a",to:"#435baf",name:"Custom",photo:profile.customPhotoURL};
+  const image = STORE_ITEMS.find(item=>item.apply?.avatarId === profile.avatarId && item.photo);
+  if (image) return {glyph:"",from:"#27304a",to:"#435baf",name:image.name,photo:image.photo};
   const hero = heroFor(profile.avatarId);
   if (hero) return { glyph: "", from: hero.from, to: hero.to, name: hero.name, hero: hero.id };
   if (profile.avatarId.startsWith("ani-")) {

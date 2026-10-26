@@ -1,6 +1,7 @@
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "./firebase/config";
-import { beginCloudSync, completeCloudSync, queueCloudSave, SAVE_KEYS } from "./firebase/cloudSave";
+import { beginCloudSync } from "./firebase/cloudSave";
+import { useAccount, startAccountSession, accountAction, isSignedAccount, beginAccountRun, settleAccountRun } from "./firebase/accounts";
+import { startCatalogSync, useCatalog } from "./firebase/catalog";
+import AccountStatus from "./components/AccountStatus";
 import { safeStorage as localStorage } from "./game/persistence";
 
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
@@ -44,6 +45,9 @@ import { loadMissions, updateMissionsProgress } from "./game/missions";
 import { STORE_ITEMS } from "./game/catalog";
 import { getPlayerLevelProgress } from "./game/levels";
 import { useAuth } from "./firebase/auth";
+import "./collection.css";
+import "./playroom.css";
+import "./account-ui.css";
 
 type Screen = "home" | "leaderboard" | "store" | "stats" | "settings" | "profile" | "missions";
 
@@ -81,6 +85,7 @@ export default function App() {
   const [name, setName] = useState(() => loadName());
   const nameRef = useRef(name);
   const [settings, setSettings] = useState<Settings>(() => loadSettings());
+  const settingsChangedByUser=useRef(false);
   const systemReducedMotion = useReducedMotion();
   const reduceMotion = settings.reducedMotion || !!systemReducedMotion;
   const [profile, setProfile] = useState<Profile>(() => loadProfile());
@@ -103,70 +108,59 @@ export default function App() {
 
   const { user, loading: authLoading } = useAuth();
   const [cloudLoaded, setCloudLoaded] = useState(false);
+  const accountSession = useAccount();
+  const expectedUid=user&&!user.isAnonymous?user.uid:null;
+  const restoringIdentity=authLoading||accountSession.uid!==expectedUid||accountSession.status==="loading";
+  const catalogRevision = useCatalog();
+  const serverRunRef = useRef<any>(null);
+  const launchToken = useRef(0);
+  const [launchPending, setLaunchPending] = useState(false);
+  const [gameNote, setGameNote] = useState("");
   const [showNamePopup, setShowNamePopup] = useState(false);
   const [tempName, setTempName] = useState("");
   const [dailyReward, setDailyReward] = useState<{ sparks: number; diamonds: number; streak: number } | null>(null);
 
   const statsRef = useRef(stats);
 
-  useEffect(() => {
-    if (!cloudLoaded) return;
-    const reward = checkDailyLogin(loadStats());
-    if (reward) {
-      statsRef.current = reward.nextStats; setStats(reward.nextStats);
-      setDailyReward({ sparks: reward.rewardSparks, diamonds: reward.rewardDiamonds, streak: reward.nextStats.loginStreak || 1 });
-    }
-  }, [cloudLoaded]);
-
+  useEffect(() => startCatalogSync(), []);
   useEffect(() => {
     if (authLoading) return;
-    beginCloudSync();
-    if (!user) { setCloudLoaded(true); return; }
-    setCloudLoaded(false);
-    let cancelled = false;
-    const baseline = Object.fromEntries(Object.entries(SAVE_KEYS).map(([field, key]) => [field, localStorage.getItem(key)]));
-    let timer: ReturnType<typeof setTimeout>;
-    const timeout = new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new Error('Cloud restore timed out')), 6000); });
-    Promise.race([getDoc(doc(db, 'users', user.uid)), timeout]).then(snap => {
-      if (cancelled) return;
-      const data = snap.exists() ? snap.data() : {};
-      for (const [field, key] of Object.entries(SAVE_KEYS)) {
-        if (data[field] == null || baseline[field] !== localStorage.getItem(key) || phaseRef.current !== 'menu') continue;
-        const remoteTime = Number(data[field + 'UpdatedAt']) || 0;
-        const localTime = Number(localStorage.getItem(key + '_updatedAt')) || 0;
-        const legacyIsNewer = !remoteTime && (field !== 'stats' || (data.stats.totalScore ?? 0) >= loadStats().totalScore);
-        if (remoteTime < localTime && !legacyIsNewer) continue;
-        if (baseline[field]) localStorage.setItem(key + '_before_cloud_restore', baseline[field]);
-        localStorage.setItem(key, field === 'operativeName' ? String(data[field]) : JSON.stringify(data[field]));
-        localStorage.setItem(key + '_updatedAt', String(remoteTime));
-      }
-      statsRef.current = loadStats(); profileRef.current = loadProfile(); nameRef.current = loadName();
-      setStats(statsRef.current); setProfile(profileRef.current); setSettings(loadSettings()); setName(nameRef.current);
-      if (!user.isAnonymous && !data.operativeName && !localStorage.getItem('vector_name_set')) {
-        setTempName(user.displayName?.split(' ')[0] || 'Operative'); setShowNamePopup(true);
-      }
-      completeCloudSync(user.uid);
-      const patch: Record<string, unknown> = {};
-      for (const [field, key] of Object.entries(SAVE_KEYS)) {
-        const raw = localStorage.getItem(key);
-        if (raw) {
-          try { patch[field] = field === 'operativeName' ? raw : JSON.parse(raw); patch[field + 'UpdatedAt'] = Number(localStorage.getItem(key + '_updatedAt')) || Date.now(); } catch {}
-        }
-      }
-      queueCloudSave(patch);
-    }).catch(err => {
-      if (!cancelled) console.warn('Cloud restore unavailable; local progress is available.', err);
-    }).finally(() => { clearTimeout(timer); if (!cancelled) setCloudLoaded(true); });
-    return () => { cancelled = true; clearTimeout(timer); beginCloudSync(); };
-  }, [user, authLoading]);
+    launchToken.current++; serverRunRef.current=null; setLaunchPending(false);settingsChangedByUser.current=false;
+    setShowTutorial(false);setShowModifiersModal(false);setGameNote("");tutorialStarts.current=false;tutorialMode.current=null;
+    if(countdownTimer.current!==null)window.clearInterval(countdownTimer.current);countdownTimer.current=null;setCountdown(null);
+    engineRef.current?.toMenu(); setPhase("menu"); phaseRef.current="menu"; setPrepMode(null); setSummary(null); setDailyReward(null); setShowNamePopup(false);
+    return startAccountSession(user);
+  }, [user?.uid, authLoading]);
+  useEffect(() => {
+    const refresh = () => {
+      setStats(loadStats()); setProfile(loadProfile()); setSettings(loadSettings()); setName(loadName()); setScores(loadScores(modeRef.current));
+    };
+    window.addEventListener("vector-account-updated",refresh);
+    refresh();
+    return () => window.removeEventListener("vector-account-updated",refresh);
+  }, []);
+  useEffect(() => { setCloudLoaded(!authLoading && accountSession.status!=="loading"); }, [authLoading,accountSession.status]);
+  useEffect(() => {
+    if (!cloudLoaded || restoringIdentity) return;
+    if (user && !user.isAnonymous) {
+      if(accountSession.status!=="ready")return;
+      let cancelled=false;
+      void accountAction("claimDaily",{},"daily_"+new Date().toISOString().slice(0,10)).then(result=>{
+        if(!cancelled && result.reward && !result.alreadyClaimed)setDailyReward(result.reward);
+      }).catch(()=>{});
+      return()=>{cancelled=true;};
+    }
+    const reward=checkDailyLogin(loadStats());
+    if(reward){setStats(reward.nextStats);setDailyReward({sparks:reward.rewardSparks,diamonds:reward.rewardDiamonds,streak:reward.nextStats.loginStreak||1});}
+  }, [cloudLoaded,user?.uid,accountSession.status,restoringIdentity]);
 
   useEffect(() => {
     phaseRef.current = phase;
   }, [phase]);
   useEffect(() => {
     nameRef.current = name;
-    if (cloudLoaded) saveName(name);
-  }, [name, cloudLoaded]);
+    if (cloudLoaded && !restoringIdentity && ["guest","ready"].includes(accountSession.status)) saveName(name);
+  }, [name, cloudLoaded,restoringIdentity,accountSession.status]);
   useEffect(() => {
     profileRef.current = profile;
   }, [profile, cloudLoaded]);
@@ -187,6 +181,16 @@ export default function App() {
       onOver: (sum) => {
         if (sum.mode === "practice") {
           sum.xpGained = 0; setSummary(sum); setHeld([]); return;
+        }
+        if (isSignedAccount()) {
+          if(sum.score>0)addScore(sum.mode,{score:sum.score,name:nameRef.current,date:new Date().toLocaleDateString()},sum.challengeId);
+          setScores(loadScores(sum.mode)); setHeld([]); sum.xpGained=0; const pendingSummary={...sum,rewardPending:true};setSummary(pendingSummary);
+          const receipt=serverRunRef.current;serverRunRef.current=null;
+          if(receipt)void settleAccountRun(receipt.id,sum).then(result=>{
+            if(result){setSummary(current=>current===pendingSummary?{...sum,xpGained:result.reward?.xp||0,rewardPending:false}:current);setGameNote(result.message);}
+          }).catch((error:any)=>setGameNote(["functions/failed-precondition","functions/invalid-argument","functions/permission-denied"].includes(error?.code)?error.message:"Your run is saved on this device. Cloud rewards will retry when you reconnect."));
+          else setGameNote("No cloud run session was available. This score stays on your device.");
+          return;
         }
         if (sum.score > 0) {
           addScore(sum.mode, {
@@ -245,7 +249,7 @@ export default function App() {
 
   // settings persistence + live engine config
   useEffect(() => {
-    if (cloudLoaded) saveSettings(settings);
+    if (cloudLoaded && !restoringIdentity && (["guest","ready"].includes(accountSession.status)||settingsChangedByUser.current)){saveSettings(settings);settingsChangedByUser.current=false;}
     engineRef.current?.configure({ ...settings, reducedMotion: reduceMotion });
     document.documentElement.setAttribute("data-theme", settings.uiMode || "dark");
     document.documentElement.setAttribute("data-color", settings.colorway || "cobalt");
@@ -259,19 +263,19 @@ export default function App() {
     if (metaTheme) {
       metaTheme.setAttribute("content", settings.uiMode === "light" ? "#f6f6f8" : "#121418");
     }
-  }, [settings, cloudLoaded, reduceMotion]);
+  }, [settings, cloudLoaded, reduceMotion,restoringIdentity,accountSession.status]);
 
   useEffect(() => {
     profileRef.current = profile;
-    if (cloudLoaded) saveProfile(profile);
+    if (cloudLoaded && !restoringIdentity && ["guest","ready"].includes(accountSession.status)) saveProfile(profile);
     engineRef.current?.setAudioPack(profile.audioPackId);
-    engineRef.current?.setArenaTheme(STORE_ITEMS.find(item => item.id === profile.arenaThemeId && profile.purchased.includes(item.id))?.themeSwatch);
-  }, [profile, cloudLoaded]);
+    engineRef.current?.setArenaTheme(STORE_ITEMS.find(item => item.id === profile.arenaThemeId)?.themeSwatch);
+  }, [profile, cloudLoaded, catalogRevision,restoringIdentity,accountSession.status]);
 
   const updateProfile = useCallback((p: Profile) => setProfile(p), []);
 
   const updateSetting = useCallback(<K extends keyof Settings>(key: K, value: Settings[K]) => {
-    setSettings((prev) => ({ ...prev, [key]: value }));
+    settingsChangedByUser.current=true;setSettings((prev) => ({ ...prev, [key]: value }));
   }, []);
 
   const best = scores[0]?.score ?? 0;
@@ -301,7 +305,7 @@ export default function App() {
   useEffect(() => () => {
     if (countdownTimer.current !== null) window.clearInterval(countdownTimer.current);
   }, []);
-  const start = useCallback((m?: unknown) => {
+  const start = useCallback(async (m?: unknown) => {
     const engine = engineRef.current;
     if (!engine) return;
     stopCountdown();
@@ -311,6 +315,17 @@ export default function App() {
     setMode(nextMode);
     setSummary(null);
     const nextModifiers = { ...modifiersRef.current };
+    const ticket=++launchToken.current;
+    serverRunRef.current=null;
+    if(isSignedAccount() && nextMode!=="practice"){
+      setLaunchPending(true);setGameNote("");
+      try {
+        const run=await beginAccountRun(nextMode,getModifierMultiplier(nextModifiers));
+        if(ticket!==launchToken.current)return;
+        serverRunRef.current=run;
+      } catch(error:any){if(ticket===launchToken.current){setGameNote(error.message);setLaunchPending(false);}return;}
+      setLaunchPending(false);
+    }
     engine.toMenu();
     engine.sound.ensure();
     engine.sound.click();
@@ -325,7 +340,9 @@ export default function App() {
         engine.sound.click();
       } else {
         stopCountdown();
-        engine.startGame(nextMode, nextModifiers);
+        const session=serverRunRef.current;
+        const challenge=session&&(nextMode==="daily"||nextMode==="weekly")?session.bucket.slice(nextMode.length+1):undefined;
+        engine.startGame(nextMode, nextModifiers,challenge);
       }
     }, 1000);
   }, [stopCountdown]);
@@ -379,6 +396,7 @@ export default function App() {
   }, []);
 
   const goHome = useCallback(() => {
+    launchToken.current++;setLaunchPending(false);serverRunRef.current=null;
     stopCountdown();
     engineRef.current?.toMenu();
     setScores(loadScores(modeRef.current));
@@ -504,7 +522,7 @@ export default function App() {
                   transition={reduceMotion ? { duration: 0.1 } : { type: "spring", stiffness: 360, damping: 30, mass: 0.8 }}
                   className="w-full min-h-full"
                 >
-                  <Suspense fallback={<p className="t-caption p-8" role="status">Opening…</p>}>
+                  <Suspense key={expectedUid||"guest"} fallback={<p className="t-caption p-8" role="status">Opening…</p>}>
                   {screen === "home" ? (
                     <HomeScreen
                       keyboardEnabled={!prepMode && !showTutorial && !dailyReward && !showNamePopup && !showModifiersModal}
@@ -637,6 +655,8 @@ export default function App() {
         )}
       </AnimatePresence>
 
+      {launchPending && <div className="surface-backdrop fixed inset-0 z-[220] grid place-items-center" role="dialog" aria-modal="true" aria-label="Preparing run"><div className="surface-card p-6"><p>Preparing your cloud run…</p><button className="v-button mt-4" onClick={goHome}>Cancel</button></div></div>}
+      {phase==="menu" && <AccountStatus note={gameNote}/>}
       {/* first-run tutorial */}
       <AnimatePresence>
         {showTutorial && <TutorialOverlay onDone={finishTutorial} />}
@@ -777,7 +797,7 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {user && !cloudLoaded && phase === "menu" && (
+      {restoringIdentity && phase === "menu" && (
         <div role="status" className="surface-backdrop fixed inset-0 z-[250] grid place-items-center">
           <p className="t-body">Restoring your progress…</p>
         </div>

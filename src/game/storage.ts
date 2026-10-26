@@ -416,15 +416,18 @@ export function saveStats(s: Stats) {
 export function checkDailyLogin(stats: Stats): { nextStats: Stats; rewardSparks: number; rewardDiamonds: number } | null {
   stats = loadStats(); // Read the persisted claim, including React Strict Mode replays.
   const now = new Date();
-  const today = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
-  if (stats.lastLoginDate === today) return null; // Already logged in today
+  const today = now.toISOString().slice(0,10);
+  const normalizeDay = (value: string) => value?.replace(/-(\d)(?=-|$)/g, "-0$1");
+  const storedDay=normalizeDay(stats.lastLoginDate);
+  if(storedDay>today){saveStats({...stats,lastLoginDate:today});return null;} // Older local-calendar saves can be one UTC day ahead.
+  if (storedDay === today) return null; // Already logged in today
 
   let streak = stats.loginStreak || 0;
   const yesterdayDate = new Date(now);
-  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-  const yesterday = `${yesterdayDate.getFullYear()}-${yesterdayDate.getMonth() + 1}-${yesterdayDate.getDate()}`;
+  yesterdayDate.setUTCDate(yesterdayDate.getUTCDate() - 1);
+  const yesterday = yesterdayDate.toISOString().slice(0,10);
 
-  if (stats.lastLoginDate === yesterday) {
+  if (normalizeDay(stats.lastLoginDate) === yesterday) {
     streak++;
   } else {
     streak = 1; // Broken streak

@@ -1,6 +1,6 @@
 import { STORE_ITEMS, type StoreItem, type Currency } from "./catalog";
 import { AVATARS, BANNERS, FRAMES, TITLES, DEFAULT_PROFILE, loadProfile, saveProfile, type Profile } from "./profile";
-import { loadStats, convertSparksToDiamonds, spendDiamonds, spendSparks, type Stats } from "./storage";
+import { loadStats, convertSparksToDiamonds, spendDiamonds, spendSparks, saveStats, type Stats } from "./storage";
 
 export type StoreSort = "featured" | "price-low" | "price-high" | "name";
 export type CollectionView = "browse" | "collection" | "wishlist";
@@ -19,6 +19,9 @@ export function sameCosmetic(a: StoreItem["apply"], b: StoreItem["apply"]): bool
 }
 export function ownsStoreItem(item: StoreItem, profile: Profile, stats: Stats): boolean {
   if (item.pack) return false;
+  if (profile.accessRole === "developer") return true;
+  if (profile.inventoryRules?.[item.id]) return false;
+  if (profile.accessRole === "moderator") return true;
   if (item.frameCss === "none") return true;
   if (profile.purchased.includes(item.id)) return true;
   if (profile.purchased.some(id => sameCosmetic(item.apply, STORE_ITEMS.find(i => i.id === id)?.apply ?? legacy[id]))) return true;
@@ -43,6 +46,7 @@ export function canAffordItem(item: StoreItem, stats: Stats): boolean {
 export function filterStoreItems(items: StoreItem[], profile: Profile, stats: Stats, filters: StoreFilters): StoreItem[] {
   const terms = filters.query.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
   const list = items.filter(item => {
+    if (filters.view === "browse" && (item.active === false || item.unlockOnly)) return false;
     if (filters.tab !== "all" && item.tab !== filters.tab) return false;
     if (filters.view === "collection" && !ownsStoreItem(item, profile, stats)) return false;
     if (filters.view === "wishlist" && !profile.wishlist?.includes(item.id)) return false;
@@ -68,17 +72,22 @@ export function transactStoreItem(id: string, intent: "buy" | "equip"): StoreRes
   const profile = loadProfile();
   const stats = loadStats();
   const owned = ownsStoreItem(item, profile, stats);
+  if(item.active===false&&!owned)return {ok:false,reason:"This item is not on sale right now."};
+  if(item.unlockOnly&&!owned)return {ok:false,reason:item.desc};
   if (intent === "equip" && !owned) return { ok: false, reason: "Unlock this item before equipping it." };
   if (owned) {
     const next = { ...profile, ...item.apply, ...(item.tab === "avatars" ? { useGooglePfp: false } : {}) };
     saveProfile(next);
     return { ok: true, stats, profile: next, kind: "equipped" };
   }
-  const nextStats = item.pack?.diamonds ? convertSparksToDiamonds(item.cost, item.pack.diamonds)
+  if(profile.inventoryRules?.[item.id]==="locked")return {ok:false,reason:"This item is locked for your account."};
+  const nextStats = item.cost===0 ? {...stats,diamonds:stats.diamonds+(item.pack?.diamonds||0)} : item.pack?.diamonds ? convertSparksToDiamonds(item.cost, item.pack.diamonds)
     : item.currency === "diamonds" ? spendDiamonds(item.cost) : spendSparks(item.cost);
   if (!nextStats) return { ok: false, reason: "Your balance changed. You do not have enough " + (item.currency === "diamonds" ? "Diamonds." : "Sparks.") };
+  if(item.cost===0)saveStats(nextStats);
   if (item.pack) return { ok: true, stats: nextStats, profile, kind: "exchanged" };
   const nextProfile = { ...profile, ...item.apply, purchased: [...new Set([...profile.purchased, item.id])],
+    inventoryRules: Object.fromEntries(Object.entries(profile.inventoryRules||{}).filter(([id])=>id!==item.id)),
     wishlist: (profile.wishlist ?? []).filter(key => key !== id), ...(item.tab === "avatars" ? { useGooglePfp: false } : {}) };
   saveProfile(nextProfile);
   return { ok: true, stats: nextStats, profile: nextProfile, kind: "bought" };

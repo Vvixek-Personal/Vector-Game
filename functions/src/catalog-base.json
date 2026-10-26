@@ -1,0 +1,3132 @@
+{
+  "items": [
+    {
+      "id": "hero-spider",
+      "tab": "avatars",
+      "name": "Spider-Man",
+      "desc": "The friendly neighborhood hero. Classic scarlet mask, web lines and bright white lenses.",
+      "cost": 500,
+      "currency": "sparks",
+      "hero": "hero-spider",
+      "apply": {
+        "avatarId": "hero-spider"
+      },
+      "rarity": "epic",
+      "isNew": true
+    },
+    {
+      "id": "hero-miles",
+      "tab": "avatars",
+      "name": "Miles Morales",
+      "desc": "A black-and-red spider suit with electric energy and bold crimson webbing.",
+      "cost": 700,
+      "currency": "sparks",
+      "hero": "hero-miles",
+      "apply": {
+        "avatarId": "hero-miles"
+      },
+      "rarity": "epic",
+      "isNew": true
+    },
+    {
+      "id": "hero-gwen",
+      "tab": "avatars",
+      "name": "Spider-Gwen",
+      "desc": "A white hood, pink lining, dark mask and cool cyan lenses.",
+      "cost": 750,
+      "currency": "sparks",
+      "hero": "hero-gwen",
+      "apply": {
+        "avatarId": "hero-gwen"
+      },
+      "rarity": "epic",
+      "isNew": true
+    },
+    {
+      "id": "hero-iron",
+      "tab": "avatars",
+      "name": "Iron Man",
+      "desc": "Scarlet armor, sculpted gold plating and an icy blue arc reactor.",
+      "cost": 900,
+      "currency": "sparks",
+      "hero": "hero-iron",
+      "apply": {
+        "avatarId": "hero-iron"
+      },
+      "rarity": "epic",
+      "isNew": true
+    },
+    {
+      "id": "hero-panther",
+      "tab": "avatars",
+      "name": "Black Panther",
+      "desc": "A midnight mask with silver contours and a pulse of violet energy.",
+      "cost": 850,
+      "currency": "sparks",
+      "hero": "hero-panther",
+      "apply": {
+        "avatarId": "hero-panther"
+      },
+      "rarity": "epic",
+      "isNew": true
+    },
+    {
+      "id": "hero-bat",
+      "tab": "avatars",
+      "name": "Batman",
+      "desc": "A sharp-eared dark cowl, steel-gray suit and a warm gold accent.",
+      "cost": 800,
+      "currency": "sparks",
+      "hero": "hero-bat",
+      "apply": {
+        "avatarId": "hero-bat"
+      },
+      "rarity": "epic",
+      "isNew": true
+    },
+    {
+      "id": "hero-deadpool",
+      "tab": "avatars",
+      "name": "Deadpool",
+      "desc": "Crimson mask, black eye patches and an unmistakable sideways look.",
+      "cost": 650,
+      "currency": "sparks",
+      "hero": "hero-deadpool",
+      "apply": {
+        "avatarId": "hero-deadpool"
+      },
+      "rarity": "epic",
+      "isNew": true
+    },
+    {
+      "id": "hero-sentinel",
+      "tab": "avatars",
+      "name": "Vector Sentinel",
+      "desc": "An original arena guardian with a luminous cyan visor and a titanium shell.",
+      "cost": 450,
+      "currency": "sparks",
+      "hero": "hero-sentinel",
+      "apply": {
+        "avatarId": "hero-sentinel"
+      },
+      "rarity": "epic",
+      "isNew": true
+    },
+    {
+      "id": "av-spark",
+      "tab": "avatars",
+      "name": "Spark",
+      "desc": "The original glowing vector spark mark.",
+      "cost": 150,
+      "currency": "sparks",
+      "preview": "✦",
+      "apply": {
+        "avatarId": "spark"
+      },
+      "rarity": "common"
+    },
+    {
+      "id": "ani-valkyrie",
+      "tab": "avatars",
+      "name": "Valkyrie",
+      "desc": "Celestial blade sovereign with radiant star halo and sapphire eyes.",
+      "cost": 1350,
+      "currency": "sparks",
+      "anime": "ani-valkyrie",
+      "apply": {
+        "avatarId": "ani-valkyrie"
+      },
+      "rarity": "epic",
+      "isNew": true
+    },
+    {
+      "id": "ani-vortex",
+      "tab": "avatars",
+      "name": "Vortex",
+      "desc": "Quantum speedster with ultraviolet neon visor and dual light trails.",
+      "cost": 40,
+      "currency": "diamonds",
+      "anime": "ani-vortex",
+      "apply": {
+        "avatarId": "ani-vortex"
+      },
+      "rarity": "ultra",
+      "isNew": true
+    },
+    {
+      "id": "ani-cipher",
+      "tab": "avatars",
+      "name": "Cipher",
+      "desc": "Cyberpunk netrunner with holographic neon visor.",
+      "cost": 380,
+      "currency": "sparks",
+      "anime": "ani-cipher",
+      "apply": {
+        "avatarId": "ani-cipher"
+      },
+      "rarity": "rare"
+    },
+    {
+      "id": "ani-sakura",
+      "tab": "avatars",
+      "name": "Sakura",
+      "desc": "Pastel pink star idol with starry anime eyes.",
+      "cost": 420,
+      "currency": "sparks",
+      "anime": "ani-sakura",
+      "apply": {
+        "avatarId": "ani-sakura"
+      },
+      "rarity": "rare"
+    },
+    {
+      "id": "ani-ryu",
+      "tab": "avatars",
+      "name": "Ryu",
+      "desc": "Flame ronin with spiky fiery hair & crest headband.",
+      "cost": 345,
+      "originalCost": 460,
+      "currency": "sparks",
+      "isSale": true,
+      "salePercent": 25,
+      "anime": "ani-ryu",
+      "apply": {
+        "avatarId": "ani-ryu"
+      },
+      "rarity": "rare"
+    },
+    {
+      "id": "ani-kage",
+      "tab": "avatars",
+      "name": "Kage",
+      "desc": "Shadow shinobi with midnight cowl & crimson gaze.",
+      "cost": 520,
+      "currency": "sparks",
+      "anime": "ani-kage",
+      "apply": {
+        "avatarId": "ani-kage"
+      },
+      "rarity": "rare"
+    },
+    {
+      "id": "ani-kitsune",
+      "tab": "avatars",
+      "name": "Kitsune",
+      "desc": "Fox spirit with sacred ears & vermilion eye markings.",
+      "cost": 620,
+      "currency": "sparks",
+      "anime": "ani-kitsune",
+      "apply": {
+        "avatarId": "ani-kitsune"
+      },
+      "rarity": "epic"
+    },
+    {
+      "id": "ani-eva",
+      "tab": "avatars",
+      "name": "Eva",
+      "desc": "Ace mecha pilot with neural interface temple clips.",
+      "cost": 680,
+      "currency": "sparks",
+      "anime": "ani-eva",
+      "apply": {
+        "avatarId": "ani-eva"
+      },
+      "rarity": "epic"
+    },
+    {
+      "id": "ani-ren",
+      "tab": "avatars",
+      "name": "Ren",
+      "desc": "Streetwear rebel with dual-tone split dye hair.",
+      "cost": 740,
+      "currency": "sparks",
+      "anime": "ani-ren",
+      "apply": {
+        "avatarId": "ani-ren"
+      },
+      "rarity": "epic"
+    },
+    {
+      "id": "ani-yuki",
+      "tab": "avatars",
+      "name": "Yuki",
+      "desc": "Frost sorceress with pale ice locks & crystal clip.",
+      "cost": 820,
+      "currency": "sparks",
+      "anime": "ani-yuki",
+      "apply": {
+        "avatarId": "ani-yuki"
+      },
+      "rarity": "epic"
+    },
+    {
+      "id": "ani-chiyo",
+      "tab": "avatars",
+      "name": "Chiyo",
+      "desc": "Neko champion with fluffy cat ears and gold bell.",
+      "cost": 900,
+      "currency": "sparks",
+      "anime": "ani-chiyo",
+      "apply": {
+        "avatarId": "ani-chiyo"
+      },
+      "rarity": "epic"
+    },
+    {
+      "id": "ani-nero",
+      "tab": "avatars",
+      "name": "Nero",
+      "desc": "Abyss prince with dark obsidian horns & golden iris.",
+      "cost": 1100,
+      "currency": "sparks",
+      "anime": "ani-nero",
+      "apply": {
+        "avatarId": "ani-nero"
+      },
+      "rarity": "epic"
+    },
+    {
+      "id": "ani-lumi",
+      "tab": "avatars",
+      "name": "Lumi",
+      "desc": "Celestial valkyrie with radiant glowing halo.",
+      "cost": 1250,
+      "currency": "sparks",
+      "anime": "ani-lumi",
+      "apply": {
+        "avatarId": "ani-lumi"
+      },
+      "rarity": "epic"
+    },
+    {
+      "id": "ani-zen",
+      "tab": "avatars",
+      "name": "Zen",
+      "desc": "Emerald gale archer with serene mint focus.",
+      "cost": 1380,
+      "currency": "sparks",
+      "anime": "ani-zen",
+      "apply": {
+        "avatarId": "ani-zen"
+      },
+      "rarity": "epic"
+    },
+    {
+      "id": "ani-miku",
+      "tab": "avatars",
+      "name": "Aria",
+      "desc": "Neon cyber vocalist with twin teal ponytails.",
+      "cost": 1500,
+      "currency": "sparks",
+      "anime": "ani-miku",
+      "apply": {
+        "avatarId": "ani-miku"
+      },
+      "rarity": "epic"
+    },
+    {
+      "id": "ani-kaido",
+      "tab": "avatars",
+      "name": "Kaido",
+      "desc": "Thunder fist brawler with electric spiky golden mane.",
+      "cost": 1650,
+      "currency": "sparks",
+      "anime": "ani-kaido",
+      "apply": {
+        "avatarId": "ani-kaido"
+      },
+      "rarity": "epic"
+    },
+    {
+      "id": "ani-shin",
+      "tab": "avatars",
+      "name": "Shinobi X",
+      "desc": "Cybernetic phantom assassin with illuminated visor.",
+      "cost": 30,
+      "currency": "diamonds",
+      "anime": "ani-shin",
+      "apply": {
+        "avatarId": "ani-shin"
+      },
+      "rarity": "ultra"
+    },
+    {
+      "id": "ani-astral",
+      "tab": "avatars",
+      "name": "Astral Prime",
+      "desc": "Cosmic sovereign with starfield locks and gold crown.",
+      "cost": 50,
+      "currency": "diamonds",
+      "anime": "ani-astral",
+      "apply": {
+        "avatarId": "ani-astral"
+      },
+      "rarity": "ultra"
+    },
+    {
+      "id": "ani-nova",
+      "tab": "avatars",
+      "name": "Nova",
+      "desc": "Solar alchemist with radiant golden hair and star prism earrings.",
+      "cost": 1450,
+      "currency": "sparks",
+      "anime": "ani-nova",
+      "apply": {
+        "avatarId": "ani-nova"
+      },
+      "rarity": "epic",
+      "isNew": true
+    },
+    {
+      "id": "ani-solaria",
+      "tab": "avatars",
+      "name": "Solaria",
+      "desc": "Solar priestess with incandescent halo and amber flame eyes.",
+      "cost": 1550,
+      "currency": "sparks",
+      "anime": "ani-solaria",
+      "apply": {
+        "avatarId": "ani-solaria"
+      },
+      "rarity": "epic",
+      "isNew": true
+    },
+    {
+      "id": "ani-phantom",
+      "tab": "avatars",
+      "name": "Phantom",
+      "desc": "Void spectre with violet ethereal hair and glowing aura.",
+      "cost": 1750,
+      "currency": "sparks",
+      "anime": "ani-phantom",
+      "apply": {
+        "avatarId": "ani-phantom"
+      },
+      "rarity": "epic",
+      "isNew": true
+    },
+    {
+      "id": "ani-kyubi",
+      "tab": "avatars",
+      "name": "Kyubi",
+      "desc": "Nine-tailed fox sovereign with crimson sacred ears & golden iris.",
+      "cost": 45,
+      "currency": "diamonds",
+      "anime": "ani-kyubi",
+      "apply": {
+        "avatarId": "ani-kyubi"
+      },
+      "rarity": "ultra",
+      "isNew": true
+    },
+    {
+      "id": "ani-mecha-zero",
+      "tab": "avatars",
+      "name": "Mecha Zero",
+      "desc": "Next-gen cyber sentinel with animated laser visor.",
+      "cost": 60,
+      "currency": "diamonds",
+      "anime": "ani-mecha-zero",
+      "apply": {
+        "avatarId": "ani-mecha-zero"
+      },
+      "rarity": "ultra",
+      "isNew": true
+    },
+    {
+      "id": "cto-blaze",
+      "tab": "avatars",
+      "name": "Blaze",
+      "desc": "High-velocity pilot with fiery locks, goggles and flight jacket.",
+      "cost": 2400,
+      "currency": "sparks",
+      "cartoon": "cto-blaze",
+      "apply": {
+        "avatarId": "cto-blaze"
+      },
+      "rarity": "epic",
+      "isNew": true
+    },
+    {
+      "id": "cto-cosmo",
+      "tab": "avatars",
+      "name": "Cosmo",
+      "desc": "Deep space explorer with purple hair and stardust blush.",
+      "cost": 2500,
+      "currency": "sparks",
+      "cartoon": "cto-cosmo",
+      "apply": {
+        "avatarId": "cto-cosmo"
+      },
+      "rarity": "epic",
+      "isNew": true
+    },
+    {
+      "id": "cto-sprout",
+      "tab": "avatars",
+      "name": "Sprout",
+      "desc": "Nature guardian with fresh leaf green hair and cheerful smile.",
+      "cost": 2600,
+      "currency": "sparks",
+      "cartoon": "cto-sprout",
+      "apply": {
+        "avatarId": "cto-sprout"
+      },
+      "rarity": "epic",
+      "isNew": true
+    },
+    {
+      "id": "cto-glitch",
+      "tab": "avatars",
+      "name": "Glitch",
+      "desc": "Digital anomaly with cyan square frames and pixel energy.",
+      "cost": 25,
+      "currency": "diamonds",
+      "cartoon": "cto-glitch",
+      "apply": {
+        "avatarId": "cto-glitch"
+      },
+      "rarity": "ultra",
+      "isNew": true
+    },
+    {
+      "id": "cto-bean",
+      "tab": "avatars",
+      "name": "Bean",
+      "desc": "Round face, navy hair.",
+      "cost": 1200,
+      "currency": "sparks",
+      "cartoon": "cto-bean",
+      "apply": {
+        "avatarId": "cto-bean"
+      },
+      "rarity": "epic"
+    },
+    {
+      "id": "cto-pip",
+      "tab": "avatars",
+      "name": "Pip",
+      "desc": "Soft oval, cocoa hair.",
+      "cost": 1280,
+      "currency": "sparks",
+      "cartoon": "cto-pip",
+      "apply": {
+        "avatarId": "cto-pip"
+      },
+      "rarity": "epic"
+    },
+    {
+      "id": "cto-moss",
+      "tab": "avatars",
+      "name": "Moss",
+      "desc": "Square chin, forest cut.",
+      "cost": 1360,
+      "currency": "sparks",
+      "cartoon": "cto-moss",
+      "apply": {
+        "avatarId": "cto-moss"
+      },
+      "rarity": "epic"
+    },
+    {
+      "id": "cto-nori",
+      "tab": "avatars",
+      "name": "Nori",
+      "desc": "Violet shirt, ink hair.",
+      "cost": 1480,
+      "currency": "sparks",
+      "cartoon": "cto-nori",
+      "apply": {
+        "avatarId": "cto-nori"
+      },
+      "rarity": "epic"
+    },
+    {
+      "id": "cto-blush",
+      "tab": "avatars",
+      "name": "Blush",
+      "desc": "Pink bun, blush.",
+      "cost": 1600,
+      "currency": "sparks",
+      "cartoon": "cto-blush",
+      "apply": {
+        "avatarId": "cto-blush"
+      },
+      "rarity": "epic"
+    },
+    {
+      "id": "cto-kiwi",
+      "tab": "avatars",
+      "name": "Kiwi",
+      "desc": "Green crew, grin.",
+      "cost": 1720,
+      "currency": "sparks",
+      "cartoon": "cto-kiwi",
+      "apply": {
+        "avatarId": "cto-kiwi"
+      },
+      "rarity": "epic"
+    },
+    {
+      "id": "cto-soda",
+      "tab": "avatars",
+      "name": "Soda",
+      "desc": "Blue crop, square.",
+      "cost": 1840,
+      "currency": "sparks",
+      "cartoon": "cto-soda",
+      "apply": {
+        "avatarId": "cto-soda"
+      },
+      "rarity": "epic"
+    },
+    {
+      "id": "cto-pixel",
+      "tab": "avatars",
+      "name": "Pixel",
+      "desc": "Block hair, amber tee.",
+      "cost": 1980,
+      "currency": "sparks",
+      "cartoon": "cto-pixel",
+      "apply": {
+        "avatarId": "cto-pixel"
+      },
+      "rarity": "epic"
+    },
+    {
+      "id": "cto-fox",
+      "tab": "avatars",
+      "name": "Fox",
+      "desc": "Pointed hair, rust.",
+      "cost": 2280,
+      "currency": "sparks",
+      "cartoon": "cto-fox",
+      "apply": {
+        "avatarId": "cto-fox"
+      },
+      "rarity": "epic"
+    },
+    {
+      "id": "cto-luna",
+      "tab": "avatars",
+      "name": "Luna",
+      "desc": "Indigo halo.",
+      "cost": 3200,
+      "currency": "sparks",
+      "cartoon": "cto-luna",
+      "apply": {
+        "avatarId": "cto-luna"
+      },
+      "rarity": "epic"
+    },
+    {
+      "id": "cto-royal",
+      "tab": "avatars",
+      "name": "Royal",
+      "desc": "Indigo cape energy.",
+      "cost": 20,
+      "currency": "diamonds",
+      "cartoon": "cto-royal",
+      "apply": {
+        "avatarId": "cto-royal"
+      },
+      "rarity": "ultra"
+    },
+    {
+      "id": "cto-bolt",
+      "tab": "avatars",
+      "name": "Bolt",
+      "desc": "Lightning hair.",
+      "cost": 50,
+      "currency": "diamonds",
+      "cartoon": "cto-bolt",
+      "apply": {
+        "avatarId": "cto-bolt"
+      },
+      "rarity": "ultra"
+    },
+    {
+      "id": "ban-aurora-borealis",
+      "tab": "banners",
+      "name": "Hyper Aurora",
+      "desc": "Prismatic northern light ribbons with drifting cosmic stardust.",
+      "preview": "linear-gradient(120deg,#064e3b,#10b981 40%,#6366f1 80%,#ec4899)",
+      "apply": {
+        "bannerId": "hyper-aurora"
+      },
+      "cost": 420,
+      "currency": "sparks",
+      "rarity": "epic",
+      "isNew": true
+    },
+    {
+      "id": "ban-prism-nebula",
+      "tab": "banners",
+      "name": "Prism Nebula",
+      "desc": "Vibrant cosmic shockwave blending laser magenta, violet & cyan.",
+      "preview": "linear-gradient(120deg,#1e1b4b,#a855f7 45%,#06b6d4)",
+      "apply": {
+        "bannerId": "prism-nebula"
+      },
+      "cost": 480,
+      "currency": "sparks",
+      "rarity": "epic",
+      "isNew": true
+    },
+    {
+      "id": "ban-cyber-grid",
+      "tab": "banners",
+      "name": "Cyber Horizon",
+      "desc": "Retro synthwave grid sunset wash.",
+      "preview": "linear-gradient(120deg,#09090b,#f43f5e 50%,#fbbf24)",
+      "apply": {
+        "bannerId": "cyber-horizon"
+      },
+      "cost": 380,
+      "currency": "sparks",
+      "rarity": "rare",
+      "isNew": true
+    },
+    {
+      "id": "ban-supernova",
+      "tab": "banners",
+      "name": "Supernova",
+      "desc": "Cosmic blaze from deep violet to solar gold.",
+      "preview": "linear-gradient(120deg,#1c0a35,#9333ea 45%,#f59e0b)",
+      "apply": {
+        "bannerId": "supernova"
+      },
+      "cost": 308,
+      "originalCost": 440,
+      "currency": "sparks",
+      "isSale": true,
+      "salePercent": 30,
+      "rarity": "rare"
+    },
+    {
+      "id": "ban-tide",
+      "tab": "banners",
+      "name": "Tide",
+      "desc": "Teal to mint.",
+      "preview": "linear-gradient(120deg,#123a4a,#2dd4bf)",
+      "apply": {
+        "bannerId": "tide"
+      },
+      "cost": 180,
+      "currency": "sparks",
+      "rarity": "rare"
+    },
+    {
+      "id": "ban-ember",
+      "tab": "banners",
+      "name": "Ember",
+      "desc": "Coal to amber.",
+      "preview": "linear-gradient(120deg,#3a1f16,#d97706)",
+      "apply": {
+        "bannerId": "ember"
+      },
+      "cost": 220,
+      "currency": "sparks",
+      "rarity": "rare"
+    },
+    {
+      "id": "ban-violet",
+      "tab": "banners",
+      "name": "Violet Haze",
+      "desc": "Ink to lilac.",
+      "preview": "linear-gradient(120deg,#221a3f,#c084fc)",
+      "apply": {
+        "bannerId": "violet"
+      },
+      "cost": 260,
+      "currency": "sparks",
+      "rarity": "rare"
+    },
+    {
+      "id": "ban-aurora",
+      "tab": "banners",
+      "name": "Aurora",
+      "desc": "Pine to ice.",
+      "preview": "linear-gradient(120deg,#0b3b2e,#a5f3fc)",
+      "apply": {
+        "bannerId": "aurora"
+      },
+      "cost": 320,
+      "currency": "sparks",
+      "rarity": "rare"
+    },
+    {
+      "id": "ban-rose",
+      "tab": "banners",
+      "name": "Rosé",
+      "desc": "Wine to blush.",
+      "preview": "linear-gradient(120deg,#3f1626,#fb7185)",
+      "apply": {
+        "bannerId": "rose"
+      },
+      "cost": 340,
+      "currency": "sparks",
+      "rarity": "rare"
+    },
+    {
+      "id": "ban-ghost",
+      "tab": "banners",
+      "name": "Ghostline",
+      "desc": "Quiet charcoal.",
+      "preview": "linear-gradient(120deg,#111827,#4b5563)",
+      "apply": {
+        "bannerId": "ghostline"
+      },
+      "cost": 280,
+      "currency": "sparks",
+      "rarity": "rare"
+    },
+    {
+      "id": "ban-gold",
+      "tab": "banners",
+      "name": "Gilded",
+      "desc": "Walnut to gold.",
+      "preview": "linear-gradient(120deg,#3f2f0b,#fbbf24)",
+      "apply": {
+        "bannerId": "gold"
+      },
+      "cost": 480,
+      "currency": "sparks",
+      "rarity": "rare"
+    },
+    {
+      "id": "ban-nebula",
+      "tab": "banners",
+      "name": "Nebula",
+      "desc": "Indigo to violet.",
+      "preview": "linear-gradient(120deg,#0b1024,#7c3aed)",
+      "apply": {
+        "bannerId": "nebula"
+      },
+      "cost": 520,
+      "currency": "sparks",
+      "rarity": "rare"
+    },
+    {
+      "id": "ban-citrus",
+      "tab": "banners",
+      "name": "Citrus",
+      "desc": "Lime splash.",
+      "preview": "linear-gradient(120deg,#14532d,#84cc16)",
+      "apply": {
+        "bannerId": "citrus"
+      },
+      "cost": 300,
+      "currency": "sparks",
+      "rarity": "rare"
+    },
+    {
+      "id": "ban-ice",
+      "tab": "banners",
+      "name": "Icebox",
+      "desc": "Cold steel.",
+      "preview": "linear-gradient(120deg,#0c4a6e,#e0f2fe)",
+      "apply": {
+        "bannerId": "ice"
+      },
+      "cost": 360,
+      "currency": "sparks",
+      "rarity": "rare"
+    },
+    {
+      "id": "ban-noir",
+      "tab": "banners",
+      "name": "Noir",
+      "desc": "Almost black.",
+      "preview": "linear-gradient(120deg,#030712,#1f2937)",
+      "apply": {
+        "bannerId": "noir"
+      },
+      "cost": 400,
+      "currency": "sparks",
+      "rarity": "rare"
+    },
+    {
+      "id": "ban-peach",
+      "tab": "banners",
+      "name": "Peach",
+      "desc": "Sunset skin.",
+      "preview": "linear-gradient(120deg,#9a3412,#fed7aa)",
+      "apply": {
+        "bannerId": "peach"
+      },
+      "cost": 380,
+      "currency": "sparks",
+      "rarity": "rare"
+    },
+    {
+      "id": "ban-dusk",
+      "tab": "banners",
+      "name": "Dusk",
+      "desc": "Deep twilight wash with indigo and rose undertones.",
+      "preview": "linear-gradient(120deg,#2b3350,#4c3a6b 55%,#7a4a6e)",
+      "apply": {
+        "bannerId": "dusk"
+      },
+      "cost": 180,
+      "currency": "sparks",
+      "rarity": "rare"
+    },
+    {
+      "id": "ban-solaris",
+      "tab": "banners",
+      "name": "Solaris",
+      "desc": "Blazing cosmic corona with incandescent gold and ruby flare.",
+      "preview": "linear-gradient(120deg,#450a0a,#dc2626 50%,#fef08a)",
+      "apply": {
+        "bannerId": "solaris"
+      },
+      "cost": 460,
+      "currency": "sparks",
+      "rarity": "rare"
+    },
+    {
+      "id": "ban-obsidian",
+      "tab": "banners",
+      "name": "Obsidian",
+      "desc": "Black glass with gold edge.",
+      "preview": "linear-gradient(120deg,#020617,#111827 40%,#fbbf24)",
+      "apply": {
+        "bannerId": "obsidian"
+      },
+      "cost": 20,
+      "currency": "diamonds",
+      "rarity": "ultra"
+    },
+    {
+      "id": "ban-crown",
+      "tab": "banners",
+      "name": "Crownlight",
+      "desc": "The expensive wash.",
+      "preview": "linear-gradient(120deg,#1e1b4b,#f472b6 50%,#fbbf24)",
+      "apply": {
+        "bannerId": "crown"
+      },
+      "cost": 50,
+      "currency": "diamonds",
+      "rarity": "ultra"
+    },
+    {
+      "id": "sty-waves",
+      "tab": "styles",
+      "name": "Waves",
+      "desc": "Soft concentric wash.",
+      "pattern": "waves",
+      "apply": {
+        "bannerStyle": "waves"
+      },
+      "cost": 140,
+      "currency": "sparks",
+      "rarity": "common"
+    },
+    {
+      "id": "sty-grid",
+      "tab": "styles",
+      "name": "Grid",
+      "desc": "Fine graph paper.",
+      "pattern": "grid",
+      "apply": {
+        "bannerStyle": "grid"
+      },
+      "cost": 140,
+      "currency": "sparks",
+      "rarity": "common"
+    },
+    {
+      "id": "sty-orbits",
+      "tab": "styles",
+      "name": "Orbits",
+      "desc": "Faint circling rings.",
+      "pattern": "orbits",
+      "apply": {
+        "bannerStyle": "orbits"
+      },
+      "cost": 180,
+      "currency": "sparks",
+      "rarity": "common"
+    },
+    {
+      "id": "sty-rays",
+      "tab": "styles",
+      "name": "Rays",
+      "desc": "A slow sunburst.",
+      "pattern": "rays",
+      "apply": {
+        "bannerStyle": "rays"
+      },
+      "cost": 180,
+      "currency": "sparks",
+      "rarity": "common"
+    },
+    {
+      "id": "sty-dots",
+      "tab": "styles",
+      "name": "Dots",
+      "desc": "Tiny scattered marks.",
+      "pattern": "dots",
+      "apply": {
+        "bannerStyle": "dots"
+      },
+      "cost": 120,
+      "currency": "sparks",
+      "rarity": "common"
+    },
+    {
+      "id": "sty-plain",
+      "tab": "styles",
+      "name": "Plain",
+      "desc": "Just the wash.",
+      "pattern": "plain",
+      "apply": {
+        "bannerStyle": "plain"
+      },
+      "cost": 100,
+      "currency": "sparks",
+      "rarity": "common"
+    },
+    {
+      "id": "sty-chevron",
+      "tab": "styles",
+      "name": "Chevron",
+      "desc": "Quiet arrows.",
+      "pattern": "waves",
+      "apply": {
+        "bannerStyle": "waves"
+      },
+      "cost": 200,
+      "currency": "sparks",
+      "rarity": "common"
+    },
+    {
+      "id": "sty-noise",
+      "tab": "styles",
+      "name": "Grain",
+      "desc": "Film grain.",
+      "pattern": "dots",
+      "apply": {
+        "bannerStyle": "dots"
+      },
+      "cost": 220,
+      "currency": "sparks",
+      "rarity": "common"
+    },
+    {
+      "id": "sty-scan",
+      "tab": "styles",
+      "name": "Scan",
+      "desc": "CRT lines.",
+      "pattern": "grid",
+      "apply": {
+        "bannerStyle": "grid"
+      },
+      "cost": 240,
+      "currency": "sparks",
+      "rarity": "common"
+    },
+    {
+      "id": "sty-halo",
+      "tab": "styles",
+      "name": "Halo",
+      "desc": "Center bloom.",
+      "pattern": "orbits",
+      "apply": {
+        "bannerStyle": "orbits"
+      },
+      "cost": 260,
+      "currency": "sparks",
+      "rarity": "common"
+    },
+    {
+      "id": "sty-tide",
+      "tab": "styles",
+      "name": "Ripple",
+      "desc": "Water rings.",
+      "pattern": "waves",
+      "apply": {
+        "bannerStyle": "waves"
+      },
+      "cost": 280,
+      "currency": "sparks",
+      "rarity": "common"
+    },
+    {
+      "id": "sty-spark",
+      "tab": "styles",
+      "name": "Sparkfall",
+      "desc": "Falling ticks.",
+      "pattern": "dots",
+      "apply": {
+        "bannerStyle": "dots"
+      },
+      "cost": 300,
+      "currency": "sparks",
+      "rarity": "common"
+    },
+    {
+      "id": "thm-matrix",
+      "tab": "themes",
+      "name": "Neon Matrix",
+      "desc": "Hyper-contrast digital rain emerald with obsidian core.",
+      "preview": "#10b981",
+      "themeSwatch": [
+        "#10b981",
+        "#020d08",
+        "#059669"
+      ],
+      "cost": 380,
+      "currency": "sparks",
+      "rarity": "rare",
+      "isNew": true,
+      "apply": {
+        "arenaThemeId": "thm-matrix"
+      }
+    },
+    {
+      "id": "thm-overdrive",
+      "tab": "themes",
+      "name": "Overdrive",
+      "desc": "Electric orange and plasma cyan high-octane stadium.",
+      "preview": "#f97316",
+      "themeSwatch": [
+        "#f97316",
+        "#0c0a09",
+        "#06b6d4"
+      ],
+      "cost": 450,
+      "currency": "sparks",
+      "rarity": "epic",
+      "isNew": true,
+      "apply": {
+        "arenaThemeId": "thm-overdrive"
+      }
+    },
+    {
+      "id": "thm-starlight",
+      "tab": "themes",
+      "name": "Starlight Void",
+      "desc": "Deep velvet space with shimmering silver and pastel rose.",
+      "preview": "#c084fc",
+      "themeSwatch": [
+        "#c084fc",
+        "#090514",
+        "#f472b6"
+      ],
+      "cost": 420,
+      "currency": "sparks",
+      "rarity": "rare",
+      "isNew": true,
+      "apply": {
+        "arenaThemeId": "thm-starlight"
+      }
+    },
+    {
+      "id": "thm-cyberpunk",
+      "tab": "themes",
+      "name": "Cyberpunk",
+      "desc": "High-octane magenta & electric cyan.",
+      "preview": "#ec4899",
+      "themeSwatch": [
+        "#ec4899",
+        "#080614",
+        "#06b6d4"
+      ],
+      "cost": 270,
+      "originalCost": 360,
+      "currency": "sparks",
+      "isSale": true,
+      "salePercent": 25,
+      "rarity": "rare",
+      "apply": {
+        "arenaThemeId": "thm-cyberpunk"
+      }
+    },
+    {
+      "id": "thm-ion",
+      "tab": "themes",
+      "name": "Ion",
+      "desc": "Cyan arena.",
+      "preview": "#38e8ff",
+      "themeSwatch": [
+        "#38e8ff",
+        "#0a061b",
+        "#7c5cff"
+      ],
+      "cost": 220,
+      "currency": "sparks",
+      "rarity": "rare",
+      "apply": {
+        "arenaThemeId": "thm-ion"
+      }
+    },
+    {
+      "id": "thm-solar",
+      "tab": "themes",
+      "name": "Solar",
+      "desc": "Amber arena.",
+      "preview": "#ffb14d",
+      "themeSwatch": [
+        "#ffb14d",
+        "#100b05",
+        "#fb7185"
+      ],
+      "cost": 260,
+      "currency": "sparks",
+      "rarity": "rare",
+      "apply": {
+        "arenaThemeId": "thm-solar"
+      }
+    },
+    {
+      "id": "thm-phase",
+      "tab": "themes",
+      "name": "Phase",
+      "desc": "Violet arena.",
+      "preview": "#c4b5fd",
+      "themeSwatch": [
+        "#c4b5fd",
+        "#0b0615",
+        "#f0abfc"
+      ],
+      "cost": 260,
+      "currency": "sparks",
+      "rarity": "rare",
+      "apply": {
+        "arenaThemeId": "thm-phase"
+      }
+    },
+    {
+      "id": "thm-cyber",
+      "tab": "themes",
+      "name": "Cyber Neon",
+      "desc": "Neon rose & laser cyan synthwave.",
+      "preview": "#f43f5e",
+      "themeSwatch": [
+        "#f43f5e",
+        "#050816",
+        "#06b6d4"
+      ],
+      "cost": 320,
+      "currency": "sparks",
+      "rarity": "rare",
+      "apply": {
+        "arenaThemeId": "thm-cyber"
+      }
+    },
+    {
+      "id": "thm-emerald",
+      "tab": "themes",
+      "name": "Emerald Void",
+      "desc": "Laser jade & lime plasma obsidian.",
+      "preview": "#10b981",
+      "themeSwatch": [
+        "#10b981",
+        "#020f0a",
+        "#84cc16"
+      ],
+      "cost": 320,
+      "currency": "sparks",
+      "rarity": "rare",
+      "apply": {
+        "arenaThemeId": "thm-emerald"
+      }
+    },
+    {
+      "id": "thm-mono",
+      "tab": "themes",
+      "name": "Mono",
+      "desc": "Graphite arena.",
+      "preview": "#f8fafc",
+      "themeSwatch": [
+        "#f8fafc",
+        "#050505",
+        "#94a3b8"
+      ],
+      "cost": 240,
+      "currency": "sparks",
+      "rarity": "rare",
+      "apply": {
+        "arenaThemeId": "thm-mono"
+      }
+    },
+    {
+      "id": "thm-aurora",
+      "tab": "themes",
+      "name": "Aurora",
+      "desc": "Mint arena.",
+      "preview": "#6ee7b7",
+      "themeSwatch": [
+        "#6ee7b7",
+        "#02100d",
+        "#67e8f9"
+      ],
+      "cost": 300,
+      "currency": "sparks",
+      "rarity": "rare",
+      "apply": {
+        "arenaThemeId": "thm-aurora"
+      }
+    },
+    {
+      "id": "thm-ember",
+      "tab": "themes",
+      "name": "Forge",
+      "desc": "Hot coal.",
+      "preview": "#fb923c",
+      "themeSwatch": [
+        "#fb923c",
+        "#1c0b05",
+        "#f43f5e"
+      ],
+      "cost": 320,
+      "currency": "sparks",
+      "rarity": "rare",
+      "apply": {
+        "arenaThemeId": "thm-ember"
+      }
+    },
+    {
+      "id": "thm-abyss",
+      "tab": "themes",
+      "name": "Abyss",
+      "desc": "Deep navy.",
+      "preview": "#60a5fa",
+      "themeSwatch": [
+        "#60a5fa",
+        "#020617",
+        "#818cf8"
+      ],
+      "cost": 340,
+      "currency": "sparks",
+      "rarity": "rare",
+      "apply": {
+        "arenaThemeId": "thm-abyss"
+      }
+    },
+    {
+      "id": "thm-sakura",
+      "tab": "themes",
+      "name": "Sakura",
+      "desc": "Pink dusk.",
+      "preview": "#fb7185",
+      "themeSwatch": [
+        "#fb7185",
+        "#1f0a14",
+        "#f9a8d4"
+      ],
+      "cost": 360,
+      "currency": "sparks",
+      "rarity": "rare",
+      "apply": {
+        "arenaThemeId": "thm-sakura"
+      }
+    },
+    {
+      "id": "thm-lime",
+      "tab": "themes",
+      "name": "Lime",
+      "desc": "Acid green.",
+      "preview": "#a3e635",
+      "themeSwatch": [
+        "#a3e635",
+        "#052e16",
+        "#4ade80"
+      ],
+      "cost": 280,
+      "currency": "sparks",
+      "rarity": "rare",
+      "apply": {
+        "arenaThemeId": "thm-lime"
+      }
+    },
+    {
+      "id": "thm-sand",
+      "tab": "themes",
+      "name": "Sand",
+      "desc": "Warm stone.",
+      "preview": "#fcd34d",
+      "themeSwatch": [
+        "#fcd34d",
+        "#1c1408",
+        "#fdba74"
+      ],
+      "cost": 300,
+      "currency": "sparks",
+      "rarity": "rare",
+      "apply": {
+        "arenaThemeId": "thm-sand"
+      }
+    },
+    {
+      "id": "thm-ice",
+      "tab": "themes",
+      "name": "Ice",
+      "desc": "Cold white.",
+      "preview": "#e0f2fe",
+      "themeSwatch": [
+        "#e0f2fe",
+        "#082f49",
+        "#7dd3fc"
+      ],
+      "cost": 380,
+      "currency": "sparks",
+      "rarity": "rare",
+      "apply": {
+        "arenaThemeId": "thm-ice"
+      }
+    },
+    {
+      "id": "thm-blood",
+      "tab": "themes",
+      "name": "Signal",
+      "desc": "Red alert.",
+      "preview": "#fb7185",
+      "themeSwatch": [
+        "#fb7185",
+        "#1c0508",
+        "#ef4444"
+      ],
+      "cost": 400,
+      "currency": "sparks",
+      "rarity": "rare",
+      "apply": {
+        "arenaThemeId": "thm-blood"
+      }
+    },
+    {
+      "id": "thm-synthwave",
+      "tab": "themes",
+      "name": "Synthwave",
+      "desc": "Retro-future violet skyline & laser pink.",
+      "preview": "#ff007f",
+      "themeSwatch": [
+        "#ff007f",
+        "#0a0017",
+        "#00f0ff"
+      ],
+      "cost": 380,
+      "currency": "sparks",
+      "rarity": "rare",
+      "apply": {
+        "arenaThemeId": "thm-synthwave"
+      }
+    },
+    {
+      "id": "thm-void",
+      "tab": "themes",
+      "name": "Void",
+      "desc": "True black, white arrow.",
+      "preview": "#f8fafc",
+      "themeSwatch": [
+        "#f8fafc",
+        "#000000",
+        "#64748b"
+      ],
+      "cost": 20,
+      "currency": "diamonds",
+      "rarity": "ultra",
+      "apply": {
+        "arenaThemeId": "thm-void"
+      }
+    },
+    {
+      "id": "thm-gold",
+      "tab": "themes",
+      "name": "Aurum",
+      "desc": "Black and gold only.",
+      "preview": "#fbbf24",
+      "themeSwatch": [
+        "#fbbf24",
+        "#0a0702",
+        "#f59e0b"
+      ],
+      "cost": 50,
+      "currency": "diamonds",
+      "rarity": "ultra",
+      "apply": {
+        "arenaThemeId": "thm-gold"
+      }
+    },
+    {
+      "id": "frm-celestial",
+      "tab": "frames",
+      "name": "Celestial Corona",
+      "desc": "Radiant multi-layered astral ring with orbiting cyan light particles.",
+      "frameCss": "0 0 0 3px #38bdf8, 0 0 0 6px #818cf8, 0 0 28px 6px #38bdf8aa",
+      "apply": {
+        "frameId": "celestial"
+      },
+      "cost": 520,
+      "currency": "sparks",
+      "rarity": "epic",
+      "isNew": true
+    },
+    {
+      "id": "frm-phoenix",
+      "tab": "frames",
+      "name": "Phoenix Wings",
+      "desc": "Fiery incandescent aura with solar flare winglets.",
+      "frameCss": "0 0 0 3px #ea580c, 0 0 0 6px #f59e0b, 0 0 24px 6px #ea580caa",
+      "apply": {
+        "frameId": "phoenix"
+      },
+      "cost": 580,
+      "currency": "sparks",
+      "rarity": "epic",
+      "isNew": true
+    },
+    {
+      "id": "frm-quantum",
+      "tab": "frames",
+      "name": "Quantum Matrix",
+      "desc": "Dual cyan and magenta shifting energy ring.",
+      "frameCss": "0 0 0 3px #06b6d4, 0 0 0 6px #d946ef, 0 0 20px 4px #06b6d4aa",
+      "apply": {
+        "frameId": "quantum"
+      },
+      "cost": 35,
+      "currency": "diamonds",
+      "rarity": "ultra",
+      "isNew": true
+    },
+    {
+      "id": "frm-valkyrie",
+      "tab": "frames",
+      "name": "Valkyrie Halo",
+      "desc": "Radiant winged halo with twin sapphire crystal flares.",
+      "frameCss": "0 0 0 3px #38bdf8, 0 0 24px 6px #0284c7, 0 0 0 6px #ffffff44",
+      "apply": {
+        "frameId": "valkyrie"
+      },
+      "cost": 460,
+      "currency": "sparks",
+      "rarity": "epic",
+      "isNew": true
+    },
+    {
+      "id": "frm-starlight",
+      "tab": "frames",
+      "name": "Starlight",
+      "desc": "Pulsing diamond stellar aura with four-point star flares.",
+      "frameCss": "0 0 0 3px #38bdf8, 0 0 20px 4px #818cf8",
+      "apply": {
+        "frameId": "starlight"
+      },
+      "cost": 238,
+      "originalCost": 340,
+      "currency": "sparks",
+      "isSale": true,
+      "salePercent": 30,
+      "rarity": "rare"
+    },
+    {
+      "id": "frm-clean",
+      "tab": "frames",
+      "name": "Clean",
+      "desc": "Minimalist silhouette without an outer ring.",
+      "frameCss": "none",
+      "apply": {
+        "frameId": "clean"
+      },
+      "cost": 80,
+      "currency": "sparks",
+      "rarity": "rare"
+    },
+    {
+      "id": "frm-ring",
+      "tab": "frames",
+      "name": "Ring",
+      "desc": "Thin brand ring.",
+      "frameCss": "0 0 0 3px var(--brand)",
+      "apply": {
+        "frameId": "ring"
+      },
+      "cost": 160,
+      "currency": "sparks",
+      "rarity": "rare"
+    },
+    {
+      "id": "frm-glow",
+      "tab": "frames",
+      "name": "Glow",
+      "desc": "Soft halo.",
+      "frameCss": "0 0 0 3px #0000, 0 0 18px 4px var(--brand)",
+      "apply": {
+        "frameId": "glow"
+      },
+      "cost": 240,
+      "currency": "sparks",
+      "rarity": "rare"
+    },
+    {
+      "id": "frm-double",
+      "tab": "frames",
+      "name": "Double",
+      "desc": "Two-line ring.",
+      "frameCss": "0 0 0 2px var(--surface), 0 0 0 5px var(--brand)",
+      "apply": {
+        "frameId": "double"
+      },
+      "cost": 280,
+      "currency": "sparks",
+      "rarity": "rare"
+    },
+    {
+      "id": "frm-pulse",
+      "tab": "frames",
+      "name": "Pulse",
+      "desc": "Living brand ring.",
+      "frameCss": "0 0 0 3px var(--brand), 0 0 12px var(--brand)",
+      "apply": {
+        "frameId": "pulse"
+      },
+      "cost": 300,
+      "currency": "sparks",
+      "rarity": "rare"
+    },
+    {
+      "id": "frm-thin",
+      "tab": "frames",
+      "name": "Hairline",
+      "desc": "Almost nothing.",
+      "frameCss": "0 0 0 1px #ffffff88",
+      "apply": {
+        "frameId": "thin"
+      },
+      "cost": 140,
+      "currency": "sparks",
+      "rarity": "rare"
+    },
+    {
+      "id": "frm-bold",
+      "tab": "frames",
+      "name": "Bold",
+      "desc": "Heavy outline.",
+      "frameCss": "0 0 0 5px var(--text)",
+      "apply": {
+        "frameId": "bold"
+      },
+      "cost": 220,
+      "currency": "sparks",
+      "rarity": "rare"
+    },
+    {
+      "id": "frm-mint",
+      "tab": "frames",
+      "name": "Mint",
+      "desc": "Green edge.",
+      "frameCss": "0 0 0 3px #34d399",
+      "apply": {
+        "frameId": "mint"
+      },
+      "cost": 260,
+      "currency": "sparks",
+      "rarity": "rare"
+    },
+    {
+      "id": "frm-rose",
+      "tab": "frames",
+      "name": "Rose",
+      "desc": "Pink edge.",
+      "frameCss": "0 0 0 3px #fb7185",
+      "apply": {
+        "frameId": "rose"
+      },
+      "cost": 260,
+      "currency": "sparks",
+      "rarity": "rare"
+    },
+    {
+      "id": "frm-ice",
+      "tab": "frames",
+      "name": "Ice",
+      "desc": "Cyan edge.",
+      "frameCss": "0 0 0 3px #67e8f9",
+      "apply": {
+        "frameId": "ice"
+      },
+      "cost": 260,
+      "currency": "sparks",
+      "rarity": "rare"
+    },
+    {
+      "id": "frm-gold",
+      "tab": "frames",
+      "name": "Gilded",
+      "desc": "Gold edge.",
+      "frameCss": "0 0 0 3px #fbbf24, 0 0 22px 2px #fbbf2488",
+      "apply": {
+        "frameId": "gold"
+      },
+      "cost": 480,
+      "currency": "sparks",
+      "rarity": "rare"
+    },
+    {
+      "id": "frm-prism",
+      "tab": "frames",
+      "name": "Prism",
+      "desc": "Pink-cyan edge.",
+      "frameCss": "0 0 0 3px #0000, 0 0 0 5px #f0abfc, 0 0 22px 4px #22d3ee",
+      "apply": {
+        "frameId": "prism"
+      },
+      "cost": 520,
+      "currency": "sparks",
+      "rarity": "rare"
+    },
+    {
+      "id": "frm-shadow",
+      "tab": "frames",
+      "name": "Drop",
+      "desc": "Soft drop shadow.",
+      "frameCss": "0 10px 24px #00000066",
+      "apply": {
+        "frameId": "shadow"
+      },
+      "cost": 200,
+      "currency": "sparks",
+      "rarity": "rare"
+    },
+    {
+      "id": "frm-hyper",
+      "tab": "frames",
+      "name": "Hyperdrive",
+      "desc": "Electric pulse halo.",
+      "frameCss": "0 0 0 2px #06b6d4, 0 0 0 5px #ec4899, 0 0 16px #06b6d4",
+      "apply": {
+        "frameId": "hyper"
+      },
+      "cost": 380,
+      "currency": "sparks",
+      "rarity": "rare"
+    },
+    {
+      "id": "frm-obsidian",
+      "tab": "frames",
+      "name": "Obsidian",
+      "desc": "Black ring, gold fleck.",
+      "frameCss": "0 0 0 4px #0b0b0b, 0 0 0 6px #fbbf24",
+      "apply": {
+        "frameId": "obsidian"
+      },
+      "cost": 20,
+      "currency": "diamonds",
+      "rarity": "ultra"
+    },
+    {
+      "id": "frm-crown",
+      "tab": "frames",
+      "name": "Crown",
+      "desc": "The expensive ring.",
+      "frameCss": "0 0 0 3px #fbbf24, 0 0 0 8px #f472b6, 0 0 28px #fbbf24",
+      "apply": {
+        "frameId": "crown"
+      },
+      "cost": 100,
+      "currency": "diamonds",
+      "rarity": "ultra"
+    },
+    {
+      "id": "ttl-godspeed",
+      "tab": "titles",
+      "name": "Godspeed",
+      "desc": "For arrow masters who read patterns at instantaneous reflex.",
+      "apply": {
+        "titleId": "godspeed"
+      },
+      "cost": 650,
+      "currency": "sparks",
+      "rarity": "rare",
+      "isNew": true
+    },
+    {
+      "id": "ttl-supersonic",
+      "tab": "titles",
+      "name": "Supersonic",
+      "desc": "Breaking sound barrier reaction precision.",
+      "apply": {
+        "titleId": "supersonic"
+      },
+      "cost": 700,
+      "currency": "sparks",
+      "rarity": "rare",
+      "isNew": true
+    },
+    {
+      "id": "ttl-apex",
+      "tab": "titles",
+      "name": "Apex Predator",
+      "desc": "Dominates leaderboard streams.",
+      "apply": {
+        "titleId": "apex"
+      },
+      "cost": 25,
+      "currency": "diamonds",
+      "rarity": "ultra",
+      "isNew": true
+    },
+    {
+      "id": "ttl-hyperdrive",
+      "tab": "titles",
+      "name": "Hyperdrive",
+      "desc": "Surpassed the reaction barrier.",
+      "apply": {
+        "titleId": "hyperdrive"
+      },
+      "cost": 385,
+      "originalCost": 550,
+      "currency": "sparks",
+      "isSale": true,
+      "salePercent": 30,
+      "rarity": "rare"
+    },
+    {
+      "id": "ttl-rookie",
+      "tab": "titles",
+      "name": "Rookie",
+      "desc": "First steps on the grid.",
+      "apply": {
+        "titleId": "rookie"
+      },
+      "cost": 80,
+      "currency": "sparks",
+      "rarity": "rare"
+    },
+    {
+      "id": "ttl-steady",
+      "tab": "titles",
+      "name": "Steady Hand",
+      "desc": "For people who wait.",
+      "apply": {
+        "titleId": "steady"
+      },
+      "cost": 180,
+      "currency": "sparks",
+      "rarity": "rare"
+    },
+    {
+      "id": "ttl-streaker",
+      "tab": "titles",
+      "name": "Streak Keeper",
+      "desc": "You don't drop it.",
+      "apply": {
+        "titleId": "streaker"
+      },
+      "cost": 240,
+      "currency": "sparks",
+      "rarity": "rare"
+    },
+    {
+      "id": "ttl-sharp",
+      "tab": "titles",
+      "name": "Sharpshooter",
+      "desc": "Clean reads.",
+      "apply": {
+        "titleId": "sharpshooter"
+      },
+      "cost": 320,
+      "currency": "sparks",
+      "rarity": "rare"
+    },
+    {
+      "id": "ttl-speed",
+      "tab": "titles",
+      "name": "Speedster",
+      "desc": "Under a quarter second.",
+      "apply": {
+        "titleId": "speedster"
+      },
+      "cost": 360,
+      "currency": "sparks",
+      "rarity": "rare"
+    },
+    {
+      "id": "ttl-grinder",
+      "tab": "titles",
+      "name": "Grinder",
+      "desc": "Shows up anyway.",
+      "apply": {
+        "titleId": "grinder"
+      },
+      "cost": 280,
+      "currency": "sparks",
+      "rarity": "rare"
+    },
+    {
+      "id": "ttl-pilot",
+      "tab": "titles",
+      "name": "Pilot",
+      "desc": "Hands on the stick.",
+      "apply": {
+        "titleId": "pilot"
+      },
+      "cost": 300,
+      "currency": "sparks",
+      "rarity": "rare"
+    },
+    {
+      "id": "ttl-ghost",
+      "tab": "titles",
+      "name": "Ghost",
+      "desc": "Barely there.",
+      "apply": {
+        "titleId": "ghost"
+      },
+      "cost": 340,
+      "currency": "sparks",
+      "rarity": "rare"
+    },
+    {
+      "id": "ttl-patron",
+      "tab": "titles",
+      "name": "Patron",
+      "desc": "Quiet flex.",
+      "apply": {
+        "titleId": "patron"
+      },
+      "cost": 480,
+      "currency": "sparks",
+      "rarity": "rare"
+    },
+    {
+      "id": "ttl-ace",
+      "tab": "titles",
+      "name": "Ace",
+      "desc": "The default, earned.",
+      "apply": {
+        "titleId": "ace"
+      },
+      "cost": 200,
+      "currency": "sparks",
+      "rarity": "rare"
+    },
+    {
+      "id": "ttl-vector",
+      "tab": "titles",
+      "name": "Vector",
+      "desc": "House name.",
+      "apply": {
+        "titleId": "vector"
+      },
+      "cost": 400,
+      "currency": "sparks",
+      "rarity": "rare"
+    },
+    {
+      "id": "ttl-night",
+      "tab": "titles",
+      "name": "Night Shift",
+      "desc": "After hours.",
+      "apply": {
+        "titleId": "night"
+      },
+      "cost": 260,
+      "currency": "sparks",
+      "rarity": "rare"
+    },
+    {
+      "id": "ttl-legend",
+      "tab": "titles",
+      "name": "Vector Legend",
+      "desc": "The long game.",
+      "apply": {
+        "titleId": "legend"
+      },
+      "cost": 900,
+      "currency": "sparks",
+      "rarity": "rare"
+    },
+    {
+      "id": "ttl-combo-master",
+      "tab": "titles",
+      "name": "Combo Master",
+      "desc": "Flows through perfect chains.",
+      "apply": {
+        "titleId": "combo-master"
+      },
+      "cost": 500,
+      "currency": "sparks",
+      "rarity": "rare"
+    },
+    {
+      "id": "ttl-sovereign",
+      "tab": "titles",
+      "name": "Sovereign",
+      "desc": "Diamond-only line.",
+      "apply": {
+        "titleId": "sovereign"
+      },
+      "cost": 20,
+      "currency": "diamonds",
+      "rarity": "ultra"
+    },
+    {
+      "id": "ttl-eternal",
+      "tab": "titles",
+      "name": "Eternal Flow",
+      "desc": "Transcended all speed and rhythm limits.",
+      "apply": {
+        "titleId": "eternal"
+      },
+      "cost": 35,
+      "currency": "diamonds",
+      "rarity": "ultra"
+    },
+    {
+      "id": "ttl-myth",
+      "tab": "titles",
+      "name": "Myth",
+      "desc": "Almost nobody has this.",
+      "apply": {
+        "titleId": "myth"
+      },
+      "cost": 100,
+      "currency": "diamonds",
+      "rarity": "ultra"
+    },
+    {
+      "id": "aud-retro",
+      "tab": "audio",
+      "name": "8-Bit Arcade",
+      "desc": "Classic chiptune sound effects and retro synthesizer hits.",
+      "apply": {
+        "audioPackId": "retro"
+      },
+      "cost": 2000,
+      "currency": "sparks",
+      "rarity": "rare"
+    },
+    {
+      "id": "aud-lofi",
+      "tab": "audio",
+      "name": "Lo-Fi Beats",
+      "desc": "Chill vinyl pops, warm bass sweeps, and soft rhodes chords.",
+      "apply": {
+        "audioPackId": "lofi"
+      },
+      "cost": 2800,
+      "currency": "sparks",
+      "rarity": "epic",
+      "isNew": true
+    },
+    {
+      "id": "aud-ethereal",
+      "tab": "audio",
+      "name": "Ethereal Chimes",
+      "desc": "Soft, crystalline bells and windchimes for a relaxing vibe.",
+      "apply": {
+        "audioPackId": "ethereal"
+      },
+      "cost": 3500,
+      "currency": "sparks",
+      "rarity": "epic"
+    },
+    {
+      "id": "aud-cyber",
+      "tab": "audio",
+      "name": "Cyberdeck",
+      "desc": "Heavy mechanical clacks and glitch hop synthetic bursts.",
+      "apply": {
+        "audioPackId": "cyber"
+      },
+      "cost": 30,
+      "currency": "diamonds",
+      "rarity": "ultra"
+    },
+    {
+      "id": "aud-zen",
+      "tab": "audio",
+      "name": "Zen Garden",
+      "desc": "Bamboo strikes and deep resonating gongs.",
+      "apply": {
+        "audioPackId": "zen"
+      },
+      "cost": 40,
+      "currency": "diamonds",
+      "rarity": "ultra"
+    },
+    {
+      "id": "dia-100",
+      "tab": "diamonds",
+      "name": "100 Diamonds",
+      "desc": "10,000 Sparks → 100 ◆",
+      "cost": 10000,
+      "currency": "sparks",
+      "pack": {
+        "diamonds": 100
+      },
+      "rarity": "rare"
+    },
+    {
+      "id": "dia-280",
+      "tab": "diamonds",
+      "name": "280 Diamonds",
+      "desc": "20,000 Sparks → 280 ◆ (SPECIAL 20% DISCOUNT)",
+      "cost": 20000,
+      "originalCost": 25000,
+      "currency": "sparks",
+      "isSale": true,
+      "salePercent": 20,
+      "pack": {
+        "diamonds": 280
+      },
+      "rarity": "epic"
+    },
+    {
+      "id": "dia-600",
+      "tab": "diamonds",
+      "name": "600 Diamonds",
+      "desc": "50,000 Sparks → 600 ◆",
+      "cost": 50000,
+      "currency": "sparks",
+      "pack": {
+        "diamonds": 600
+      },
+      "rarity": "ultra"
+    },
+    {
+      "id": "dia-1500",
+      "tab": "diamonds",
+      "name": "1,500 Diamonds",
+      "desc": "100,000 Sparks → 1,500 ◆ (Grandmaster chest)",
+      "cost": 100000,
+      "currency": "sparks",
+      "pack": {
+        "diamonds": 1500
+      },
+      "rarity": "ultra"
+    },
+    {
+      "id": "earned-arrow",
+      "tab": "avatars",
+      "name": "True North",
+      "desc": "Unlocked from the start",
+      "cost": 0,
+      "currency": "sparks",
+      "rarity": "common",
+      "preview": "▲",
+      "apply": {
+        "avatarId": "arrow"
+      },
+      "unlockOnly": true
+    },
+    {
+      "id": "earned-orbit",
+      "tab": "avatars",
+      "name": "Orbit",
+      "desc": "Unlocked from the start",
+      "cost": 0,
+      "currency": "sparks",
+      "rarity": "common",
+      "preview": "◍",
+      "apply": {
+        "avatarId": "orbit"
+      },
+      "unlockOnly": true
+    },
+    {
+      "id": "earned-bolt",
+      "tab": "avatars",
+      "name": "Bolt",
+      "desc": "Unlocked from the start",
+      "cost": 0,
+      "currency": "sparks",
+      "rarity": "common",
+      "preview": "➶",
+      "apply": {
+        "avatarId": "bolt"
+      },
+      "unlockOnly": true
+    },
+    {
+      "id": "earned-prism",
+      "tab": "avatars",
+      "name": "Prism",
+      "desc": "Play 5 runs",
+      "cost": 0,
+      "currency": "sparks",
+      "rarity": "common",
+      "preview": "◆",
+      "apply": {
+        "avatarId": "prism"
+      },
+      "unlockOnly": true
+    },
+    {
+      "id": "earned-lunar",
+      "tab": "avatars",
+      "name": "Lunar",
+      "desc": "Play 10 runs",
+      "cost": 0,
+      "currency": "sparks",
+      "rarity": "common",
+      "preview": "☾",
+      "apply": {
+        "avatarId": "lunar"
+      },
+      "unlockOnly": true
+    },
+    {
+      "id": "earned-hex",
+      "tab": "avatars",
+      "name": "Hexcore",
+      "desc": "Reach a 8 streak",
+      "cost": 0,
+      "currency": "sparks",
+      "rarity": "common",
+      "preview": "⬢",
+      "apply": {
+        "avatarId": "hex"
+      },
+      "unlockOnly": true
+    },
+    {
+      "id": "earned-cross",
+      "tab": "avatars",
+      "name": "Crosshair",
+      "desc": "Reach a 12 streak",
+      "cost": 0,
+      "currency": "sparks",
+      "rarity": "common",
+      "preview": "◎",
+      "apply": {
+        "avatarId": "cross"
+      },
+      "unlockOnly": true
+    },
+    {
+      "id": "earned-star",
+      "tab": "avatars",
+      "name": "Supernova",
+      "desc": "Earn 2,500 lifetime",
+      "cost": 0,
+      "currency": "sparks",
+      "rarity": "common",
+      "preview": "★",
+      "apply": {
+        "avatarId": "star"
+      },
+      "unlockOnly": true
+    },
+    {
+      "id": "earned-diamond",
+      "tab": "avatars",
+      "name": "Monarch",
+      "desc": "Earn 6,000 lifetime",
+      "cost": 0,
+      "currency": "sparks",
+      "rarity": "common",
+      "preview": "◈",
+      "apply": {
+        "avatarId": "diamond"
+      },
+      "unlockOnly": true
+    },
+    {
+      "id": "earned-ghost",
+      "tab": "avatars",
+      "name": "Ghost",
+      "desc": "React under 220ms",
+      "cost": 0,
+      "currency": "sparks",
+      "rarity": "common",
+      "preview": "➤",
+      "apply": {
+        "avatarId": "ghost"
+      },
+      "unlockOnly": true
+    },
+    {
+      "id": "earned-plus",
+      "tab": "avatars",
+      "name": "Medic",
+      "desc": "Play 25 runs",
+      "cost": 0,
+      "currency": "sparks",
+      "rarity": "common",
+      "preview": "✚",
+      "apply": {
+        "avatarId": "plus"
+      },
+      "unlockOnly": true
+    },
+    {
+      "id": "earned-comet",
+      "tab": "avatars",
+      "name": "Comet",
+      "desc": "Buy with Sparks",
+      "cost": 0,
+      "currency": "sparks",
+      "rarity": "common",
+      "preview": "☄",
+      "apply": {
+        "avatarId": "comet"
+      },
+      "unlockOnly": true
+    }
+  ],
+  "rules": [
+    {
+      "id": "ban-ember",
+      "stat": "runs",
+      "op": ">=",
+      "value": 5
+    },
+    {
+      "id": "ban-violet",
+      "stat": "bestStreak",
+      "op": ">=",
+      "value": 8
+    },
+    {
+      "id": "ban-aurora",
+      "stat": "totalScore",
+      "op": ">=",
+      "value": 2500
+    },
+    {
+      "id": "ban-rose",
+      "stat": "runs",
+      "op": ">=",
+      "value": 25
+    },
+    {
+      "id": "ban-ghost",
+      "stat": "fastestMs",
+      "op": "<",
+      "value": 220
+    },
+    {
+      "id": "ban-gold",
+      "stat": "totalScore",
+      "op": ">=",
+      "value": 6000
+    },
+    {
+      "id": "frm-ring",
+      "stat": "runs",
+      "op": ">=",
+      "value": 3
+    },
+    {
+      "id": "frm-glow",
+      "stat": "bestStreak",
+      "op": ">=",
+      "value": 8
+    },
+    {
+      "id": "frm-double",
+      "stat": "totalScore",
+      "op": ">=",
+      "value": 2500
+    },
+    {
+      "id": "frm-gold",
+      "stat": "totalScore",
+      "op": ">=",
+      "value": 6000
+    },
+    {
+      "id": "frm-prism",
+      "stat": "fastestMs",
+      "op": "<",
+      "value": 220
+    },
+    {
+      "id": "ttl-steady",
+      "stat": "runs",
+      "op": ">=",
+      "value": 5
+    },
+    {
+      "id": "ttl-streaker",
+      "stat": "bestStreak",
+      "op": ">=",
+      "value": 8
+    },
+    {
+      "id": "ttl-sharp",
+      "stat": "bestStreak",
+      "op": ">=",
+      "value": 12
+    },
+    {
+      "id": "ttl-speed",
+      "stat": "fastestMs",
+      "op": "<",
+      "value": 250
+    },
+    {
+      "id": "ttl-grinder",
+      "stat": "runs",
+      "op": ">=",
+      "value": 25
+    },
+    {
+      "id": "ttl-legend",
+      "stat": "totalScore",
+      "op": ">=",
+      "value": 12000
+    },
+    {
+      "id": "earned-prism",
+      "stat": "runs",
+      "op": ">=",
+      "value": 5
+    },
+    {
+      "id": "earned-lunar",
+      "stat": "runs",
+      "op": ">=",
+      "value": 10
+    },
+    {
+      "id": "earned-hex",
+      "stat": "bestStreak",
+      "op": ">=",
+      "value": 8
+    },
+    {
+      "id": "earned-cross",
+      "stat": "bestStreak",
+      "op": ">=",
+      "value": 12
+    },
+    {
+      "id": "earned-star",
+      "stat": "totalScore",
+      "op": ">=",
+      "value": 2500
+    },
+    {
+      "id": "earned-diamond",
+      "stat": "totalScore",
+      "op": ">=",
+      "value": 6000
+    },
+    {
+      "id": "earned-ghost",
+      "stat": "fastestMs",
+      "op": "<",
+      "value": 220
+    },
+    {
+      "id": "earned-plus",
+      "stat": "runs",
+      "op": ">=",
+      "value": 25
+    }
+  ],
+  "starters": [
+    "av-spark",
+    "ban-tide",
+    "ban-dusk",
+    "sty-waves",
+    "sty-chevron",
+    "sty-tide",
+    "frm-clean",
+    "ttl-rookie",
+    "earned-arrow",
+    "earned-orbit",
+    "earned-bolt"
+  ],
+  "defaultProfile": {
+    "avatarId": "spark",
+    "customAvatar": {
+      "glyph": "▲",
+      "from": "#a8b7f2",
+      "to": "#7dd3fc"
+    },
+    "bannerId": "dusk",
+    "customBanner": {
+      "from": "#2b3350",
+      "to": "#7a4a6e",
+      "pattern": "waves"
+    },
+    "bannerStyle": "waves",
+    "frameId": "none",
+    "titleId": "rookie",
+    "purchased": [],
+    "wishlist": [],
+    "favoriteModes": [],
+    "claimedLevels": [],
+    "charges": {
+      "shield": 1,
+      "surge": 0,
+      "saver": 0
+    }
+  },
+  "defaultStats": {
+    "runs": 0,
+    "totalScore": 0,
+    "bestStreak": 0,
+    "fastestMs": 9999,
+    "sparks": 0,
+    "sparksEarned": 0,
+    "hits": 0,
+    "misses": 0,
+    "playSeconds": 0,
+    "reactionTotal": 0,
+    "reactionCount": 0,
+    "sparksSpent": 0,
+    "diamonds": 0,
+    "history": [],
+    "modeRuns": {},
+    "loginStreak": 0,
+    "lastLoginDate": "",
+    "bonusXp": 0
+  },
+  "levelRewards": [
+    {
+      "level": 1,
+      "xpRequired": 500,
+      "storeItemId": "cto-bean"
+    },
+    {
+      "level": 2,
+      "xpRequired": 1464,
+      "storeItemId": "ban-tide"
+    },
+    {
+      "level": 3,
+      "xpRequired": 2745,
+      "storeItemId": "frm-ring"
+    },
+    {
+      "level": 4,
+      "xpRequired": 4287,
+      "storeItemId": "ttl-steady"
+    },
+    {
+      "level": 5,
+      "xpRequired": 6059,
+      "storeItemId": "thm-matrix"
+    },
+    {
+      "level": 6,
+      "xpRequired": 8037,
+      "storeItemId": "sty-waves"
+    },
+    {
+      "level": 7,
+      "xpRequired": 10206,
+      "storeItemId": "cto-pip"
+    },
+    {
+      "level": 8,
+      "xpRequired": 12553,
+      "storeItemId": "frm-glow"
+    },
+    {
+      "level": 9,
+      "xpRequired": 15068,
+      "storeItemId": "ban-ember"
+    },
+    {
+      "level": 10,
+      "xpRequired": 17741,
+      "storeItemId": "ani-ryu",
+      "diamonds": 10
+    },
+    {
+      "level": 11,
+      "xpRequired": 20565,
+      "storeItemId": "ttl-streaker"
+    },
+    {
+      "level": 12,
+      "xpRequired": 23534,
+      "storeItemId": "thm-ion"
+    },
+    {
+      "level": 13,
+      "xpRequired": 26643,
+      "storeItemId": "ban-citrus"
+    },
+    {
+      "level": 14,
+      "xpRequired": 29886,
+      "storeItemId": "frm-mint"
+    },
+    {
+      "level": 15,
+      "xpRequired": 33259,
+      "storeItemId": "cto-moss"
+    },
+    {
+      "level": 16,
+      "xpRequired": 36758,
+      "storeItemId": "sty-orbits"
+    },
+    {
+      "level": 17,
+      "xpRequired": 40380,
+      "storeItemId": "ttl-sharp"
+    },
+    {
+      "level": 18,
+      "xpRequired": 44121,
+      "storeItemId": "thm-solar"
+    },
+    {
+      "level": 19,
+      "xpRequired": 47978,
+      "storeItemId": "frm-ice"
+    },
+    {
+      "level": 20,
+      "xpRequired": 51948,
+      "storeItemId": "ani-sakura",
+      "diamonds": 10
+    },
+    {
+      "level": 21,
+      "xpRequired": 56029,
+      "storeItemId": "ban-violet"
+    },
+    {
+      "level": 22,
+      "xpRequired": 60218,
+      "storeItemId": "cto-nori"
+    },
+    {
+      "level": 23,
+      "xpRequired": 64513,
+      "storeItemId": "ttl-speed"
+    },
+    {
+      "level": 24,
+      "xpRequired": 68912,
+      "storeItemId": "thm-phase"
+    },
+    {
+      "level": 25,
+      "xpRequired": 73414,
+      "storeItemId": "frm-pulse"
+    },
+    {
+      "level": 26,
+      "xpRequired": 78015,
+      "storeItemId": "sty-rays"
+    },
+    {
+      "level": 27,
+      "xpRequired": 82715,
+      "storeItemId": "ban-aurora"
+    },
+    {
+      "level": 28,
+      "xpRequired": 87511,
+      "storeItemId": "cto-blush"
+    },
+    {
+      "level": 29,
+      "xpRequired": 92403,
+      "storeItemId": "ttl-grinder"
+    },
+    {
+      "level": 30,
+      "xpRequired": 97389,
+      "storeItemId": "ani-cipher",
+      "diamonds": 10
+    },
+    {
+      "level": 31,
+      "xpRequired": 102466,
+      "storeItemId": "frm-phoenix"
+    },
+    {
+      "level": 32,
+      "xpRequired": 107635,
+      "storeItemId": "frm-pulse"
+    },
+    {
+      "level": 33,
+      "xpRequired": 112893,
+      "storeItemId": "frm-prism"
+    },
+    {
+      "level": 34,
+      "xpRequired": 118239,
+      "storeItemId": "ttl-steady"
+    },
+    {
+      "level": 35,
+      "xpRequired": 123673,
+      "storeItemId": "ttl-patron"
+    },
+    {
+      "level": 36,
+      "xpRequired": 129193,
+      "storeItemId": "aud-lofi"
+    },
+    {
+      "level": 37,
+      "xpRequired": 134798,
+      "storeItemId": "hero-bat"
+    },
+    {
+      "level": 38,
+      "xpRequired": 140486,
+      "storeItemId": "ani-ryu"
+    },
+    {
+      "level": 39,
+      "xpRequired": 146258,
+      "storeItemId": "ani-nero"
+    },
+    {
+      "level": 40,
+      "xpRequired": 152112,
+      "storeItemId": "ani-kitsune",
+      "diamonds": 20
+    },
+    {
+      "level": 41,
+      "xpRequired": 158047,
+      "storeItemId": "cto-nori"
+    },
+    {
+      "level": 42,
+      "xpRequired": 164061,
+      "storeItemId": "ban-aurora-borealis"
+    },
+    {
+      "level": 43,
+      "xpRequired": 170156,
+      "storeItemId": "ban-aurora"
+    },
+    {
+      "level": 44,
+      "xpRequired": 176328,
+      "storeItemId": "ban-noir"
+    },
+    {
+      "level": 45,
+      "xpRequired": 182578,
+      "storeItemId": "sty-rays"
+    },
+    {
+      "level": 46,
+      "xpRequired": 188906,
+      "storeItemId": "sty-tide"
+    },
+    {
+      "level": 47,
+      "xpRequired": 195309,
+      "storeItemId": "thm-solar"
+    },
+    {
+      "level": 48,
+      "xpRequired": 201787,
+      "storeItemId": "thm-abyss"
+    },
+    {
+      "level": 49,
+      "xpRequired": 208341,
+      "storeItemId": "frm-celestial"
+    },
+    {
+      "level": 50,
+      "xpRequired": 214968,
+      "storeItemId": "thm-synthwave",
+      "diamonds": 30
+    },
+    {
+      "level": 51,
+      "xpRequired": 221668,
+      "storeItemId": "frm-gold"
+    },
+    {
+      "level": 52,
+      "xpRequired": 228442,
+      "storeItemId": "ttl-rookie"
+    },
+    {
+      "level": 53,
+      "xpRequired": 235287,
+      "storeItemId": "ttl-ghost"
+    },
+    {
+      "level": 54,
+      "xpRequired": 242203,
+      "storeItemId": "aud-retro"
+    },
+    {
+      "level": 55,
+      "xpRequired": 249191,
+      "storeItemId": "hero-panther"
+    },
+    {
+      "level": 56,
+      "xpRequired": 256249,
+      "storeItemId": "ani-sakura"
+    },
+    {
+      "level": 57,
+      "xpRequired": 263376,
+      "storeItemId": "ani-chiyo"
+    },
+    {
+      "level": 58,
+      "xpRequired": 270572,
+      "storeItemId": "ani-solaria"
+    },
+    {
+      "level": 59,
+      "xpRequired": 277837,
+      "storeItemId": "cto-moss"
+    },
+    {
+      "level": 60,
+      "xpRequired": 285170,
+      "storeItemId": "frm-prism",
+      "diamonds": 40
+    },
+    {
+      "level": 61,
+      "xpRequired": 292571,
+      "storeItemId": "ban-violet"
+    },
+    {
+      "level": 62,
+      "xpRequired": 300039,
+      "storeItemId": "ban-ice"
+    },
+    {
+      "level": 63,
+      "xpRequired": 307573,
+      "storeItemId": "sty-orbits"
+    },
+    {
+      "level": 64,
+      "xpRequired": 315173,
+      "storeItemId": "sty-halo"
+    },
+    {
+      "level": 65,
+      "xpRequired": 322839,
+      "storeItemId": "thm-ion"
+    },
+    {
+      "level": 66,
+      "xpRequired": 330570,
+      "storeItemId": "thm-ember"
+    },
+    {
+      "level": 67,
+      "xpRequired": 338365,
+      "storeItemId": "thm-synthwave"
+    },
+    {
+      "level": 68,
+      "xpRequired": 346225,
+      "storeItemId": "frm-glow"
+    },
+    {
+      "level": 69,
+      "xpRequired": 354149,
+      "storeItemId": "frm-ice"
+    },
+    {
+      "level": 70,
+      "xpRequired": 362136,
+      "storeItemId": "ban-obsidian",
+      "diamonds": 50
+    },
+    {
+      "level": 71,
+      "xpRequired": 370186,
+      "storeItemId": "ttl-pilot"
+    },
+    {
+      "level": 72,
+      "xpRequired": 378299,
+      "storeItemId": "ttl-combo-master"
+    },
+    {
+      "level": 73,
+      "xpRequired": 386474,
+      "storeItemId": "hero-iron"
+    },
+    {
+      "level": 74,
+      "xpRequired": 394711,
+      "storeItemId": "ani-cipher"
+    },
+    {
+      "level": 75,
+      "xpRequired": 403009,
+      "storeItemId": "ani-yuki"
+    },
+    {
+      "level": 76,
+      "xpRequired": 411369,
+      "storeItemId": "ani-nova"
+    },
+    {
+      "level": 77,
+      "xpRequired": 419789,
+      "storeItemId": "cto-pip"
+    },
+    {
+      "level": 78,
+      "xpRequired": 428269,
+      "storeItemId": "cto-fox"
+    },
+    {
+      "level": 79,
+      "xpRequired": 436809,
+      "storeItemId": "ban-ember"
+    },
+    {
+      "level": 80,
+      "xpRequired": 445410,
+      "storeItemId": "ttl-legend",
+      "diamonds": 60
+    },
+    {
+      "level": 81,
+      "xpRequired": 454069,
+      "storeItemId": "sty-grid"
+    },
+    {
+      "level": 82,
+      "xpRequired": 462787,
+      "storeItemId": "sty-scan"
+    },
+    {
+      "level": 83,
+      "xpRequired": 471564,
+      "storeItemId": "thm-cyberpunk"
+    },
+    {
+      "level": 84,
+      "xpRequired": 480400,
+      "storeItemId": "thm-aurora"
+    },
+    {
+      "level": 85,
+      "xpRequired": 489293,
+      "storeItemId": "thm-blood"
+    },
+    {
+      "level": 86,
+      "xpRequired": 498245,
+      "storeItemId": "frm-ring"
+    },
+    {
+      "level": 87,
+      "xpRequired": 507253,
+      "storeItemId": "frm-rose"
+    },
+    {
+      "level": 88,
+      "xpRequired": 516319,
+      "storeItemId": "ttl-supersonic"
+    },
+    {
+      "level": 89,
+      "xpRequired": 525442,
+      "storeItemId": "ttl-grinder"
+    },
+    {
+      "level": 90,
+      "xpRequired": 534621,
+      "storeItemId": "ban-aurora",
+      "diamonds": 80
+    },
+    {
+      "level": 91,
+      "xpRequired": 543856,
+      "storeItemId": "hero-gwen"
+    },
+    {
+      "level": 92,
+      "xpRequired": 553148,
+      "storeItemId": "ani-valkyrie"
+    },
+    {
+      "level": 93,
+      "xpRequired": 562495,
+      "storeItemId": "ani-ren"
+    },
+    {
+      "level": 94,
+      "xpRequired": 571897,
+      "storeItemId": "ani-kaido"
+    },
+    {
+      "level": 95,
+      "xpRequired": 581355,
+      "storeItemId": "cto-bean"
+    },
+    {
+      "level": 96,
+      "xpRequired": 590868,
+      "storeItemId": "cto-pixel"
+    },
+    {
+      "level": 97,
+      "xpRequired": 600435,
+      "storeItemId": "ban-tide"
+    },
+    {
+      "level": 98,
+      "xpRequired": 610057,
+      "storeItemId": "ban-nebula"
+    },
+    {
+      "level": 99,
+      "xpRequired": 619733,
+      "storeItemId": "sty-waves"
+    },
+    {
+      "level": 100,
+      "xpRequired": 629463,
+      "storeItemId": "ani-valkyrie",
+      "diamonds": 100
+    }
+  ],
+  "spin": [
+    {
+      "id": "sparks-150",
+      "label": "+150",
+      "sublabel": "Sparks",
+      "type": "sparks",
+      "amount": 150,
+      "color": "#0284c7",
+      "accent": "#38bdf8",
+      "weight": 30
+    },
+    {
+      "id": "diamonds-5",
+      "label": "+5",
+      "sublabel": "Diamonds",
+      "type": "diamonds",
+      "amount": 5,
+      "color": "#059669",
+      "accent": "#34d399",
+      "weight": 22
+    },
+    {
+      "id": "egg-neon",
+      "label": "Neon Egg",
+      "sublabel": "Incubator",
+      "type": "egg",
+      "eggType": "neon",
+      "color": "#7c3aed",
+      "accent": "#a78bfa",
+      "weight": 16
+    },
+    {
+      "id": "sparks-400",
+      "label": "+400",
+      "sublabel": "Sparks",
+      "type": "sparks",
+      "amount": 400,
+      "color": "#d97706",
+      "accent": "#fbbf24",
+      "weight": 14
+    },
+    {
+      "id": "egg-quantum",
+      "label": "Void Egg",
+      "sublabel": "Incubator",
+      "type": "egg",
+      "eggType": "quantum",
+      "color": "#db2777",
+      "accent": "#f472b6",
+      "weight": 8
+    },
+    {
+      "id": "diamonds-20",
+      "label": "+20",
+      "sublabel": "Diamonds",
+      "type": "diamonds",
+      "amount": 20,
+      "color": "#10b981",
+      "accent": "#6ee7b7",
+      "weight": 5
+    },
+    {
+      "id": "avatar-cosmic",
+      "label": "Cipher PFP",
+      "sublabel": "Anime Avatar",
+      "type": "avatar",
+      "avatarId": "ani-cipher",
+      "avatarName": "Cipher",
+      "color": "#4f46e5",
+      "accent": "#818cf8",
+      "weight": 3
+    },
+    {
+      "id": "jackpot-sparks",
+      "label": "+1,200",
+      "sublabel": "✦ JACKPOT!",
+      "type": "jackpot",
+      "amount": 1200,
+      "color": "#e11d48",
+      "accent": "#fb7185",
+      "weight": 2
+    }
+  ],
+  "eggs": {
+    "neon": {
+      "type": "neon",
+      "name": "Neon Core Egg",
+      "tagline": "High-voltage bio-mechanical shell charging with kinetic plasma.",
+      "durationSeconds": 20,
+      "costSparks": 250,
+      "costDiamonds": 0,
+      "glowColor": "#22c55e",
+      "accentColor": "#86efac",
+      "eggIcon": "🟢",
+      "tier": "Common",
+      "possibleLoot": [
+        "Sparks (200 - 499)",
+        "Diamonds (4 - 8)"
+      ]
+    },
+    "quantum": {
+      "type": "quantum",
+      "name": "Quantum Void Egg",
+      "tagline": "Crystalline chronos shell housing unstable subatomic tachyons.",
+      "durationSeconds": 45,
+      "costSparks": 750,
+      "costDiamonds": 10,
+      "glowColor": "#a855f7",
+      "accentColor": "#d8b4fe",
+      "eggIcon": "🟣",
+      "tier": "Rare",
+      "possibleLoot": [
+        "Diamonds (15 - 29)",
+        "Anime Avatar: Cipher",
+        "Duplicate avatar: 800 Sparks"
+      ]
+    },
+    "solar": {
+      "type": "solar",
+      "name": "Solar Dragon Egg",
+      "tagline": "Radiant primordial core forged inside an exploding celestial star.",
+      "durationSeconds": 90,
+      "costSparks": 1800,
+      "costDiamonds": 30,
+      "glowColor": "#f59e0b",
+      "accentColor": "#fde68a",
+      "eggIcon": "🟡",
+      "tier": "Legendary",
+      "possibleLoot": [
+        "Diamonds (50 - 99) and 1,500 Sparks",
+        "Anime Avatar: Astral Prime",
+        "Duplicate avatar: 2,000 Sparks"
+      ]
+    }
+  }
+}

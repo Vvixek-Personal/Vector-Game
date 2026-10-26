@@ -5,7 +5,7 @@ test('production precaches the game and lazy analytics for offline play',async({
   await page.route('https://**/*',r=>r.abort());
   await page.addInitScript(()=> {
     localStorage.setItem('vector_tutorial_seen_v2','1');
-    if(!localStorage.getItem('vector_stats_v5')) {const d=new Date();localStorage.setItem('vector_stats_v5',JSON.stringify({lastLoginDate:d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()}));}
+    if(!localStorage.getItem('vector_stats_v5')) {const d=new Date();localStorage.setItem('vector_stats_v5',JSON.stringify({lastLoginDate:d.toISOString().slice(0,10)}));}
   });
   await page.goto('/');await expect(page.getByRole('button',{name:'Play Arcade',exact:true})).toBeVisible();
   await page.evaluate(async()=> {await navigator.serviceWorker.ready;});

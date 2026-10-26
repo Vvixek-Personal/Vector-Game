@@ -9,3 +9,14 @@ coverage/
 
 test-results/
 playwright-report/
+
+functions/node_modules/
+functions/.secret.local
+functions/.env*
+!functions/.env.example
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+.vector-emulator-data/
+
+firebase-export-*/

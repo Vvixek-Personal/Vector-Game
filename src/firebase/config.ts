@@ -1,10 +1,10 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider } from "firebase/auth";
-import { getFirestore, doc, getDocFromServer } from "firebase/firestore";
+import { getAuth, GoogleAuthProvider, connectAuthEmulator } from "firebase/auth";
+import { getFirestore, doc, getDocFromServer, connectFirestoreEmulator } from "firebase/firestore";
 import firebaseConfig from "../../firebase-applet-config.json";
 
 // Initialize Firebase App singleton
-export const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+export const app = getApps().length > 0 ? getApp() : initializeApp((import.meta.env?.DEV ? import.meta.env.VITE_VECTOR_EMULATORS : undefined) === "true" ? { ...firebaseConfig, projectId: "demo-vector" } : firebaseConfig);
 
 // Initialize Firebase Auth
 export const auth = getAuth(app);
@@ -15,6 +15,11 @@ googleProvider.setCustomParameters({ prompt: "select_account" });
 export const db = firebaseConfig.firestoreDatabaseId
   ? getFirestore(app, firebaseConfig.firestoreDatabaseId)
   : getFirestore(app);
+
+if ((import.meta.env?.DEV ? import.meta.env.VITE_VECTOR_EMULATORS : undefined) === "true") {
+  connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
+  connectFirestoreEmulator(db, "127.0.0.1", 8080);
+}
 
 // Verify connection per Firebase integration guidelines
 export async function testFirestoreConnection(): Promise<boolean> {
