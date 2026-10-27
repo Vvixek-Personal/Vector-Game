@@ -10,10 +10,19 @@ service cloud.firestore {
           && get(/databases/$(database)/documents/accounts/$(request.auth.uid)).data.developerUntil > request.time.toMillis())
       );
     }
+    function giftParticipant() {
+      return signedIn() && resource != null && resource.data != null
+        && (request.auth.uid == resource.data.sender || request.auth.uid == resource.data.recipient);
+    }
+
     match /accounts/{uid} {
-      allow get: if owner(uid) || developer();
+      // Signed-in players need a single-document read to validate a gift
+      // recipient. Listing all accounts remains developer-only.
+      allow get: if signedIn();
       allow list: if developer();
-      allow write: if owner(uid) || developer();
+      // A player can sync gameplay fields but cannot promote their own role.
+      allow write: if developer()
+        || (owner(uid) && (resource == null || request.resource.data.role == resource.data.role));
     }
     match /users/{uid} {
       allow get: if owner(uid) || developer();
@@ -34,20 +43,50 @@ service cloud.firestore {
     }
     match /gifts/{id} {
       allow read: if signedIn() && (resource.data.sender == request.auth.uid || resource.data.recipient == request.auth.uid || developer());
-      allow write: if signedIn() && (request.auth.uid == request.resource.data.sender || developer());
+      allow create: if signedIn()
+        && request.auth.uid == request.resource.data.sender
+        && request.resource.data.recipient is string
+        && request.resource.data.sender != request.resource.data.recipient
+        && request.resource.data.itemId is string
+        && request.resource.data.status == 'pending'
+        && request.resource.data.consumed is bool;
+      // Either participant may settle or return a gift. Ownership fields are
+      // immutable, so a recipient cannot redirect someone else's item.
+      allow update: if (giftParticipant() || developer())
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','handledAt','returnCredited','returnCreditedAt'])
+        && request.resource.data.sender == resource.data.sender
+        && request.resource.data.recipient == resource.data.recipient
+        && request.resource.data.itemId == resource.data.itemId
+        && request.resource.data.consumed == resource.data.consumed
+        && request.resource.data.status in ['pending','claimed','returned','cancelled']
+        && (resource.data.status == 'pending'
+          || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['returnCredited','returnCreditedAt']));
+      allow delete: if false;
     }
     match /feedback/{id} {
       allow read: if signedIn() && (resource.data.uid == request.auth.uid || developer());
-      allow create: if signedIn();
-      allow update: if developer();
-      allow delete: if developer();
+      allow create: if signedIn() && request.auth.uid == request.resource.data.uid;
+      allow update, delete: if developer();
     }
     match /ledger/{id} {
       allow read, write: if developer();
     }
     match /leaderboard/{id} {
       allow read: if true;
-      allow write: if signedIn();
+      // A player may only publish their own mode and overall records.
+      allow write: if signedIn()
+        && (id.matches(request.auth.uid + '.*') || developer())
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.score is int
+        && request.resource.data.score >= 0
+        && request.resource.data.mode is string;
+    }
+    match /runs/{id} {
+      allow read: if signedIn() && (resource.data.uid == request.auth.uid || developer());
+      allow create, update: if signedIn()
+        && request.auth.uid == request.resource.data.uid
+        && request.resource.data.mode is string;
+      allow delete: if false;
     }
     match /{document=**} { allow read, write: if false; }
   }

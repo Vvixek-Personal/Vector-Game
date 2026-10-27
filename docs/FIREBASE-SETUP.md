@@ -1,6 +1,6 @@
 # Vector 1.3 Firebase activation
 
-The account, gift, and Developer tools use trusted Cloud Functions. The playable build alone cannot activate them. Guest play remains available without Firebase. The implementation has been tested against local Auth, Firestore, Functions, and Storage emulators; that is separate from deploying the live project.
+The account, gift, and Developer tools prefer trusted Cloud Functions, with a complete client fallback when those Functions have not been deployed. Guest play remains available without Firebase. The original 1.3 implementation was tested against local emulators; that is separate from deploying the live project. Rerun the emulator suite after applying the October 27, 2026 rule and fallback changes.
 
 ## Owner setup
 
@@ -18,28 +18,30 @@ The public configuration targets project **steel-scanner-8xfhk**, database **ai-
 
 The server grants permanent Developer access only when Firebase Auth verifies **personal.me.vivek@gmail.com**. A normal player's email field, local save, or submitted role cannot grant access.
 
-## Master password
+## Master key
 
-Choose a private password of at least 16 characters. Do not put it in the frontend, an environment file committed to GitHub, screenshots, or chat. Run the interactive setup:
+The owner requested a short numeric Developer key. That key is now configured through a salted PBKDF2-SHA256 verification record in `functions/src/master-key.mjs`; the plaintext is not present in the frontend bundle. The Developer form accepts 8–256 characters, and the session lasts one hour.
+
+Security note: an eight-digit numeric key is weak and the verification record is public code. Treat this as a convenience gate only. For a production project, deploy the trusted `unlockDeveloper` Cloud Function and set a longer, private override using `VECTOR_MASTER_PASSWORD_HASH`. The setup script now accepts 8–256 characters:
 
     node scripts/set-master-password.mjs
 
-The script reads the password with masked input, derives a salted scrypt hash, and sends only the hash to Firebase Secret Manager. It removes its temporary file afterward. The secret is **VECTOR_MASTER_PASSWORD_HASH**. There is no built-in production password. The emulator uses a separate ignored, test-only fixture.
+It derives a salted scrypt hash and stores only that hash. `VECTOR_MASTER_PASSWORD_HASH` can contain either the legacy `scrypt$salt$hash` record or a `pbkdf2-sha256$iterations$salt$hash` record; when set, it replaces the default key rather than adding a second valid key. The emulator uses a separate ignored, test-only fixture. Rotating the key requires changing the verification record or environment value and redeploying the backend/client together.
 
-Password Developer sessions last one hour and can be revoked from Tune → Developer → Players. Attempts are limited per account and IP. Signing out hides all management tools; server checks still apply to every operation.
+Password Developer sessions can be revoked from Tune → Developer → Players. Server attempts are rate-limited per account and IP. Signing out hides all management tools; server checks still apply to every operation.
 
 ## Coordinated release
 
 Back up the existing database through the project's normal backup process. Existing legacy **users** documents are retained; the first authenticated bootstrap creates the canonical **accounts** document once. Repeated sign-ins return that account instead of importing another local save.
 
-Create the secret, then deploy the backend before the new client and rules:
+If you override the default master-key record, configure that value first. Deploy the backend and rules before the new client:
 
     node --import tsx scripts/export-domain.mjs
     npx --prefix functions firebase deploy --only functions:vector-game --project steel-scanner-8xfhk
     npx --prefix functions firebase deploy --only firestore,storage --project steel-scanner-8xfhk
     npm run build
 
-Publish **dist/** through the existing hosting workflow after backend deployment succeeds. New rules intentionally reject the old client's direct economy/leaderboard writes. Schedule the rule/client switch together; an old cached client may need to accept the game's update notice.
+Publish **dist/** through the existing hosting workflow after backend deployment succeeds. The client now tries the trusted account service first and falls back to a complete Firestore/domain implementation only when those Functions are missing or unreachable. The checked-in rules support that fallback while still rejecting role escalation, cross-account leaderboard writes, gift redirection, and unauthorised legacy balance writes. Deploy rules and client together; an old cached client may need to accept the game's update notice.
 
 The Firebase CLI is not authenticated on the development computer at the time this upgrade was prepared. No live database, rules, Functions, Storage settings, billing, or player balances have been changed by this repair.
 
@@ -53,6 +55,8 @@ The Firebase CLI is not authenticated on the development computer at the time th
 6. Appoint a moderator; verify current and newly created Store items are available, a locked item is unavailable, and feedback reaches the developer. Revoke the role.
 7. Create/reprice a small test Store item and verify the live Store updates. Check developer-only custom picture upload and player-specific titles.
 8. Inspect Data & activity for application accounts, catalog, gifts, runs, feedback, and balance changes.
+9. Finish runs in Arcade and Daily while signed in. Confirm device scores, live global mode/challenge boards, and overall points update without duplicates; go offline for one run and verify the queued best publishes on reconnect.
+10. Sign out from a high-level account, confirm guest progress appears instead, then sign back in and confirm the high-level account returns from its own slot.
 
 The data inspector covers this game's application collections. It is not a replacement for the Firebase console, infrastructure configuration, Auth passwords, or secret access.
 
@@ -60,8 +64,8 @@ The data inspector covers this game's application collections. It is not a repla
 
 Run **node scripts/prepare-emulators.mjs** to generate ignored local configuration. This replaces emulator-only settings and uses a demo project so tests cannot access production:
 
-- functions/.env.local: VECTOR_DATABASE_ID as above and VECTOR_STORAGE_BUCKET=demo-vector.appspot.com
-- functions/.secret.local: VECTOR_MASTER_PASSWORD_HASH in scrypt$salt$hash format, matching the emulator test passphrase in the integration test.
+- functions/.env.local: VECTOR_DATABASE_ID as above, VECTOR_STORAGE_BUCKET=demo-vector.appspot.com, and VECTOR_MASTER_PASSWORD_HASH in scrypt$salt$hash format.
+- functions/.secret.local: the same VECTOR_MASTER_PASSWORD_HASH record for tooling that still reads secret files; it matches the emulator test passphrase in the integration test.
 
     npx --prefix functions firebase emulators:start --project demo-vector --only auth,firestore,functions,storage
     node --test functions/test/domain.test.mjs

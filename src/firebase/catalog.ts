@@ -3,7 +3,28 @@ import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "./config";
 import { STORE_ITEMS, type StoreItem } from "../game/catalog";
 import { FRAMES, BANNERS, TITLES } from "../game/profile";
-import { safeStorage } from "../game/persistence";
+
+// Catalog overrides are public game data, not a per-account save. Keep them in
+// one unscoped browser slot so Developer edits survive sign-out and are visible
+// to every account on the same device before the Firestore snapshot arrives.
+const catalogMemory = new Map<string, string>();
+const catalogStorage = {
+  getItem(key: string): string | null {
+    try {
+      return typeof localStorage !== "undefined" ? localStorage.getItem(key) ?? catalogMemory.get(key) ?? null : catalogMemory.get(key) ?? null;
+    } catch {
+      return catalogMemory.get(key) ?? null;
+    }
+  },
+  setItem(key: string, value: string) {
+    catalogMemory.set(key, value);
+    try {
+      if (typeof localStorage !== "undefined") localStorage.setItem(key, value);
+    } catch {
+      /* memory cache remains available */
+    }
+  },
+};
 
 // Keep base prices separate from the rotating weekly offer and remote overrides.
 const builtins = STORE_ITEMS.map((item) => {
@@ -20,7 +41,7 @@ const builtins = STORE_ITEMS.map((item) => {
 
 const loadCachedOverrides = (): StoreItem[] => {
   try {
-    const raw = safeStorage.getItem("vector_catalog_overrides");
+    const raw = catalogStorage.getItem("vector_catalog_overrides");
     if (!raw) return [];
     const list = JSON.parse(raw);
     return Array.isArray(list) ? list : [];
@@ -57,7 +78,7 @@ export function applyCatalogItem(item: StoreItem) {
     overrides.push(item);
   }
   try {
-    safeStorage.setItem("vector_catalog_overrides", JSON.stringify(overrides));
+    catalogStorage.setItem("vector_catalog_overrides", JSON.stringify(overrides));
   } catch {}
   rebuild();
 }
@@ -126,7 +147,7 @@ export function startCatalogSync() {
             : [];
         });
         try {
-          safeStorage.setItem("vector_catalog_overrides", JSON.stringify(overrides));
+          catalogStorage.setItem("vector_catalog_overrides", JSON.stringify(overrides));
         } catch {}
         rebuild();
       },

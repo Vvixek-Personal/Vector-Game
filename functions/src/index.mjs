@@ -3,15 +3,18 @@ import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
-import { defineSecret, defineString } from "firebase-functions/params";
+import { defineString } from "firebase-functions/params";
 import { randomUUID, randomInt, createHash, scrypt, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
 import { base, OWNER_EMAIL, MODES, newAccount, roleFor, accountView, applyAction, catalogFor, publicPlayer, validateCatalogItem, insist, uid, text, int, dayFor, weeklyFor, DomainError } from "./domain.mjs";
+import { MASTER_KEY_MIN_LENGTH, MASTER_KEY_MAX_LENGTH, MASTER_KEY_HASH, verifyMasterKey, verifyMasterKeyHash } from "./master-key.mjs";
 
 initializeApp();
 const databaseId=defineString("VECTOR_DATABASE_ID",{default:"ai-studio-vectorgame-560ec9bd-4e7c-4177-8021-3f5fed39406a"});
 const bucketName=defineString("VECTOR_STORAGE_BUCKET",{default:"steel-scanner-8xfhk.firebasestorage.app"});
-const masterHash=defineSecret("VECTOR_MASTER_PASSWORD_HASH");
+// The requested key works out of the box through its salted verification
+// record. Owners can override it with a fresh PBKDF2 or scrypt record.
+const masterHash=defineString("VECTOR_MASTER_PASSWORD_HASH",{default:MASTER_KEY_HASH});
 const options={region:"us-central1",maxInstances:10,timeoutSeconds:90,memory:"256MiB"};
 const db=()=>getFirestore(databaseId.value());
 const owner=req=>req.auth?.token?.email_verified===true&&String(req.auth?.token?.email||"").toLowerCase()===OWNER_EMAIL;
@@ -171,7 +174,9 @@ export const saveCatalogItem=wrap(async req=>{
     const reference=database.collection("catalog").doc(id),old=await transaction.get(reference);
     const existing=old.exists?old.data():base.items.find(item=>item.id===id);
     const item=validateCatalogItem(input,existing),now=Date.now();
-    if(item.photo)insist(item.photo.includes("/b/"+bucketName.value()+"/"),"invalid-argument","Upload images to this game's bucket.");
+    // Client-optimized data URIs are allowed so a catalog change can publish
+    // without a separate Storage deployment. Remote bucket URLs remain valid.
+    if(item.photo)insist(item.photo.includes("/b/"+bucketName.value()+"/")||/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(item.photo),"invalid-argument","Upload images to this game's bucket or use an optimized image data URI.");
     transaction.set(reference,{...item,updatedAt:now,updatedBy:account.uid});
     audit(transaction,database,account.uid,id,"catalog.save",{itemId:id,cost:item.cost,currency:item.currency,active:item.active},now);
     return {item,message:"Store item saved."};
@@ -183,7 +188,7 @@ export const acknowledgeFeedback=wrap(async req=>{
 });
 export const unlockDeveloper=wrap(async req=>{
   const id=requireUser(req),database=db(),now=Date.now(),password=String(req.data?.password||"");
-  insist(password.length>=16&&password.length<=256,"invalid-argument","Enter the configured master password (16–256 characters).");
+  insist(password.length>=MASTER_KEY_MIN_LENGTH&&password.length<=MASTER_KEY_MAX_LENGTH,"invalid-argument",`Enter the configured master key (${MASTER_KEY_MIN_LENGTH}–${MASTER_KEY_MAX_LENGTH} characters).`);
   const keys=[id,"ip_"+createHash("sha256").update(req.rawRequest.ip||"unknown").digest("hex")];
   await database.runTransaction(async transaction=>{
     const refs=keys.map(key=>database.collection("adminAttempts").doc(key)),docs=await Promise.all(refs.map(ref=>transaction.get(ref)));
@@ -192,10 +197,17 @@ export const unlockDeveloper=wrap(async req=>{
       transaction.set(refs[i],{startedAt:same?old.startedAt:now,count:count+1});
     }
   });
-  const [format,salt,expected]=masterHash.value().split("$");
-  insist(format==="scrypt"&&/^[a-f0-9]{32,128}$/.test(salt||"")&&/^[a-f0-9]{128}$/.test(expected||""),"failed-precondition","The master password is not configured on the server.");
-  const actual=await promisify(scrypt)(password,salt,64);
-  insist(timingSafeEqual(actual,Buffer.from(expected,"hex")),"permission-denied","The master password is incorrect.");
+  const record=masterHash.value()||MASTER_KEY_HASH;
+  let authorized;
+  if(record===MASTER_KEY_HASH) authorized=await verifyMasterKey(password);
+  else {
+    const [format,salt,expected]=record.split("$");
+    if(format==="scrypt"&&/^[a-f0-9]{32,128}$/.test(salt||"")&&/^[a-f0-9]{128}$/.test(expected||"")){
+      const actual=await promisify(scrypt)(password,salt,64);
+      authorized=timingSafeEqual(actual,Buffer.from(expected,"hex"));
+    }else authorized=await verifyMasterKeyHash(password,record);
+  }
+  insist(authorized,"permission-denied","The master key is incorrect.");
   const reference=database.collection("accounts").doc(id);
   await database.runTransaction(async transaction=>{
     const snapshot=await transaction.get(reference);insist(snapshot.exists,"failed-precondition","Reconnect your player account first.");
@@ -203,13 +215,14 @@ export const unlockDeveloper=wrap(async req=>{
     writeAccount(transaction,database,account,"developer");audit(transaction,database,id,id,"developer.unlock",{expiresAt:account.developerUntil},now);
   });
   return {message:"Developer access unlocked for one hour.",expiresAt:now+3600000};
-},{secrets:[masterHash]});
+});
 export const uploadImage=wrap(async req=>{
   const {account,role,database}=await current(req);insist(role==="developer","permission-denied","Only verified developers can upload images.");
   const purpose=req.data?.purpose==="profile"?"profile":"catalog",requestId=text(req.data?.requestId,"Upload ID",100);
   insist(/^[a-zA-Z0-9_-]{8,100}$/.test(requestId),"invalid-argument","Invalid upload ID.");
-  const encoded=req.data?.base64;insist(typeof encoded==="string"&&encoded.length<=2800000,"invalid-argument","Choose an image smaller than 2 MB.");
-  const bytes=Buffer.from(encoded,"base64");insist(bytes.length>20&&bytes.length<=2097152,"invalid-argument","Choose an image smaller than 2 MB.");
+  const supplied=typeof req.data?.base64==="string"?req.data.base64:String(req.data?.dataUrl||"").replace(/^data:image\/[a-z]+;base64,/i,"");
+  insist(typeof supplied==="string"&&supplied.length<=2800000,"invalid-argument","Choose an image smaller than 2 MB.");
+  const bytes=Buffer.from(supplied,"base64");insist(bytes.length>20&&bytes.length<=2097152,"invalid-argument","Choose an image smaller than 2 MB.");
   const png=bytes.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10])),jpg=bytes[0]===255&&bytes[1]===216&&bytes[2]===255,webp=bytes.subarray(0,4).toString()==="RIFF"&&bytes.subarray(8,12).toString()==="WEBP";
   insist(png||jpg||webp,"invalid-argument","Use a PNG, JPEG or WebP image.");
   if(png)insist(bytes.length>=24&&bytes.readUInt32BE(16)<=4096&&bytes.readUInt32BE(20)<=4096,"invalid-argument","Image dimensions must be 4096 pixels or smaller.");

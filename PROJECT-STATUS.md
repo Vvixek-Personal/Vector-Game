@@ -1,6 +1,8 @@
 # VECTOR 1.3 status
 
-Date: October 26, 2026
+Date: October 26, 2026; repaired October 27, 2026.
+
+See [`REPAIR-2026-10-27.md`](REPAIR-2026-10-27.md) for the current analysis. The October 27 repair fixes Developer persistence, normal-player gifting, live/global score saving, challenge buckets, master-key access, and sign-out progress isolation. It also makes deployed Cloud Functions the preferred path while retaining a durable client fallback. The older status notes below describe intended behavior from the previous repair; production deployment remains a separate owner action.
 
 The Google/Gmail sign-in integration, account session lifecycle, offline resilience, and game run execution are completely repaired and verified.
 

@@ -16,9 +16,9 @@ async function masked(prompt){
 }
 let directory;
 try{
-  console.log("Configure Vector's production master password. Firebase owner login is required.");
-  const password=await masked("New password (16–256 characters): ");
-  if(password.length<16)throw new Error("Use at least 16 characters.");
+  console.log("Configure Vector's production master key. Firebase owner login is required.");
+  const password=await masked("New master key (8–256 characters; longer is safer): ");
+  if(password.length<8)throw new Error("Use at least 8 characters.");
   if(await masked("Confirm password: ")!==password)throw new Error("Passwords did not match.");
   const salt=randomBytes(32).toString("hex"),hash=await promisify(scrypt)(password,salt,64);
   directory=await mkdtemp(join(tmpdir(),"vector-secret-"));const file=join(directory,"master-hash.txt");

@@ -106,7 +106,7 @@ async function mockRankings(page:Page,cached=false) {
   await page.addInitScript(()=>Object.defineProperty(navigator,"onLine",{configurable:true,get:()=>true}));
   const records=Array.from({length:32},(_,index)=>({id:"p"+index,userId:"p"+index,userName:"Player "+String(index+1).padStart(2,"0"),avatarId:index===0?"hero-spider":"spark",frameId:"none",level:5,mode:"arcade",score:index<2?10000:10000-index*100,streak:20-index%10,title:"Operative",updatedAt:{seconds:1792900000}}));
   await page.route("**/src/firebase/leaderboard.ts*",route=>route.fulfill({contentType:"application/javascript",body:
-    'export function subscribeToLeaderboard(mode,callback){queueMicrotask(()=>callback('+JSON.stringify(records)+'.map(r=>({...r,mode})),{fromCache:'+cached+'}));return ()=>{}} export async function submitScoreToCloud(){return false} export const submitScore=submitScoreToCloud;'}));
+    'export function subscribeToLeaderboard(mode,callback){queueMicrotask(()=>callback('+JSON.stringify(records)+'.map(r=>({...r,mode})),{fromCache:'+cached+'}));return ()=>{}} export async function submitScoreToCloud(){return false} export const submitScore=submitScoreToCloud; export async function retryPendingScores(){return 0} export function pendingScoreCount(){return 0}'}));
 }
 test("global search and pagination preserve tied places and profile focus",async({page})=>{
   await mockRankings(page); await page.goto("/",{waitUntil:"domcontentloaded"}); await page.getByRole("button",{name:"Ranks",exact:true}).click();
