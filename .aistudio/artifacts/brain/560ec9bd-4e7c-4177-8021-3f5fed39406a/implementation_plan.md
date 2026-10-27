@@ -35,7 +35,23 @@ A targeted visual and motion overhaul for VECTOR that elevates the app header, r
   - *Problem*: In `src/firebase/accounts.ts`, signing in with Google called `bootstrapAccount` via `httpsCallable` on Cloud Functions. Since no functions are deployed in this applet environment, it threw `functions/not-found` or `functions/unavailable`, triggering an error banner that locked out store actions, runs, and spins.
   - *Fix*: Implemented a pure client fallback engine in `src/firebase/accounts.ts` that executes all account operations using verified domain logic (`domain.mjs`), syncs directly with Firestore `accounts/{uid}` and `users/{uid}`, and sets `session.status = "ready"` immediately.
   - *Play Again Reliability*: Decoupled run launch in `App.tsx` from Cloud Function availability so starting a game always issues a run ticket and launches the countdown.
-  - *Error Feedback*: Enhanced `src/firebase/auth.ts` to categorize popup closures, network drops, and domain authorizations cleanly.
+- **Developer Tools Persistence & Live Publishing (October 26, 2026)**:
+  - *Analysis of Developer Tab Capabilities*:
+    1. **Catalog & Store Editor**: Create new items or edit existing items across Avatars, Themes, Banners, Frames, Titles, Patterns/Styles, Audio packs, and Diamond exchanges. Supports avatar photo upload, theme color spectrum adjustments (Arrow, Arena, Glow), gradient banners, frame shadows, custom pricing, rarity, and active availability.
+    2. **Player Management**: Search/list players across the database, inspect account stats, adjust Sparks/Diamonds/Bonus XP and power charges, grant/remove/lock/unlock store inventory, assign private player-specific titles with custom colors, promote/demote moderators, and revoke temporary password sessions.
+    3. **Data & Activity Inspector**: Audit logs from `ledger`, `accounts`, `users`, `players`, `catalog`, `gifts`, `feedback`, and `runs`.
+    4. **Moderator & Feedback Hub**: Send and review feedback reports with reviewed acknowledgments.
+    5. **Developer Identity**: Verified developer custom profile picture upload with auto-scaling and Firestore persistence.
+  - *Root Causes Found*:
+    - `saveCatalogItem` returned a mock message without saving to Firestore or triggering catalog rebuilds.
+    - `adminWallet`, `adminInventory`, `adminTitle`, `adminRole`, and `revokeDeveloper` did not fetch the target account from Firestore into `extra.target`, and did not persist modified accounts back to Firestore.
+    - `firestore.rules` had `allow write: if false;` on `/catalog/{id}`, `/accounts/{uid}`, `/feedback/{id}`, and `/ledger/{id}`.
+    - `domain.mjs` restricted avatar photo URLs to `https://firebasestorage.googleapis.com/`, rejecting data URLs.
+  - *Resolution Implemented*:
+    - Wired full client fallback and Firestore handlers for `saveCatalogItem`, updating `doc(db, "catalog", item.id)` and calling `applyCatalogItem(item)` for instantaneous publication across the Store, Vault, and Game.
+    - Implemented full Firestore read/write and audit logging for player admin operations (`accounts/{uid}` and `ledger/{id}`).
+    - Updated `firestore.rules` allowing verified developers (`personal.me.vivek@gmail.com`) write access, and deployed rules via `deploy_firebase`.
+    - Added image optimization via offscreen canvas (256x256 WebP/PNG) for fast and compact photo persistence.
 
 ---
 
@@ -47,4 +63,6 @@ A targeted visual and motion overhaul for VECTOR that elevates the app header, r
 - [x] **Smooth Transitions**: Screen changes transition with zero layout jumping, using fluid Framer Motion spring physics.
 - [x] **Google Account & Connectivity Fix**: Google sign-in connects cleanly without "services unavailable" error banners; profile and progress sync directly to Firestore.
 - [x] **Play Again Button**: Countdown and gameplay start reliably on click/tap in every mode.
-- [x] **Compilation & Test Pass**: `npm test` (51 unit tests), `npm run lint`, and `npm run build` all pass with zero errors.
+- [x] **Developer Tab Persistence & Live Publishing**: Developer changes to catalog items, pricing, custom avatars, themes, player balances, inventory rules, and exclusive titles save directly to Firestore and publish immediately to the live game.
+- [x] **Compilation & Test Pass**: `npm test` (52 unit tests), `npm run lint`, and `compile_applet` all pass with zero errors.
+

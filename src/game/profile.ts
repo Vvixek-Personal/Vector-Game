@@ -291,7 +291,7 @@ export function loadProfile(): Profile {
       accessRole: ["player","moderator","developer"].includes(p.accessRole) ? p.accessRole : "guest",
     inventoryRules: p.inventoryRules && typeof p.inventoryRules === "object" ? Object.fromEntries(Object.entries(p.inventoryRules).filter(([id,value]) => ["removed","locked","gifted"].includes(value))) as Profile["inventoryRules"] : {},
     customTitles: Array.isArray(p.customTitles) ? p.customTitles.filter(t=>t && typeof t.id === "string" && typeof t.name === "string").slice(0,30) : [],
-    customPhotoURL: typeof p.customPhotoURL === "string" && p.customPhotoURL.startsWith("https://firebasestorage.googleapis.com/") ? p.customPhotoURL : null,
+    customPhotoURL: typeof p.customPhotoURL === "string" && (p.customPhotoURL.startsWith("https://") || p.customPhotoURL.startsWith("data:image/")) ? p.customPhotoURL : null,
     avatarId: typeof p.avatarId === "string" ? p.avatarId : "spark",
       customAvatar: {
         glyph: typeof p.customAvatar?.glyph === "string" && p.customAvatar.glyph ? p.customAvatar.glyph.slice(0, 2) : "▲",

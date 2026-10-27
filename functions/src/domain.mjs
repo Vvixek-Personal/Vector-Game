@@ -340,7 +340,7 @@ export function validateCatalogItem(input,existing){
   if(input.cost!==undefined){delete value.originalCost;delete value.salePercent;delete value.isSale;}
   const color=c=>typeof c==="string"&&/^#[0-9a-f]{6}$/i.test(c);
   if(!existing){
-    if(tab==="avatars"){insist(typeof input.photo==="string"&&input.photo.startsWith("https://firebasestorage.googleapis.com/"),"invalid-argument","Upload an avatar image first.");value.photo=input.photo;value.apply={avatarId:id};}
+    if(tab==="avatars"){insist(typeof input.photo==="string"&&(input.photo.startsWith("https://")||input.photo.startsWith("http://")||input.photo.startsWith("data:image/")),"invalid-argument","Upload an avatar image first.");value.photo=input.photo;value.apply={avatarId:id};}
     if(tab==="themes"){insist(Array.isArray(input.themeSwatch)&&input.themeSwatch.length===3&&input.themeSwatch.every(color),"invalid-argument","Choose three theme colors.");value.themeSwatch=input.themeSwatch;value.apply={arenaThemeId:id};}
     if(tab==="banners"){insist(color(input.from)&&color(input.to),"invalid-argument","Choose two banner colors.");value.preview="linear-gradient(120deg,"+input.from+","+input.to+")";value.apply={bannerId:id};}
     if(tab==="frames"){insist(color(input.color),"invalid-argument","Choose a frame color.");value.frameCss="0 0 0 3px "+input.color+", 0 0 16px "+input.color+"66";value.apply={frameId:id};}
@@ -349,7 +349,7 @@ export function validateCatalogItem(input,existing){
     if(tab==="audio"){insist(["retro","ethereal","cyber","zen"].includes(input.audioPackId),"invalid-argument","Choose a supported audio engine.");value.apply={audioPackId:input.audioPackId};}
   }else{
     if(tab==="themes"&&input.themeSwatch){insist(input.themeSwatch.length===3&&input.themeSwatch.every(color),"invalid-argument","Choose three theme colors.");value.themeSwatch=input.themeSwatch;}
-    if(tab==="avatars"&&input.photo){insist(input.photo.startsWith("https://firebasestorage.googleapis.com/"),"invalid-argument","Upload a valid image.");value.photo=input.photo;delete value.hero;delete value.anime;delete value.cartoon;}
+    if(tab==="avatars"&&input.photo){insist(typeof input.photo==="string"&&(input.photo.startsWith("https://")||input.photo.startsWith("http://")||input.photo.startsWith("data:image/")),"invalid-argument","Upload a valid image.");value.photo=input.photo;delete value.hero;delete value.anime;delete value.cartoon;}
   }
   return value;
 }

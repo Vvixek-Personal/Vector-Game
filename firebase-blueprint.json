@@ -35,6 +35,47 @@
         "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp of record" }
       },
       "required": ["userId", "userName", "mode", "score"]
+    },
+    "CatalogItem": {
+      "title": "CatalogItem",
+      "description": "Dynamic store item created or updated by developer",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Store item ID" },
+        "name": { "type": "string", "description": "Display name" },
+        "desc": { "type": "string", "description": "Item description" },
+        "cost": { "type": "number", "description": "Price" },
+        "currency": { "type": "string", "enum": ["sparks", "diamonds"], "description": "Currency used" },
+        "tab": { "type": "string", "description": "Store category" },
+        "rarity": { "type": "string", "enum": ["common", "rare", "epic", "ultra"], "description": "Rarity" },
+        "active": { "type": "boolean", "description": "Available in store" },
+        "photo": { "type": "string", "description": "Custom avatar URL or data URI" },
+        "themeSwatch": { "type": "array", "items": { "type": "string" }, "description": "Theme colors" },
+        "preview": { "type": "string", "description": "Banner background style" },
+        "frameCss": { "type": "string", "description": "Frame CSS box shadow" },
+        "pattern": { "type": "string", "description": "Banner pattern" },
+        "audioPackId": { "type": "string", "description": "Audio pack ID" },
+        "apply": { "type": "object", "description": "Profile properties to apply" },
+        "updatedAt": { "type": "number", "description": "Timestamp of modification" }
+      },
+      "required": ["id", "name", "cost", "currency", "tab"]
+    },
+    "AccountDoc": {
+      "title": "AccountDoc",
+      "description": "Canonical user account with stats, profile, inventory and roles",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "User UID" },
+        "email": { "type": "string", "description": "User email" },
+        "operativeName": { "type": "string", "description": "Operative name" },
+        "role": { "type": "string", "enum": ["player", "moderator", "developer"], "description": "Account role" },
+        "ownerAccount": { "type": "boolean", "description": "Whether user is verified owner" },
+        "developerUntil": { "type": "number", "description": "Password expiration epoch ms" },
+        "stats": { "type": "object", "description": "Player lifetime statistics and currency" },
+        "profile": { "type": "object", "description": "Equipped loadout and purchased inventory" },
+        "updatedAt": { "type": "number", "description": "Last update epoch ms" }
+      },
+      "required": ["uid", "operativeName", "stats", "profile"]
     }
   },
   "firestore": {
@@ -45,6 +86,14 @@
     "/leaderboard/{entryId}": {
       "schema": "LeaderboardEntry",
       "description": "Real-time competitive high score entries per mode and overall"
+    },
+    "/catalog/{itemId}": {
+      "schema": "CatalogItem",
+      "description": "Live custom and overridden store items"
+    },
+    "/accounts/{userId}": {
+      "schema": "AccountDoc",
+      "description": "Full player account state, progression, and inventory"
     }
   }
 }

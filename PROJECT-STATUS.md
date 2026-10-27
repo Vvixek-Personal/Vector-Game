@@ -18,7 +18,14 @@ The Google/Gmail sign-in integration, account session lifecycle, offline resilie
 3. **Store, Spin & Inventory Operations:**
    - Store purchases, item equips/unequips, lucky wheel spins, incubator egg hatching, and milestone claims now operate reliably in both online Firestore and client fallback modes.
 
-4. **Validation:**
-   - 51 unit tests passed (`npm test`).
+4. **Developer Tools & Live Game Publishing:**
+   - Fully analyzed and resolved the issue where Developer tab changes (catalog creation/editing, player wallets, inventory locks/grants, custom titles, moderator roles) were not saving or publishing to the live game.
+   - Wrote real Firestore handlers for `saveCatalogItem`, `adminWallet`, `adminInventory`, `adminTitle`, `adminRole`, `revokeDeveloper`, `listPlayers`, `initializePlayer`, `inspectData`, `sendModeratorFeedback`, `acknowledgeFeedback`, and `uploadDeveloperImage`.
+   - Wired `applyCatalogItem` to immediately inject changes into the live runtime catalog and local cache, broadcasting them to the Store, Vault, and gameplay.
+   - Updated and deployed `firestore.rules` giving verified developers (`personal.me.vivek@gmail.com`) write access to `/catalog/{id}`, `/accounts/{uid}`, `/feedback/{id}`, and `/ledger/{id}`.
+
+5. **Validation:**
+   - 52 unit tests passed (`npm test`).
    - TypeScript compilation and type-check passed (`npm run lint`).
-   - Production Vite applet build passed (`npm run build` / `compile_applet`).
+   - Production Vite applet build passed (`compile_applet`).
+

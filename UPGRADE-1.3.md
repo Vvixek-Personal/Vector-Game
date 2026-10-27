@@ -21,15 +21,29 @@ Prepared October 26, 2026. Source branch: codex/vector-accounts-and-developer.
 | Large dock and inconsistent forms wasted space. | A compact horizontal dock, shared field sizing, a smaller Store overview, and responsive Profile/Developer/hatchery layouts. |
 | Google/Gmail sign-in showed "Account services are unavailable" banner even when online due to missing Cloud Functions. | Added client-side domain execution fallback in `src/firebase/accounts.ts` that seamlessly boots the session into "ready", executes all game actions locally with `applyAction`, and persists to Firestore without throwing functions/not-found or functions/unavailable errors. |
 | Play Again / Play buttons blocked if signed in with Google. | Decoupled game launch from Cloud Functions in `src/App.tsx` so `start()` always initiates the countdown and gameplay, generating local run receipts if cloud functions are unavailable. |
-| Google sign-in lacked detailed error feedback on network or popup failures. | Enhanced `src/firebase/auth.ts` with specific error handling for popup closures, network timeouts, and domain authorization, plus automatic user profile cloud sync. |
+| Developer catalog and player modifications did not save or publish to the live game. | Built real Firestore persistence for catalog items (`catalog/{id}`), player management (`accounts/{uid}`), feedback (`feedback/{id}`), and audit log (`ledger/{id}`). Catalog items instantly publish to the Store, Vault, and Game via `applyCatalogItem` and live `onSnapshot` syncing with local override caching. |
 
-## Developer tools
+## Developer tools & live publishing (October 26, 2026)
 
-The Developer tab includes Firebase player lookup and preparation, wallet/bonus XP/charge management, inventory grants/removals/locks, moderator assignment/removal, player-specific titles, Store creation/repricing/availability, avatar uploads, theme color controls, custom developer pictures, feedback review, and application-data/activity inspection.
-
-Private titles belong to assigned players and are excluded from the Store and gifting. Moderator feedback reaches the Developer workspace. Catalog changes appear in the Store without requiring a new build. Hidden catalog items remain in existing collections.
-
-Permanent Developer access requires Firebase Auth to verify **personal.me.vivek@gmail.com**. A configured server master password grants one hour of access to a signed-in account. Its salted hash is kept in Secret Manager; no production password is bundled. Role, balance, price, and gift checks run on the server for every operation.
+The Developer tab allows verified developers (**personal.me.vivek@gmail.com**) and master-password sessions to manage the live game:
+1. **Catalog & Store Editor**:
+   - Create and reprice items across all categories (Avatars, Arena Themes, Banners, Frames, Shop Titles, Patterns/Styles, Audio Engines, and Diamond Exchanges).
+   - Custom avatar image uploads are client-optimized to 256×256 WebP/PNG data URIs, fitting effortlessly in Firestore and rendering instantly across devices.
+   - Dynamic theme color spectrums (Arrow, Arena, and Glow), dual-gradient banner washes, and frame CSS box shadows.
+   - Saves directly to Firestore collection `catalog` and updates local runtime catalog caches so the Store, Vault, and in-game arenas publish and display new/edited items immediately.
+2. **Player Account & Wallet Management**:
+   - Search players across Firestore by email, operative callsign, or user ID.
+   - Directly adjust Spark and Diamond balances, Bonus XP, and power charge counts (Shield, Surge, Saver).
+   - Grant, remove, lock, or unlock inventory items (locked items prevent purchases or gifts until unlocked).
+   - Assign exclusive custom titles with individual hex colors directly to individual players without exposing them in the public store.
+   - Promote players to moderator or remove moderator privileges.
+   - All player modifications persist to Firestore `accounts/{uid}` and record audit receipts in `ledger/{id}`.
+3. **Data Inspection & Audit**:
+   - Inspect live documents in `ledger`, `accounts`, `users`, `players`, `catalog`, `gifts`, `feedback`, and `runs`.
+4. **Moderator & Developer Feedback**:
+   - Send, receive, and acknowledge structured player/moderator reports with reviewed timestamps.
+5. **Security Rules Deployed**:
+   - Firestore security rules updated and deployed with developer write permissions for `/catalog/{id}`, `/accounts/{uid}`, `/feedback/{id}`, and `/ledger/{id}`.
 
 ## Validation
 

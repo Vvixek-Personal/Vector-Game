@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import { doc, onSnapshot, getDoc, setDoc } from "firebase/firestore";
+import { doc, onSnapshot, getDoc, setDoc, getDocs, collection, query, limit, addDoc, updateDoc } from "firebase/firestore";
 import { getFunctions, httpsCallable, connectFunctionsEmulator } from "firebase/functions";
 import type { User } from "firebase/auth";
 import { app, auth, db, sanitizeFirestoreData } from "./config";
@@ -7,7 +7,10 @@ import { safeStorage, setSaveScope, getSaveScope } from "../game/persistence";
 import { beginCloudSync, completeCloudSync, queueCloudSave, SAVE_KEYS } from "./cloudSave";
 import type { Profile } from "../game/profile";
 import type { Stats } from "../game/storage";
-import { newAccount, applyAction, dayFor, base as domainBase } from "../../functions/src/domain.mjs";
+import { STORE_ITEMS, type StoreItem } from "../game/catalog";
+import { applyCatalogItem } from "./catalog";
+import { newAccount, applyAction, dayFor, base as domainBase, validateCatalogItem } from "../../functions/src/domain.mjs";
+import { levelFor } from "../../functions/src/progression.mjs";
 
 export type AccessRole = "guest" | "player" | "moderator" | "developer";
 
@@ -251,6 +254,31 @@ async function clientFallbackAccount<T = any>(name: string, data: Record<string,
       };
     }
 
+    // Handle Admin/Developer target player loading
+    const targetUid = payload.userId || payload.targetId || (data.userId as string);
+    if (targetUid && (action.startsWith("admin") || action === "revokeDeveloper")) {
+      if (role !== "developer") {
+        throw new Error("Developer access required.");
+      }
+      let targetAccount: AccountData | null = null;
+      if (targetUid === user.uid && session.account) {
+        targetAccount = structuredClone(session.account);
+      } else {
+        try {
+          const snap = await getDoc(doc(db, "accounts", targetUid));
+          if (snap.exists()) {
+            targetAccount = snap.data() as AccountData;
+          }
+        } catch (err) {
+          console.warn("Could not load target account from Firestore:", err);
+        }
+      }
+      if (!targetAccount) {
+        throw new Error("Target player account not found.");
+      }
+      extra.target = targetAccount;
+    }
+
     const actionResult = applyAction(
       currentAccount,
       action,
@@ -259,15 +287,77 @@ async function clientFallbackAccount<T = any>(name: string, data: Record<string,
       role,
       now,
       extra
-    ) as { account: AccountData; message: string; [key: string]: any };
+    ) as { account: AccountData; target?: AccountData; message: string; [key: string]: any };
+
+    // If an admin modified another player's account, save that target account to Firestore
+    if (actionResult.target && targetUid) {
+      try {
+        await setDoc(doc(db, "accounts", targetUid), sanitizeFirestoreData({
+          ...actionResult.target,
+          updatedAt: now,
+        }));
+        await setDoc(doc(db, "ledger", "adm_" + action + "_" + targetUid + "_" + now), sanitizeFirestoreData({
+          kind: action,
+          targetUid,
+          performedBy: user.uid,
+          payload,
+          createdAt: now,
+        }));
+      } catch (err) {
+        console.warn("Firestore admin action save error:", err);
+      }
+      if (targetUid === user.uid) {
+        persistCanonical(actionResult.target);
+      }
+    }
 
     const updatedAccount = actionResult.account;
-    persistCanonical(updatedAccount);
+    if (updatedAccount) persistCanonical(updatedAccount);
 
     return {
       ...actionResult,
       account: session.account || updatedAccount,
       spinIndex,
+    } as unknown as T;
+  }
+
+  if (name === "saveCatalogItem") {
+    const currentAccount = session.account;
+    const role = computedRole(currentAccount);
+    if (role !== "developer") {
+      throw new Error("Developer access required to modify the store catalog.");
+    }
+    const rawItem = (data.item as any) || {};
+    if (!rawItem || typeof rawItem !== "object") {
+      throw new Error("Invalid item data.");
+    }
+    const existing = STORE_ITEMS.find((i) => i.id === rawItem.id);
+    const validatedItem = validateCatalogItem(rawItem, existing);
+
+    try {
+      await setDoc(doc(db, "catalog", validatedItem.id), sanitizeFirestoreData({
+        ...validatedItem,
+        updatedAt: now,
+      }));
+      await setDoc(doc(db, "ledger", "cat_" + validatedItem.id + "_" + now), sanitizeFirestoreData({
+        kind: "catalog_item_saved",
+        itemId: validatedItem.id,
+        savedBy: user.uid,
+        email: user.email,
+        item: validatedItem,
+        createdAt: now,
+      }));
+    } catch (fsErr) {
+      console.warn("Firestore catalog save warning:", fsErr);
+    }
+
+    applyCatalogItem(validatedItem);
+
+    return {
+      message: existing
+        ? `Updated "${validatedItem.name}" in store catalog.`
+        : `Published "${validatedItem.name}" to store catalog.`,
+      item: validatedItem,
     } as unknown as T;
   }
 
@@ -279,6 +369,12 @@ async function clientFallbackAccount<T = any>(name: string, data: Record<string,
         session.account.developerUntil = now + 3600000;
         session.role = "developer";
         persistCanonical(session.account);
+        try {
+          await setDoc(doc(db, "accounts", user.uid), sanitizeFirestoreData({
+            ...session.account,
+            updatedAt: now,
+          }), { merge: true });
+        } catch {}
       }
       return { message: "Developer mode unlocked for 1 hour." } as unknown as T;
     }
@@ -286,18 +382,167 @@ async function clientFallbackAccount<T = any>(name: string, data: Record<string,
   }
 
   if (name === "uploadImage") {
+    const purpose = String(data.purpose || "catalog");
+    const url = String(data.dataUrl || (data.base64 ? "data:image/png;base64," + data.base64 : ""));
+    if (!url) throw new Error("No image data provided.");
+
+    if (purpose === "profile" && session.account) {
+      session.account.profile.customPhotoURL = url;
+      session.account.profile.useGooglePfp = false;
+      persistCanonical(session.account);
+      try {
+        await setDoc(doc(db, "accounts", user.uid), sanitizeFirestoreData({
+          ...session.account,
+          updatedAt: now,
+        }), { merge: true });
+      } catch (err) {
+        console.warn("Profile picture save warning:", err);
+      }
+      return {
+        url,
+        message: "Developer profile picture updated.",
+      } as unknown as T;
+    }
+
     return {
-      url: "data:image/png;base64," + data.base64,
-      message: "Image uploaded successfully.",
+      url,
+      message: "Image ready. Save the item to publish it.",
     } as unknown as T;
   }
 
   if (name === "listPlayers" || name === "playerDirectory") {
-    return { players: [] } as unknown as T;
+    const currentAccount = session.account;
+    const role = computedRole(currentAccount);
+    if (role !== "developer" && role !== "moderator") {
+      throw new Error("Developer or moderator access required.");
+    }
+    const q = String(data.query || "").trim().toLowerCase();
+    const players: any[] = [];
+    try {
+      const snap = await getDocs(query(collection(db, "accounts"), limit(50)));
+      for (const d of snap.docs) {
+        const acc = d.data() as AccountData;
+        const matches =
+          !q ||
+          d.id.toLowerCase().includes(q) ||
+          (acc.email && acc.email.toLowerCase().includes(q)) ||
+          (acc.operativeName && acc.operativeName.toLowerCase().includes(q));
+        if (matches) {
+          players.push({
+            uid: d.id,
+            email: acc.email || "",
+            displayName: acc.operativeName || "Player",
+            account: acc,
+            name: acc.operativeName || "Player",
+            level: levelFor(acc.stats),
+          });
+        }
+      }
+    } catch (err) {
+      console.warn("Could not list remote accounts:", err);
+    }
+    // Also include current user if matching and not yet in list
+    if (session.account) {
+      const selfAcc = session.account;
+      const matchesSelf =
+        !q ||
+        user.uid.toLowerCase().includes(q) ||
+        (user.email && user.email.toLowerCase().includes(q)) ||
+        (selfAcc.operativeName && selfAcc.operativeName.toLowerCase().includes(q));
+      if (matchesSelf && !players.some((p) => p.uid === user.uid)) {
+        players.unshift({
+          uid: user.uid,
+          email: user.email || selfAcc.email || "",
+          displayName: selfAcc.operativeName || user.displayName || "Player",
+          account: selfAcc,
+          name: selfAcc.operativeName || "Player",
+          level: levelFor(selfAcc.stats),
+        });
+      }
+    }
+    return { players, nextPageToken: null } as unknown as T;
+  }
+
+  if (name === "initializePlayer") {
+    const currentAccount = session.account;
+    const role = computedRole(currentAccount);
+    if (role !== "developer") throw new Error("Developer access required.");
+    const targetUid = String(data.userId || "").trim();
+    if (!targetUid) throw new Error("Choose a player ID.");
+    const snap = await getDoc(doc(db, "accounts", targetUid));
+    if (!snap.exists()) {
+      const userSnap = await getDoc(doc(db, "users", targetUid));
+      const legacyData = userSnap.exists() ? userSnap.data() : null;
+      const seed = legacyData && (legacyData.stats || legacyData.profile)
+        ? { stats: legacyData.stats, profile: legacyData.profile, operativeName: legacyData.operativeName }
+        : guestImport();
+      const fresh = newAccount({ uid: targetUid, email: legacyData?.email || "" }, seed, now, domainBase.items);
+      await setDoc(doc(db, "accounts", targetUid), sanitizeFirestoreData(fresh));
+    }
+    return { message: "Player inventory prepared." } as unknown as T;
   }
 
   if (name === "inspectData") {
-    return { documents: [] } as unknown as T;
+    const currentAccount = session.account;
+    const role = computedRole(currentAccount);
+    if (role !== "developer") {
+      throw new Error("Developer access required.");
+    }
+    const collName = String(data.collection || "ledger");
+    const docId = data.documentId ? String(data.documentId).trim() : "";
+    const documents: any[] = [];
+    try {
+      if (docId) {
+        const snap = await getDoc(doc(db, collName, docId));
+        if (snap.exists()) {
+          documents.push({ id: snap.id, data: snap.data() });
+        }
+      } else {
+        const snap = await getDocs(query(collection(db, collName), limit(30)));
+        for (const d of snap.docs) {
+          documents.push({ id: d.id, data: d.data() });
+        }
+      }
+    } catch (err: any) {
+      console.warn("inspectData error:", err);
+    }
+    return { documents, nextCursor: null } as unknown as T;
+  }
+
+  if (name === "sendModeratorFeedback") {
+    const msg = String(data.message || "").trim();
+    if (!msg) throw new Error("Enter feedback text.");
+    const feedbackDoc = {
+      uid: user.uid,
+      name: session.account?.operativeName || user.displayName || "Moderator",
+      message: msg,
+      status: "pending",
+      createdAt: now,
+    };
+    try {
+      await addDoc(collection(db, "feedback"), sanitizeFirestoreData(feedbackDoc));
+    } catch (err) {
+      console.warn("Feedback save error:", err);
+    }
+    return { message: "Feedback sent to developer." } as unknown as T;
+  }
+
+  if (name === "acknowledgeFeedback") {
+    const currentAccount = session.account;
+    const role = computedRole(currentAccount);
+    if (role !== "developer") throw new Error("Developer access required.");
+    const id = String(data.id || "").trim();
+    if (id) {
+      try {
+        await updateDoc(doc(db, "feedback", id), {
+          status: "reviewed",
+          reviewedAt: now,
+        });
+      } catch (err) {
+        console.warn("Feedback acknowledge error:", err);
+      }
+    }
+    return { message: "Marked as reviewed." } as unknown as T;
   }
 
   return { message: "Action saved." } as unknown as T;
@@ -612,14 +857,57 @@ async function retryPendingRuns() {
 
 export async function uploadDeveloperImage(file: File, purpose: "catalog" | "profile") {
   if (file.size > 2 * 1024 * 1024) throw new Error("Choose a PNG, JPEG or WebP image under 2 MB.");
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  let encoded = "";
-  for (let at = 0; at < bytes.length; at += 32768) {
-    encoded += String.fromCharCode(...bytes.subarray(at, at + 32768));
+  
+  // Resize image client-side to max 256x256 so it fits Firestore document limits and loads instantly
+  let dataUrl = "";
+  if (typeof window !== "undefined" && typeof document !== "undefined") {
+    try {
+      dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement("canvas");
+            const maxDim = 256;
+            let width = img.width;
+            let height = img.height;
+            if (width > maxDim || height > maxDim) {
+              if (width > height) {
+                height = Math.round((height * maxDim) / width);
+                width = maxDim;
+              } else {
+                width = Math.round((width * maxDim) / height);
+                height = maxDim;
+              }
+            }
+            canvas.width = Math.max(1, width);
+            canvas.height = Math.max(1, height);
+            const ctx = canvas.getContext("2d");
+            if (!ctx) return resolve(reader.result as string);
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            resolve(canvas.toDataURL("image/webp", 0.88));
+          };
+          img.onerror = () => resolve(reader.result as string);
+          img.src = reader.result as string;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    } catch {}
   }
+
+  if (!dataUrl) {
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    let encoded = "";
+    for (let at = 0; at < bytes.length; at += 32768) {
+      encoded += String.fromCharCode(...bytes.subarray(at, at + 32768));
+    }
+    dataUrl = "data:image/png;base64," + btoa(encoded);
+  }
+
   return callAccount<{ url: string; message: string }>(
     "uploadImage",
-    { purpose, base64: btoa(encoded), requestId: crypto.randomUUID() },
+    { purpose, dataUrl, requestId: crypto.randomUUID() },
     90000
   );
 }

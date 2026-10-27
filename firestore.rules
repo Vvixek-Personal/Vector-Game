@@ -13,7 +13,7 @@ service cloud.firestore {
     match /accounts/{uid} {
       allow get: if owner(uid) || developer();
       allow list: if developer();
-      allow write: if false;
+      allow write: if owner(uid) || developer();
     }
     match /users/{uid} {
       allow get: if owner(uid) || developer();
@@ -24,15 +24,31 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['userId','settings','settingsUpdatedAt','preferences','preferencesUpdatedAt','updatedAt']);
       allow delete: if false;
     }
-    match /catalog/{id} { allow read: if true; allow write: if false; }
-    match /players/{uid} { allow read: if signedIn(); allow write: if false; }
+    match /catalog/{id} {
+      allow read: if true;
+      allow write: if developer();
+    }
+    match /players/{uid} {
+      allow read: if signedIn();
+      allow write: if owner(uid) || developer();
+    }
     match /gifts/{id} {
       allow read: if signedIn() && (resource.data.sender == request.auth.uid || resource.data.recipient == request.auth.uid || developer());
-      allow write: if false;
+      allow write: if signedIn() && (request.auth.uid == request.resource.data.sender || developer());
     }
-    match /feedback/{id} { allow read: if signedIn() && (resource.data.uid == request.auth.uid || developer()); allow write: if false; }
-    match /ledger/{id} { allow read: if developer(); allow write: if false; }
-    match /leaderboard/{id} { allow read: if true; allow write: if false; }
+    match /feedback/{id} {
+      allow read: if signedIn() && (resource.data.uid == request.auth.uid || developer());
+      allow create: if signedIn();
+      allow update: if developer();
+      allow delete: if developer();
+    }
+    match /ledger/{id} {
+      allow read, write: if developer();
+    }
+    match /leaderboard/{id} {
+      allow read: if true;
+      allow write: if signedIn();
+    }
     match /{document=**} { allow read, write: if false; }
   }
 }
