@@ -10,7 +10,7 @@ A browser reflex game with 12 modes, local progression, optional Firebase sign-i
 - One name change is free per signed-in account; later changes cost **100 Diamonds**. Developers have unlimited free changes.
 - A smoother level curve starts at 500 XP, with 100 milestone rewards, mission claims, and collection previews.
 - Purchases and exchanges check current server prices. Gift transfers, returns, locks, spin rewards, hatchery payments, and balances settle on the server for signed-in players.
-- Tune → Developer contains player, wallet, inventory, role, custom-title, Store-editor, image-upload, feedback, and application-data tools. Verified owner email or a server master password is required. Moderator access includes current/future Store cosmetics, subject to individual restrictions.
+- Tune → Developer contains player, wallet, inventory, role, custom-title, Store-editor, image-upload, feedback, and application-data tools. Verified owner email or the configured master key is required. Moderator access includes current/future Store cosmetics, subject to individual restrictions.
 - Existing eight hero portraits, analytics, offline guest play, and all 12 game modes remain available.
 
 **Activation:** the new signed-in features require deploying the included Firebase backend and rules. See [Firebase setup](docs/FIREBASE-SETUP.md). The production Firebase project has not been modified by this local upgrade.
@@ -76,6 +76,6 @@ Serve **dist/** over HTTPS for installation on a real device. Localhost also sup
 
 ## Firebase
 
-Read [Firebase setup](docs/FIREBASE-SETUP.md) for the verified owner account, master password, migration, emulator checks, and coordinated release steps. Guest progress is local; signed-in economy and inventory changes require the deployed account service. No production master password is bundled.
+Read [Firebase setup](docs/FIREBASE-SETUP.md) for the verified owner account, master key, migration, emulator checks, and coordinated release steps. Guest progress is local; signed-in economy and inventory changes prefer the deployed account service and use a durable Firestore fallback when it is unavailable. The owner-requested key is stored only as a salted verification record, not as plaintext in the browser bundle.
 
 See **AUDIT.md**, **REPAIR-REPORT.md**, and **UPGRADE-1.3.md** for the repair history and this upgrade's validation.

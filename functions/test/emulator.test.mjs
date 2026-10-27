@@ -30,10 +30,12 @@ test("Firebase account, economy, permissions and gift integration",{timeout:6000
     const again=await call(a,"bootstrapAccount",{guestImport:{stats:{sparks:999999}}});assert.equal(again.account.stats.sparks,1000);
     await call(b,"bootstrapAccount",{guestImport:{operativeName:"Beta"}});const admin=await call(owner,"bootstrapAccount");assert.equal(admin.account.accessRole,"developer");
   });
-  await t.test("direct balance writes, cross-account reads and role escalation are denied",async()=>{
+  await t.test("role escalation and legacy balance writes are denied while gift lookups work",async()=>{
     const endpoint="http://127.0.0.1:8080/v1/projects/demo-vector/databases/"+db.databaseId+"/documents/";
     const write=await fetch(endpoint+"accounts/"+a.uid,{method:"PATCH",headers:{Authorization:"Bearer "+a.token,"Content-Type":"application/json"},body:JSON.stringify({fields:{role:{stringValue:"developer"}}})});assert.equal(write.status,403);
-    const other=await fetch(endpoint+"accounts/"+b.uid,{headers:{Authorization:"Bearer "+a.token}});assert.equal(other.status,403);
+    // Gift settlement requires a targeted recipient lookup; account listing
+    // and role changes remain protected.
+    const other=await fetch(endpoint+"accounts/"+b.uid,{headers:{Authorization:"Bearer "+a.token}});assert.equal(other.status,200);
     await assert.rejects(call(a,"listPlayers"),e=>e.code==="PERMISSION_DENIED");
     await assert.rejects(action(a,"adminWallet",{userId:b.uid,sparks:999}),e=>e.code==="PERMISSION_DENIED");
     const legacy=await fetch(endpoint+"users/"+a.uid,{method:"PATCH",headers:{Authorization:"Bearer "+a.token,"Content-Type":"application/json"},body:JSON.stringify({fields:{userId:{stringValue:a.uid},stats:{mapValue:{fields:{sparks:{integerValue:"99999999"}}}}}})});assert.equal(legacy.status,403);

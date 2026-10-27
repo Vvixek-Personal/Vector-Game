@@ -131,3 +131,12 @@ test('developer validateCatalogItem and applyCatalogItem publish store items to 
   assert.ok(titleResult.target.profile.customTitles.some((t: any) => t.name === "Grand Champion" && t.color === "#ff0077"));
 });
 
+
+test('the configured developer master key verifies through a salted PBKDF2 record', async () => {
+  const { verifyMasterKey, verifyMasterKeyHash, MASTER_KEY_MIN_LENGTH } = await import("../functions/src/master-key.mjs");
+  assert.equal(MASTER_KEY_MIN_LENGTH, 8);
+  assert.equal(await verifyMasterKey("12102010"), true);
+  assert.equal(await verifyMasterKey("12102011"), false);
+  assert.equal(await verifyMasterKey("1210201"), false);
+  assert.equal(await verifyMasterKeyHash("12102010", "pbkdf2-sha256$150000$00$00"), false);
+});

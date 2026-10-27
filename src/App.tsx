@@ -2,7 +2,7 @@ import { beginCloudSync } from "./firebase/cloudSave";
 import { useAccount, startAccountSession, accountAction, isSignedAccount, beginAccountRun, settleAccountRun } from "./firebase/accounts";
 import { startCatalogSync, useCatalog } from "./firebase/catalog";
 import AccountStatus from "./components/AccountStatus";
-import { safeStorage as localStorage } from "./game/persistence";
+import { safeStorage as localStorage, getSaveScope } from "./game/persistence";
 
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence, MotionConfig, useReducedMotion } from "motion/react";
@@ -33,6 +33,7 @@ import {
   recordRun,
   saveName,
   saveSettings,
+  scoreBucket,
   checkDailyLogin,
   type ScoreEntry,
   type Settings,
@@ -102,6 +103,10 @@ export default function App() {
   const [modifiers, setModifiers] = useState<GameModifiers>(() => loadModifiers());
   const [showModifiersModal, setShowModifiersModal] = useState(false);
   const modifiersRef = useRef(modifiers);
+  // Only persist React state into the save scope it was loaded from. This
+  // prevents a stale level-21 account snapshot from being written into the
+  // guest slot during the sign-out render.
+  const loadedScopeRef = useRef(getSaveScope());
   useEffect(() => {
     modifiersRef.current = modifiers;
   }, [modifiers]);
@@ -111,6 +116,7 @@ export default function App() {
   const accountSession = useAccount();
   const expectedUid=user&&!user.isAnonymous?user.uid:null;
   const restoringIdentity=authLoading||accountSession.uid!==expectedUid||accountSession.status==="loading";
+  const canPersistScope=getSaveScope()===loadedScopeRef.current;
   const catalogRevision = useCatalog();
   const serverRunRef = useRef<any>(null);
   const launchToken = useRef(0);
@@ -133,6 +139,7 @@ export default function App() {
   }, [user?.uid, authLoading]);
   useEffect(() => {
     const refresh = () => {
+      loadedScopeRef.current = getSaveScope();
       setStats(loadStats()); setProfile(loadProfile()); setSettings(loadSettings()); setName(loadName()); setScores(loadScores(modeRef.current));
     };
     window.addEventListener("vector-account-updated",refresh);
@@ -159,8 +166,8 @@ export default function App() {
   }, [phase]);
   useEffect(() => {
     nameRef.current = name;
-    if (cloudLoaded && !restoringIdentity && ["guest","ready"].includes(accountSession.status)) saveName(name);
-  }, [name, cloudLoaded,restoringIdentity,accountSession.status]);
+    if (cloudLoaded && !restoringIdentity && canPersistScope && ["guest","ready"].includes(accountSession.status)) saveName(name);
+  }, [name, cloudLoaded,restoringIdentity,canPersistScope,accountSession.status]);
   useEffect(() => {
     profileRef.current = profile;
   }, [profile, cloudLoaded]);
@@ -182,13 +189,43 @@ export default function App() {
         if (sum.mode === "practice") {
           sum.xpGained = 0; setSummary(sum); setHeld([]); return;
         }
+        const publishScore = (statsForLevel: Stats) => {
+          if (sum.score <= 0) return;
+          const currentProfile = profileRef.current;
+          const customTitle = currentProfile.customTitles?.find(title => title.id === currentProfile.titleId)?.name;
+          void submitScore({
+            mode: sum.mode,
+            challengeId: sum.challengeId,
+            score: sum.score,
+            streak: sum.bestStreak,
+            userName: nameRef.current.trim() || "Ace",
+            title: customTitle || TITLES.find(title => title.id === currentProfile.titleId)?.name || "Operative",
+            avatarId: currentProfile.avatarId,
+            frameId: currentProfile.frameId,
+            useGooglePfp: currentProfile.accessRole === "developer" && !!currentProfile.customPhotoURL,
+            userPhoto: currentProfile.customPhotoURL || undefined,
+            role: currentProfile.accessRole === "developer" || currentProfile.accessRole === "moderator" ? currentProfile.accessRole : "player",
+            level: getPlayerLevelProgress(statsForLevel, currentProfile).currentLevel,
+          }).catch((error) => console.warn("Score is saved locally; live publication will retry:", error));
+        };
         if (isSignedAccount()) {
-          if(sum.score>0)addScore(sum.mode,{score:sum.score,name:nameRef.current,date:new Date().toLocaleDateString()},sum.challengeId);
-          setScores(loadScores(sum.mode)); setHeld([]); sum.xpGained=0; const pendingSummary={...sum,rewardPending:true};setSummary(pendingSummary);
-          const receipt=serverRunRef.current;serverRunRef.current=null;
-          if(receipt)void settleAccountRun(receipt.id,sum).then(result=>{
-            if(result){setSummary(current=>current===pendingSummary?{...sum,xpGained:result.reward?.xp||0,rewardPending:false}:current);setGameNote(result.message);}
-          }).catch((error:any)=>setGameNote(["functions/failed-precondition","functions/invalid-argument","functions/permission-denied"].includes(error?.code)?error.message:"Your run is saved on this device. Cloud rewards will retry when you reconnect."));
+          if (sum.score > 0) addScore(sum.mode, { score: sum.score, name: nameRef.current, date: new Date().toLocaleDateString() }, sum.challengeId);
+          setScores(loadScores(sum.mode, sum.challengeId));
+          publishScore(loadStats());
+          setHeld([]); sum.xpGained = 0;
+          const pendingSummary = { ...sum, rewardPending: true };
+          setSummary(pendingSummary);
+          const receipt = serverRunRef.current;
+          serverRunRef.current = null;
+          if (receipt) void settleAccountRun(receipt.id, sum).then(result => {
+            if (result) {
+              setSummary(current => current === pendingSummary ? { ...sum, xpGained: result.reward?.xp || 0, rewardPending: false } : current);
+              setStats(loadStats());
+              setProfile(loadProfile());
+              setScores(loadScores(sum.mode, sum.challengeId));
+              setGameNote(result.message);
+            }
+          }).catch((error: any) => setGameNote(["functions/failed-precondition", "functions/invalid-argument", "functions/permission-denied"].includes(error?.code) ? error.message : "Your run is saved on this device. Cloud rewards will retry when you reconnect."));
           else setGameNote("No cloud run session was available. This score stays on your device.");
           return;
         }
@@ -204,40 +241,13 @@ export default function App() {
           hits: sum.hits, misses: sum.misses, perfectHits: sum.perfectHits, modifierMultiplier: sum.modifierMultiplier, playSeconds: sum.playSeconds,
           avgMs: sum.avgReactionMs, mode: sum.mode, acc: sum.accuracy,
         });
-        setScores(loadScores(sum.mode));
+        setScores(loadScores(sum.mode, sum.challengeId));
         const updatedStats = loadStats();
         setStats(updatedStats);
-        
-        // Update Missions
         updateMissionsProgress(loadMissions(), { runs: 1, score: sum.score, streak: sum.bestStreak, perfectHits: sum.perfectHits });
-
         setSummary(sum);
         setHeld([]);
-
-        // Real Data Leaderboard submission
-        if (sum.score > 0) {
-          const lvl = getPlayerLevelProgress(updatedStats, profileRef.current).currentLevel;
-          submitScore(
-            {
-              mode: sum.mode,
-              challengeId: sum.challengeId,
-              score: sum.score,
-              streak: sum.bestStreak,
-              userName: nameRef.current.trim() || "Ace",
-              title: TITLES.find(t => t.id === profileRef.current.titleId)?.name ?? "Operative",
-              avatarId: profileRef.current.avatarId,
-              frameId: profileRef.current.frameId,
-              useGooglePfp: profileRef.current.useGooglePfp,
-              level: lvl,
-            },
-            undefined,
-            undefined,
-            undefined,
-            profileRef.current
-          ).catch((err) => {
-            console.warn("Could not submit score to cloud leaderboard:", err);
-          });
-        }
+        publishScore(updatedStats);
       },
     });
     engineRef.current = engine;
@@ -249,7 +259,7 @@ export default function App() {
 
   // settings persistence + live engine config
   useEffect(() => {
-    if (cloudLoaded && !restoringIdentity && (["guest","ready"].includes(accountSession.status)||settingsChangedByUser.current)){saveSettings(settings);settingsChangedByUser.current=false;}
+    if (cloudLoaded && !restoringIdentity && canPersistScope && (["guest","ready"].includes(accountSession.status)||settingsChangedByUser.current)){saveSettings(settings);settingsChangedByUser.current=false;}
     engineRef.current?.configure({ ...settings, reducedMotion: reduceMotion });
     document.documentElement.setAttribute("data-theme", settings.uiMode || "dark");
     document.documentElement.setAttribute("data-color", settings.colorway || "cobalt");
@@ -263,14 +273,14 @@ export default function App() {
     if (metaTheme) {
       metaTheme.setAttribute("content", settings.uiMode === "light" ? "#f6f6f8" : "#121418");
     }
-  }, [settings, cloudLoaded, reduceMotion,restoringIdentity,accountSession.status]);
+  }, [settings, cloudLoaded, reduceMotion,restoringIdentity,canPersistScope,accountSession.status]);
 
   useEffect(() => {
     profileRef.current = profile;
-    if (cloudLoaded && !restoringIdentity && ["guest","ready"].includes(accountSession.status)) saveProfile(profile);
+    if (cloudLoaded && !restoringIdentity && canPersistScope && ["guest","ready"].includes(accountSession.status)) saveProfile(profile);
     engineRef.current?.setAudioPack(profile.audioPackId);
     engineRef.current?.setArenaTheme(STORE_ITEMS.find(item => item.id === profile.arenaThemeId)?.themeSwatch);
-  }, [profile, cloudLoaded, catalogRevision,restoringIdentity,accountSession.status]);
+  }, [profile, cloudLoaded, catalogRevision,restoringIdentity,canPersistScope,accountSession.status]);
 
   const updateProfile = useCallback((p: Profile) => setProfile(p), []);
 
@@ -324,7 +334,7 @@ export default function App() {
         serverRunRef.current=run;
       } catch(error:any){
         if(ticket===launchToken.current){
-          serverRunRef.current={ id: "local_run_" + Date.now(), mode: nextMode, multiplier: getModifierMultiplier(nextModifiers) };
+          serverRunRef.current={ id: "local_run_" + Date.now(), mode: nextMode, bucket: scoreBucket(nextMode), multiplier: getModifierMultiplier(nextModifiers) };
         }
       }
       if(ticket===launchToken.current) setLaunchPending(false);

@@ -59,7 +59,9 @@ Browser review covers the restored carousel, game/pause/countdown, Store purchas
 
 ## Activation status
 
-The upgrade is implemented locally. Production Firebase deployment still requires an owner login on this computer and private master-password configuration. The CLI reported that it was not authenticated. No live Firebase rules, Functions, player balances, Storage settings, or billing were changed.
+The upgrade is implemented locally. Production Firebase deployment still requires an owner login on this computer. The CLI reported that it was not authenticated. No live Firebase rules, Functions, player balances, Storage settings, or billing were changed by that work.
+
+The October 27, 2026 repair documented in `REPAIR-2026-10-27.md` supersedes the old all-or-nothing activation model: the current client calls deployed Functions first and has a complete offline fallback for projects where they were never deployed. The requested short master key is represented by a salted verification record rather than plaintext. Rules must still be deployed for a secure, authoritative production setup.
 
 Follow [Firebase setup](docs/FIREBASE-SETUP.md) for the coordinated release. Deploy the trusted backend before switching the new rules and client together; the old client's direct economy writes are intentionally rejected by the new rules.
 

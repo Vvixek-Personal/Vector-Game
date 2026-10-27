@@ -5,8 +5,11 @@ import {
   signInAnonymously,
   type User,
 } from "firebase/auth";
-import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { auth, googleProvider, db, sanitizeFirestoreData } from "./config";
+import { flushCloudSave } from "./cloudSave";
+import { flushAccountState } from "./accounts";
+import { retryPendingScores } from "./leaderboard";
 import type { Profile } from "../game/profile";
 import { useEffect, useState } from "react";
 
@@ -67,39 +70,50 @@ export async function signInAsGuest(): Promise<User> {
   }
 }
 
-// Sign out
+// Sign out: persist the account snapshot first, then switch back to the
+// isolated guest save. Account progress remains in its own cloud/device slot.
 export async function signOut(): Promise<void> {
-  const { flushCloudSave } = await import("./cloudSave");
-  try { await Promise.race([flushCloudSave(),new Promise((_,reject)=>setTimeout(()=>reject(new Error("Sync timeout")),4000))]); } catch { /* Per-account device save is retained. */ }
+  try {
+    await Promise.race([
+      Promise.allSettled([flushAccountState(), flushCloudSave(), retryPendingScores()]),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("Sync timeout")), 6000)),
+    ]);
+  } catch {
+    /* Per-account device save is retained and retried on the next sign-in. */
+  }
   await firebaseSignOut(auth);
 }
 
-// Sync user profile document to Firestore
+// Publish the small public player record used by the gift directory.
+// Private account state is written only by the account service/fallback.
 export async function syncUserProfileToCloud(
   user: User,
   inGameName?: string,
   profile?: Profile,
   level?: number
 ): Promise<void> {
-  if (!user) return;
+  if (!user || user.isAnonymous) return;
+  const name = (inGameName || user.displayName || "Operative").slice(0, 30);
+  const owner = user.emailVerified && String(user.email || "").toLowerCase() === "personal.me.vivek@gmail.com";
+  const player = {
+    uid: user.uid,
+    name,
+    displayName: name,
+    searchName: name.toLowerCase(),
+    email: user.email || "",
+    avatarId: profile?.avatarId || "spark",
+    frameId: profile?.frameId || "none",
+    photoURL: owner ? profile?.customPhotoURL || null : null,
+    role: owner ? "developer" : "player",
+    ownerAccount: owner,
+    developerUntil: 0,
+    level: Math.max(1, Number(level) || 1),
+    updatedAt: serverTimestamp(),
+  };
   try {
-    const userRef = doc(db, "users", user.uid);
-    const data: UserProfileData = {
-      userId: user.uid,
-      displayName: user.displayName || inGameName || "Operative",
-      email: user.email || "guest@vector.run",
-      photoURL: user.photoURL || undefined,
-      operativeName: inGameName,
-      level,
-      avatarId: profile?.avatarId,
-      titleId: profile?.titleId,
-      bannerId: profile?.bannerId,
-      frameId: profile?.frameId,
-      updatedAt: serverTimestamp(),
-    };
-    await setDoc(userRef, sanitizeFirestoreData(data), { merge: true });
+    await setDoc(doc(db, "players", user.uid), sanitizeFirestoreData(player), { merge: true });
   } catch (err) {
-    console.warn("Could not sync user profile to cloud:", err);
+    console.warn("Could not publish the public player record:", err);
   }
 }
 

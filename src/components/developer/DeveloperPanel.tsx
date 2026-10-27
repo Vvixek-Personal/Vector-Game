@@ -13,12 +13,12 @@ export default function DeveloperPanel(){
   const unlock=async()=>{if(busy)return;setBusy(true);setMessage("");try{const result=await callAccount<any>("unlockDeveloper",{password});setPassword("");await reconnectAccount();setMessage(result.message);}catch(error:any){setMessage(error.message);}finally{setBusy(false);}};
   if(state.role!=="developer"&&state.role!=="moderator")return <section className="developer-gate">
     <div className="developer-lock"><LockKeyhole size={28}/></div><h2>Are you a Developer?</h2>
-    <p>Sign in with <strong>personal.me.vivek@gmail.com</strong>, or unlock this tab with the configured master password.</p>
+    <p>Sign in with <strong>personal.me.vivek@gmail.com</strong>, or unlock this tab with the configured master key.</p>
     {state.status==="guest"?<GoogleAuthButton/>:<>
       <p className="form-note">Signed in as {state.account?.email||"a player"}. Developer permissions are verified by the server.</p>
       {state.status==="offline"&&<button className="v-button" onClick={()=>void reconnectAccount().catch(error=>setMessage(error.message))}>Reconnect account</button>}
       <form className="developer-password form-grid" onSubmit={event=>{event.preventDefault();void unlock();}}>
-        <label className="form-field"><span>Master password</span><input type="password" autoComplete="off" value={password} onChange={e=>setPassword(e.target.value)} minLength={16} maxLength={256} required placeholder="Enter the configured password"/></label>
+        <label className="form-field"><span>Master key</span><input type="password" autoComplete="off" value={password} onChange={e=>setPassword(e.target.value)} minLength={8} maxLength={256} required placeholder="Enter the configured master key"/></label>
         <button className="v-button v-button-primary" disabled={busy||state.status!=="ready"}>{busy?"Verifying…":"Unlock Developer tab"}</button>
       </form>
     </>}
