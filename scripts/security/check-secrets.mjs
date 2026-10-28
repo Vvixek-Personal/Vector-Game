@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 // Lightweight local pre-review check. It never prints matched credential values.
-const tracked = execFileSync("git", ["ls-files", "-z"], { encoding: "utf8" })
+const tracked = execFileSync("git", ["ls-files", "--cached", "--others", "--exclude-standard", "-z"], { encoding: "utf8" })
   .split("\0").filter(Boolean);
 const patterns = [
   { name: "private key block", re: /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/ },
