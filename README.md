@@ -65,7 +65,8 @@ These are instructions, not a claim that every suite has passed on every machine
 - `src/utils/` — shared utilities, including motion tokens.
 - `tests/` — unit and browser tests.
 - `functions/` — Firebase/backend code retained in the repository.
-- `docs/` — setup and implementation notes.
+- `scripts/` — local tooling, security checks, and historical maintenance utilities.
+- `docs/` — current guides, reference schemas, and historical reports.
 
 For a concise explanation of the main design choices and the current verification checklist, see [Architecture](docs/ARCHITECTURE.md) and [Testing](docs/TESTING.md).
 
@@ -73,7 +74,7 @@ For a concise explanation of the main design choices and the current verificatio
 
 Guest progression is stored in the browser, so it is tied to that browser and origin. Clearing browser data or switching origins can remove or separate local progress. Do not assume local data is backed up to a server.
 
-The repository includes Firebase-related code and historical setup documentation. Do not deploy backend rules or functions just because setup instructions exist: first confirm that the feature is part of the current product scope, review the configuration, and test against a disposable Firebase emulator project.
+Firebase is optional for local/offline play. Copy `.env.example` to `.env.local` and fill in `VITE_FIREBASE_*` settings only if cloud features are required. These values are public client configuration and will be included in the browser bundle; never place Gemini keys, service-account credentials, or other server secrets in `VITE_*` variables. See [security and secret handling](docs/SECURITY.md) before configuring cloud services. Do not deploy backend rules or functions just because setup files exist: first confirm the current product scope, review the configuration, and test against a disposable Firebase emulator project.
 
 Never commit real credentials, private keys, production exports, or local environment files. The provided `.env.example` is a template; create local environment files that remain ignored by Git.
 
@@ -82,8 +83,8 @@ Never commit real credentials, private keys, production exports, or local enviro
 - [Architecture and design notes](docs/ARCHITECTURE.md)
 - [Testing and verification checklist](docs/TESTING.md)
 - [Firebase setup notes](docs/FIREBASE-SETUP.md) — historical; read the warning at the top before using
-- [Audit history](AUDIT.md)
-- [Repair reports](REPAIR-REPORT.md) and [upgrade notes](UPGRADE-1.3.md) — historical reports may refer to features no longer present in the current UI
+- [Audit history](docs/history/AUDIT.md)
+- [Repair reports](docs/history/REPAIR-REPORT.md) and [upgrade notes](docs/history/UPGRADE-1.3.md) — historical reports may refer to features no longer present in the current UI
 
 ## Contributing / feedback
 
