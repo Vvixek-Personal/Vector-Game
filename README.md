@@ -18,11 +18,11 @@ Practice is intended for learning without affecting ranked progress. Daily and W
 
 ## Run locally
 
-Requirements: Node.js 22 or newer and npm.
+Requirements: Node.js 22 or newer and Bun (the repository includes `bun.lock`).
 
 ```bash
-npm ci
-npm run dev
+bun install --frozen-lockfile
+bun run dev
 ```
 
 Open the local URL printed by Vite (the configured development port is 3000).
@@ -30,8 +30,8 @@ Open the local URL printed by Vite (the configured development port is 3000).
 To create and inspect a production build:
 
 ```bash
-npm run build
-npm run preview
+bun run build
+bun run preview
 ```
 
 The build script runs TypeScript checking before Vite builds the app.
@@ -41,19 +41,19 @@ The build script runs TypeScript checking before Vite builds the app.
 Run the unit tests with:
 
 ```bash
-npm test
+bun run test
 ```
 
 Other available checks:
 
 | Command | Purpose |
 | --- | --- |
-| `npm run lint` | TypeScript check (`tsc --noEmit`) |
-| `npm run test:browser` | Playwright browser tests; requires a supported browser setup |
-| `npm run test:production` | Playwright checks against a served production build |
-| `npm run test:backend` | Backend domain tests |
-| `npm run test:integration` | Firebase emulator integration tests; requires emulator setup |
-| `npm run test:accounts` | Historical account-flow browser tests; confirm they match current scope before relying on them |
+| `bun run lint` | TypeScript check (`tsc --noEmit`) |
+| `bun run test:browser` | Playwright browser tests; requires a supported browser setup |
+| `bun run test:production` | Playwright checks against a served production build |
+| `bun run test:backend` | Backend domain tests |
+| `bun run test:integration` | Firebase emulator integration tests; requires emulator setup |
+| `bun run test:accounts` | Historical account-flow browser tests; confirm they match current scope before relying on them |
 
 These are instructions, not a claim that every suite has passed on every machine. Record the Node version, command, result, and any environment requirements when reporting a verification run.
 
@@ -74,7 +74,7 @@ For a concise explanation of the main design choices and the current verificatio
 
 Guest progression is stored in the browser, so it is tied to that browser and origin. Clearing browser data or switching origins can remove or separate local progress. Do not assume local data is backed up to a server.
 
-Firebase is optional for local/offline play. Copy `.env.example` to `.env.local` and fill in `VITE_FIREBASE_*` settings only if cloud features are required. These values are public client configuration and will be included in the browser bundle; never place Gemini keys, service-account credentials, or other server secrets in `VITE_*` variables. See [security and secret handling](docs/SECURITY.md) before configuring cloud services. Do not deploy backend rules or functions just because setup files exist: first confirm the current product scope, review the configuration, and test against a disposable Firebase emulator project.
+Firebase is optional for local/offline play. Copy `.env.example` to `.env.local` and fill in `VITE_FIREBASE_*` settings only if cloud features are required. These values are public client configuration and will be included in the browser bundle; never place Gemini keys, service-account credentials, or other server secrets in `VITE_*` variables. See [security and secret handling](docs/SECURITY.md) before configuring cloud services. Run `bun run security:scan` before publishing changes. Do not deploy backend rules or functions just because setup files exist: first confirm the current product scope, review the configuration, and test against a disposable Firebase emulator project.
 
 Never commit real credentials, private keys, production exports, or local environment files. The provided `.env.example` is a template; create local environment files that remain ignored by Git.
 
