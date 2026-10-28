@@ -3,18 +3,17 @@ import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
-import { defineString } from "firebase-functions/params";
+import { defineString, defineSecret } from "firebase-functions/params";
 import { randomUUID, randomInt, createHash, scrypt, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
 import { base, OWNER_EMAIL, MODES, newAccount, roleFor, accountView, applyAction, catalogFor, publicPlayer, validateCatalogItem, insist, uid, text, int, dayFor, weeklyFor, DomainError } from "./domain.mjs";
-import { MASTER_KEY_MIN_LENGTH, MASTER_KEY_MAX_LENGTH, MASTER_KEY_HASH, verifyMasterKey, verifyMasterKeyHash } from "./master-key.mjs";
+import { MASTER_KEY_MIN_LENGTH, MASTER_KEY_MAX_LENGTH, verifyMasterKeyHash } from "./master-key.mjs";
 
 initializeApp();
 const databaseId=defineString("VECTOR_DATABASE_ID",{default:"ai-studio-vectorgame-560ec9bd-4e7c-4177-8021-3f5fed39406a"});
 const bucketName=defineString("VECTOR_STORAGE_BUCKET",{default:"steel-scanner-8xfhk.firebasestorage.app"});
-// The requested key works out of the box through its salted verification
-// record. Owners can override it with a fresh PBKDF2 or scrypt record.
-const masterHash=defineString("VECTOR_MASTER_PASSWORD_HASH",{default:MASTER_KEY_HASH});
+// Read the verifier only from Secret Manager; never keep a default hash in source.
+const masterHash=defineSecret("VECTOR_MASTER_PASSWORD_HASH");
 const options={region:"us-central1",maxInstances:10,timeoutSeconds:90,memory:"256MiB"};
 const db=()=>getFirestore(databaseId.value());
 const owner=req=>req.auth?.token?.email_verified===true&&String(req.auth?.token?.email||"").toLowerCase()===OWNER_EMAIL;
@@ -197,16 +196,14 @@ export const unlockDeveloper=wrap(async req=>{
       transaction.set(refs[i],{startedAt:same?old.startedAt:now,count:count+1});
     }
   });
-  const record=masterHash.value()||MASTER_KEY_HASH;
-  let authorized;
-  if(record===MASTER_KEY_HASH) authorized=await verifyMasterKey(password);
-  else {
-    const [format,salt,expected]=record.split("$");
-    if(format==="scrypt"&&/^[a-f0-9]{32,128}$/.test(salt||"")&&/^[a-f0-9]{128}$/.test(expected||"")){
-      const actual=await promisify(scrypt)(password,salt,64);
-      authorized=timingSafeEqual(actual,Buffer.from(expected,"hex"));
-    }else authorized=await verifyMasterKeyHash(password,record);
-  }
+  const record=masterHash.value();
+  insist(typeof record==="string"&&record.length>0,"failed-precondition","Developer master key is not configured on the server.");
+  let authorized=false;
+  const [format,salt,expected]=record.split("$");
+  if(format==="scrypt"&&/^[a-f0-9]{32,128}$/.test(salt||"")&&/^[a-f0-9]{128}$/.test(expected||"")){
+    const actual=await promisify(scrypt)(password,salt,64);
+    authorized=timingSafeEqual(actual,Buffer.from(expected,"hex"));
+  }else authorized=await verifyMasterKeyHash(password,record);
   insist(authorized,"permission-denied","The master key is incorrect.");
   const reference=database.collection("accounts").doc(id);
   await database.runTransaction(async transaction=>{
@@ -215,7 +212,7 @@ export const unlockDeveloper=wrap(async req=>{
     writeAccount(transaction,database,account,"developer");audit(transaction,database,id,id,"developer.unlock",{expiresAt:account.developerUntil},now);
   });
   return {message:"Developer access unlocked for one hour.",expiresAt:now+3600000};
-});
+}, { secrets: [masterHash] });
 export const uploadImage=wrap(async req=>{
   const {account,role,database}=await current(req);insist(role==="developer","permission-denied","Only verified developers can upload images.");
   const purpose=req.data?.purpose==="profile"?"profile":"catalog",requestId=text(req.data?.requestId,"Upload ID",100);
