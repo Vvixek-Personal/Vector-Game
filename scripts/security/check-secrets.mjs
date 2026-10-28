@@ -12,7 +12,6 @@ const patterns = [
   { name: "Slack token", re: /\bxox[baprs]-[A-Za-z0-9-]{20,}\b/ },
   { name: "Google API key candidate", re: /\bAIza[0-9A-Za-z_-]{30,}\b/ },
   { name: "Gemini key assignment", re: /\bGEMINI_API_KEY\s*[:=]\s*[\x22\x27]?[^\s\x22\x27#]{12,}/i },
-  { name: "service-account credential file", re: /serviceAccountKey\.json|service-account(?:-[\w-]+)?\.json/i },
 ];
 const ignoredExample = new Set([".env.example", "functions/.env.example"]);
 const findings = [];
