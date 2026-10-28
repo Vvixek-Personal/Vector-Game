@@ -138,7 +138,7 @@ test('developer verifier accepts only an explicitly supplied salted PBKDF2 recor
   const password = "test-only-password";
   const salt = "00112233445566778899aabbccddeeff";
   const hash = pbkdf2Sync(password, Buffer.from(salt, "hex"), 10000, 32, "sha256").toString("hex");
-  const record = `pbkdf2-sha256$10000${salt}${hash}`;
+  const record = "pbkdf2-sha256$10000$" + salt + "$" + hash;
   assert.equal(MASTER_KEY_MIN_LENGTH, 8);
   assert.equal(MASTER_KEY_MAX_LENGTH, 256);
   assert.equal(await verifyMasterKeyHash(password, record), true);

@@ -2,7 +2,18 @@ import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, connectAuthEmulator } from "firebase/auth";
 import { getFirestore, doc, getDocFromServer, connectFirestoreEmulator } from "firebase/firestore";
 
-const env = import.meta.env;
+type RuntimeEnv = {
+  DEV?: boolean;
+  VITE_FIREBASE_API_KEY?: string;
+  VITE_FIREBASE_AUTH_DOMAIN?: string;
+  VITE_FIREBASE_PROJECT_ID?: string;
+  VITE_FIREBASE_APP_ID?: string;
+  VITE_FIREBASE_STORAGE_BUCKET?: string;
+  VITE_FIREBASE_MESSAGING_SENDER_ID?: string;
+  VITE_FIREBASE_DATABASE_ID?: string;
+  VITE_VECTOR_EMULATORS?: string;
+};
+const env = (import.meta as unknown as { env?: RuntimeEnv }).env ?? {};
 const clientConfig = {
   apiKey: env.VITE_FIREBASE_API_KEY?.trim(),
   authDomain: env.VITE_FIREBASE_AUTH_DOMAIN?.trim(),
