@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -20,7 +20,11 @@
     <script>
       try {
         var s = JSON.parse(localStorage.getItem("vector_settings_v5") || "{}");
-        if (s.uiMode) document.documentElement.setAttribute("data-theme", s.uiMode);
+        if (s.uiMode) {
+          document.documentElement.setAttribute("data-theme", s.uiMode);
+        } else {
+          document.documentElement.setAttribute("data-theme", "dark");
+        }
         if (s.colorway) document.documentElement.setAttribute("data-color", s.colorway);
         if (s.textSize) document.documentElement.setAttribute("data-text-size", s.textSize);
       } catch (e) {}
