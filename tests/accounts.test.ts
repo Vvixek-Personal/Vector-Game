@@ -132,11 +132,17 @@ test('developer validateCatalogItem and applyCatalogItem publish store items to 
 });
 
 
-test('the configured developer master key verifies through a salted PBKDF2 record', async () => {
-  const { verifyMasterKey, verifyMasterKeyHash, MASTER_KEY_MIN_LENGTH } = await import("../functions/src/master-key.mjs");
+test('developer verifier accepts only an explicitly supplied salted PBKDF2 record', async () => {
+  const { pbkdf2Sync } = await import("node:crypto");
+  const { verifyMasterKeyHash, MASTER_KEY_MIN_LENGTH, MASTER_KEY_MAX_LENGTH } = await import("../functions/src/master-key.mjs");
+  const password = "test-only-password";
+  const salt = "00112233445566778899aabbccddeeff";
+  const hash = pbkdf2Sync(password, Buffer.from(salt, "hex"), 10000, 32, "sha256").toString("hex");
+  const record = `pbkdf2-sha256$10000${salt}${hash}`;
   assert.equal(MASTER_KEY_MIN_LENGTH, 8);
-  assert.equal(await verifyMasterKey("12102010"), true);
-  assert.equal(await verifyMasterKey("12102011"), false);
-  assert.equal(await verifyMasterKey("1210201"), false);
-  assert.equal(await verifyMasterKeyHash("12102010", "pbkdf2-sha256$150000$00$00"), false);
+  assert.equal(MASTER_KEY_MAX_LENGTH, 256);
+  assert.equal(await verifyMasterKeyHash(password, record), true);
+  assert.equal(await verifyMasterKeyHash("wrong-test-password", record), false);
+  assert.equal(await verifyMasterKeyHash(password, ""), false);
+  assert.equal(await verifyMasterKeyHash(password, "pbkdf2-sha256$150000$00$00"), false);
 });
