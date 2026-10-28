@@ -2,7 +2,7 @@ import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, connectAuthEmulator } from "firebase/auth";
 import { getFirestore, doc, getDocFromServer, connectFirestoreEmulator } from "firebase/firestore";
 
-const env = import.meta.env;
+const env = (import.meta as ImportMeta & { env?: Record<string, any> }).env ?? {};
 const clientConfig = {
   apiKey: env.VITE_FIREBASE_API_KEY?.trim(),
   authDomain: env.VITE_FIREBASE_AUTH_DOMAIN?.trim(),
