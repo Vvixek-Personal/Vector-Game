@@ -5,9 +5,6 @@
 
 export const MASTER_KEY_MIN_LENGTH = 8;
 export const MASTER_KEY_MAX_LENGTH = 256;
-export const MASTER_KEY_HASH =
-  "pbkdf2-sha256$150000$be96b1104890fe821142fbdad24b67e7$6771ee61f1728eb4bdec755cde86b9d8ed6ddeea8005437db3993dc1390c2ce5";
-
 const encoder = new TextEncoder();
 
 function fromHex(value) {
@@ -29,9 +26,9 @@ function equalHex(a, b) {
 }
 
 /** Verify a PBKDF2-SHA256 `format$iterations$salt$hash` record. */
-export async function verifyMasterKeyHash(password, record = MASTER_KEY_HASH) {
+export async function verifyMasterKeyHash(password, record) {
   if (typeof password !== "string" || password.length < MASTER_KEY_MIN_LENGTH || password.length > MASTER_KEY_MAX_LENGTH) return false;
-  if (typeof record !== "string") return false;
+  if (typeof record !== "string" || record.length === 0) return false;
   const [format, iterationsText, saltText, expected] = record.split("$");
   const iterations = Number(iterationsText);
   const salt = fromHex(saltText);
@@ -44,8 +41,4 @@ export async function verifyMasterKeyHash(password, record = MASTER_KEY_HASH) {
   } catch {
     return false;
   }
-}
-
-export function verifyMasterKey(password) {
-  return verifyMasterKeyHash(password, MASTER_KEY_HASH);
 }

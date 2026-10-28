@@ -1,28 +1,46 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, connectAuthEmulator } from "firebase/auth";
 import { getFirestore, doc, getDocFromServer, connectFirestoreEmulator } from "firebase/firestore";
-import firebaseConfig from "../../firebase-applet-config.json";
 
-// Initialize Firebase App singleton
-export const app = getApps().length > 0 ? getApp() : initializeApp((import.meta.env?.DEV ? import.meta.env.VITE_VECTOR_EMULATORS : undefined) === "true" ? { ...firebaseConfig, projectId: "demo-vector" } : firebaseConfig);
+const env = import.meta.env;
+const clientConfig = {
+  apiKey: env.VITE_FIREBASE_API_KEY?.trim(),
+  authDomain: env.VITE_FIREBASE_AUTH_DOMAIN?.trim(),
+  projectId: env.VITE_FIREBASE_PROJECT_ID?.trim(),
+  appId: env.VITE_FIREBASE_APP_ID?.trim(),
+  storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET?.trim(),
+  messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID?.trim(),
+};
+export const useFirebaseEmulators = Boolean(env.DEV && env.VITE_VECTOR_EMULATORS === "true");
+export const firebaseEnabled = Boolean(useFirebaseEmulators || (clientConfig.apiKey && clientConfig.authDomain && clientConfig.projectId && clientConfig.appId));
 
-// Initialize Firebase Auth
+// Firebase web config is public client configuration, not a server secret.
+// VITE_* values are included in browser builds; never put Gemini/service-account secrets here.
+const firebaseConfig = firebaseEnabled ? clientConfig : {
+  apiKey: "local-disabled-key",
+  authDomain: "localhost",
+  projectId: "demo-vector",
+  appId: "1:000000000000:web:local-disabled",
+};
+
+export const app = getApps().length > 0
+  ? getApp()
+  : initializeApp(useFirebaseEmulators ? { ...firebaseConfig, projectId: "demo-vector" } : firebaseConfig);
+
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: "select_account" });
 
-// Initialize Cloud Firestore using the designated databaseId if present
-export const db = firebaseConfig.firestoreDatabaseId
-  ? getFirestore(app, firebaseConfig.firestoreDatabaseId)
-  : getFirestore(app);
+const databaseId = env.VITE_FIREBASE_DATABASE_ID?.trim();
+export const db = databaseId ? getFirestore(app, databaseId) : getFirestore(app);
 
-if ((import.meta.env?.DEV ? import.meta.env.VITE_VECTOR_EMULATORS : undefined) === "true") {
+if (useFirebaseEmulators) {
   connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
   connectFirestoreEmulator(db, "127.0.0.1", 8080);
 }
 
-// Verify connection per Firebase integration guidelines
 export async function testFirestoreConnection(): Promise<boolean> {
+  if (!firebaseEnabled) return false;
   try {
     await getDocFromServer(doc(db, "test", "connection"));
     return true;
@@ -34,35 +52,18 @@ export async function testFirestoreConnection(): Promise<boolean> {
   }
 }
 
-// Connection checks are explicit; startup must work offline.
-
-/**
- * Recursively strips any `undefined` values from an object or array before
- * writing to Firestore, preventing "Unsupported field value: undefined" errors.
- * Preserves Date, FieldValue (serverTimestamp, deleteField, etc.), and primitives.
- */
+/** Recursively strip undefined values before Firestore writes. */
 export function sanitizeFirestoreData<T>(data: T): T {
-  if (data === null || data === undefined) {
-    return data;
-  }
-  if (typeof data === "function") {
-    return undefined as unknown as T;
-  }
+  if (data === null || data === undefined) return data;
+  if (typeof data === "function") return undefined as unknown as T;
   if (Array.isArray(data)) {
-    return data
-      .filter((item) => item !== undefined && typeof item !== "function")
-      .map((item) => sanitizeFirestoreData(item)) as unknown as T;
+    return data.filter((item) => item !== undefined && typeof item !== "function").map((item) => sanitizeFirestoreData(item)) as unknown as T;
   }
   if (typeof data === "object") {
-    // Keep special non-plain objects as-is (e.g. FieldValue, Timestamp, Date)
-    if (data.constructor && data.constructor.name !== "Object") {
-      return data;
-    }
+    if (data.constructor && data.constructor.name !== "Object") return data;
     const clean: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(data as Record<string, unknown>)) {
-      if (value !== undefined && typeof value !== "function") {
-        clean[key] = sanitizeFirestoreData(value);
-      }
+      if (value !== undefined && typeof value !== "function") clean[key] = sanitizeFirestoreData(value);
     }
     return clean as unknown as T;
   }

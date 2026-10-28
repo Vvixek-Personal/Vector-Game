@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from "react";
 import { collection, onSnapshot } from "firebase/firestore";
-import { db } from "./config";
+import { db, firebaseEnabled } from "./config";
 import { STORE_ITEMS, type StoreItem } from "../game/catalog";
 import { FRAMES, BANNERS, TITLES } from "../game/profile";
 
@@ -134,6 +134,10 @@ function rebuild() {
 }
 
 export function startCatalogSync() {
+  if (!firebaseEnabled) {
+    rebuild();
+    return () => {};
+  }
   users++;
   if (!stop) {
     rebuild();

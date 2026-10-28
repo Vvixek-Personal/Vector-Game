@@ -12,7 +12,7 @@ The repository still contains some Firebase code, backend functions, tests, and 
 
 ## How to verify the current state
 
-1. Read the current [README](README.md) and [architecture notes](docs/ARCHITECTURE.md).
+1. Read the current [README](../../README.md) and [architecture notes](../ARCHITECTURE.md).
 2. Inspect the current call sites and screens before relying on an old report.
 3. Run `npm ci`, `npm test`, `npm run lint`, and `npm run build` in the current checkout.
 4. Treat Firebase deployment as a separate release decision. Use a disposable emulator project for tests; do not deploy old instructions without reviewing the current code, rules, and product scope.

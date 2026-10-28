@@ -38,11 +38,6 @@ import {
   accountView,
   validateCatalogItem,
 } from "../../functions/src/domain.mjs";
-import {
-  MASTER_KEY_MAX_LENGTH,
-  MASTER_KEY_MIN_LENGTH,
-  verifyMasterKey,
-} from "../../functions/src/master-key.mjs";
 import type { AccountData, Session } from "./accounts";
 
 export interface FallbackContext {
@@ -616,29 +611,13 @@ async function fallbackSaveCatalogItem(user: any, data: Record<string, unknown>,
   };
 }
 
-async function fallbackUnlockDeveloper(user: any, data: Record<string, unknown>, ctx: FallbackContext, now: number) {
-  const password = String(data.password || "");
-  if (password.length < MASTER_KEY_MIN_LENGTH || password.length > MASTER_KEY_MAX_LENGTH) {
-    throw new Error(`Enter the configured master key (${MASTER_KEY_MIN_LENGTH}–${MASTER_KEY_MAX_LENGTH} characters).`);
-  }
-  if (!isOwner(user) && !(await verifyMasterKey(password))) throw new Error("Invalid master key.");
-  const accountRef = doc(db, "accounts", user.uid);
-  const accountSnap = await getDoc(accountRef).catch(() => null);
-  const catalog = await currentCatalog(now);
-  const account = normalizeAccount(accountSnap?.exists() ? accountSnap.data() : ctx.getSession().account, user, now, catalog);
-  account.developerUntil = now + 3600000;
-  account.ownerAccount = isOwner(user);
-  account.revision = (account.revision || 0) + 1;
-  ctx.persistCanonical(account);
-  try {
-    await syncAccountNow(account, now);
-    await setDoc(doc(db, "ledger", `developer_unlock_${user.uid}_${now}`), sanitizeFirestoreData({
-      kind: "developer.unlock", actor: user.uid, expiresAt: account.developerUntil, createdAt: now,
-    }));
-  } catch {
-    return { message: "Developer mode unlocked on this device. Cloud sync will retry." };
-  }
-  return { message: "Developer mode unlocked for one hour." };
+async function fallbackUnlockDeveloper(
+  _user: any,
+  _data: Record<string, unknown>,
+  _ctx: FallbackContext,
+  _now: number,
+) {
+  throw new Error("Developer access requires server-side verification and is unavailable in client fallback mode.");
 }
 
 async function fallbackUploadImage(user: any, data: Record<string, unknown>, ctx: FallbackContext, now: number) {
