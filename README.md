@@ -1,81 +1,92 @@
-# VECTOR 1.3 — play your way
+# VECTOR
 
-A browser reflex game with 12 modes, local progression, optional Firebase sign-in, and offline installation.
+VECTOR is a browser-based arrow-reflex game built with React, TypeScript, and Vite. Read the prompt, respond with the matching direction, and try to improve your score and reaction time.
 
-## What’s new in 1.3
+This repository contains the source code and the scripts used to develop and test the game. It is a personal project in active development; the documentation is being kept aligned with the code rather than presenting every planned or historical feature as shipped.
 
-- The original swipe carousel Play screen is back, with Practice, countdowns, and hit feedback preserved.
-- A shorter dock and consistent form controls make the updated Store, Profile, Gifts, and hatchery easier to use on phones.
-- Account saves keep each player's wallet, inventory, name, and claims separate from guest and other account saves. Legacy cloud progress migrates once. Daily rewards use one UTC day.
-- One name change is free per signed-in account; later changes cost **100 Diamonds**. Developers have unlimited free changes.
-- A smoother level curve starts at 500 XP, with 100 milestone rewards, mission claims, and collection previews.
-- Purchases and exchanges check current server prices. Gift transfers, returns, locks, spin rewards, hatchery payments, and balances settle on the server for signed-in players.
-- Tune → Developer contains player, wallet, inventory, role, custom-title, Store-editor, image-upload, feedback, and application-data tools. Verified owner email or the configured master key is required. Moderator access includes current/future Store cosmetics, subject to individual restrictions.
-- Existing eight hero portraits, analytics, offline guest play, and all 12 game modes remain available.
+## Gameplay
 
-**Activation:** the new signed-in features require deploying the included Firebase backend and rules. See [Firebase setup](docs/FIREBASE-SETUP.md). The production Firebase project has not been modified by this local upgrade.
+- **12 modes:** Arcade, Practice, Co-op, Waves, Memory, Rush, Blitz, Sudden, Zen, Versus, Daily, and Weekly.
+- **Keyboard and touch input:** use the arrow keys or WASD; the arena also supports touch/swipe input.
+- **Progression:** local profile, settings, scores, statistics, missions, and cosmetic inventory.
+- **Performance feedback:** run summaries and reaction-time analytics.
+- **Installable web app:** the Vite PWA setup supports installation when served from a supported origin.
 
-## Play on Windows
+Practice is intended for learning without affecting ranked progress. Daily and Weekly use fixed challenge rules. Reduced-motion preferences are respected.
 
-If you cloned this repository, run `npm ci` and `npm run build` first to generate **dist/**. The packaged ZIP supplied in the Codex chat already contains that build.
+> **Current scope:** the latest main-branch commit removed the account sign-in and leaderboard UI. Older repair reports and Firebase notes may describe an earlier version and are not a reliable description of the current user interface. Firebase catalog-sync code still exists, so review the configuration before deploying or changing cloud behavior.
 
-### Launch the built game
+## Run locally
 
-Unzip the whole folder and double-click **Play-Vector.cmd**. It uses Node.js 22.12 or later to serve the included production build and opens **http://127.0.0.1:3000**. Keep its window open while playing. This launcher needs no package download.
+Requirements: Node.js 22 or newer and npm.
 
-**Start-Vector.cmd** starts the editable development version; it downloads dependencies the first time.
-
-## Controls
-
-Use arrow keys or WASD, two keys for diagonals, or tap/swipe the arena. F activates Focus. P or Escape pauses. Co-op uses WASD for Player 1 and arrow keys for Player 2. The white swap badge means go opposite; a gold star gives a bonus.
-
-- **Practice:** untimed and unranked, with direction coaching and a Finish practice button. It does not award currency, XP, missions or leaderboard scores.
-- **Countdown:** every start/restart gives you three seconds to prepare. Cancel or Escape returns to the menu. Switching away cancels it safely.
-- **Feedback:** successful responses show their reaction rating, points and milliseconds; misses show a retry cue.
-- **Daily / Weekly:** fixed rules and UTC challenge periods.
-
-## Analytics
-
-Open **Stats** for real performance history. Filter by mode, run range and standard/modified rules; inspect Score, Accuracy, Reaction, Streak or Sparks. Hover, touch, or focus the chart and use the arrow keys. Two complete equal groups of matching runs enable average comparisons.
-
-New runs record timing, hit/miss counts, perfect hits, rule multipliers and active duration. The newest 100 scored runs are retained; lifetime totals continue accumulating. Older runs remain compatible; missing measurements appear as —. Empty and single-run charts contain no invented data. Practice is excluded.
-
-Animations follow the app's reduced-motion setting and the operating system preference. Moving particles, arena flashes, long counters and wheel spins are suppressed when reduced motion is active.
-
-## Text and motion
-
-VECTOR keeps one typography and one motion system so every screen, dialog and overlay feels like the same product.
-
-- **Type ramp:** `.t-eyebrow`, `.t-display`, `.t-title`, `.t-heading`, `.t-body`, `.t-caption` (in `src/index.css`) plus `.num` for tabular figures. Sizes multiply the user's text-size setting through `--text-scale`.
-- **Case and weight:** sentence case for labels, buttons and headings. Uppercase is reserved for short micro-labels with wider tracking. Nothing goes heavier than semibold (680), and numbers always use tabular figures.
-- **Motion tokens:** `--dur-1`…`--dur-4` (110–280 ms) and `--ease-out`/`--ease-standard`/`--ease-in-out`. The same values are exported for JS animations in `src/utils/motion.ts` (`DURATION`, `EASE`, `SPRING`, shared `backdropVariants`/`panelVariants`/`popoverVariants`).
-- **What animates:** transform and opacity only. Entrances settle in 160–200 ms, dialogs rise 12 px once, and lists cascade at 40 ms. There are no endless decorative loops; only true live states (a running timer, unclaimed rewards) keep moving.
-- **Reduced motion:** the app's setting and the OS preference both remove travel, loops and long counters while keeping opacity and colour changes, so state changes stay visible.
-
-When adding UI, reuse those classes and variants instead of new keyframes or one-off durations.
-
-## Develop and verify
-
-```text
+```bash
 npm ci
 npm run dev
-npm test
-npm run build
 ```
 
-- `npm run build`: type checking plus production/PWA build.
-- `npm run test:browser`: start the development server first. Tests use Microsoft Edge on Windows; VECTOR_BROWSER can point at another installed Chromium executable.
-- `npm run test:production`: serve the built game on port 4173 first (`PORT=4173 node scripts/serve.mjs`; in PowerShell set `$env:PORT = "4173"` before running Node). Checks offline loading, icons and the local server.
-- `npm run preview -- --host 127.0.0.1`: inspect a production build.
+Open the local URL printed by Vite (the configured development port is 3000).
 
-No Gemini or other AI API key is needed. Guest play works without sign-in. Keep the same browser and address to retain local progress; data on one hosting address is separate from another.
+To create and inspect a production build:
 
-## Install / host
+```bash
+npm run build
+npm run preview
+```
 
-Serve **dist/** over HTTPS for installation on a real device. Localhost also supports testing. Do not open index.html directly from disk. Updates are offered from the menu, so an active run is never force-reloaded.
+The build script runs TypeScript checking before Vite builds the app.
 
-## Firebase
+## Tests
 
-Read [Firebase setup](docs/FIREBASE-SETUP.md) for the verified owner account, master key, migration, emulator checks, and coordinated release steps. Guest progress is local; signed-in economy and inventory changes prefer the deployed account service and use a durable Firestore fallback when it is unavailable. The owner-requested key is stored only as a salted verification record, not as plaintext in the browser bundle.
+Run the unit tests with:
 
-See **AUDIT.md**, **REPAIR-REPORT.md**, and **UPGRADE-1.3.md** for the repair history and this upgrade's validation.
+```bash
+npm test
+```
+
+Other available checks:
+
+| Command | Purpose |
+| --- | --- |
+| `npm run lint` | TypeScript check (`tsc --noEmit`) |
+| `npm run test:browser` | Playwright browser tests; requires a supported browser setup |
+| `npm run test:production` | Playwright checks against a served production build |
+| `npm run test:backend` | Backend domain tests |
+| `npm run test:integration` | Firebase emulator integration tests; requires emulator setup |
+| `npm run test:accounts` | Historical account-flow browser tests; confirm they match current scope before relying on them |
+
+These are instructions, not a claim that every suite has passed on every machine. Record the Node version, command, result, and any environment requirements when reporting a verification run.
+
+## Project map
+
+- `src/App.tsx` — application-level screen and game flow.
+- `src/game/` — game engine, modes, profile, progression, and browser storage.
+- `src/components/` — reusable UI and screens.
+- `src/utils/` — shared utilities, including motion tokens.
+- `tests/` — unit and browser tests.
+- `functions/` — Firebase/backend code retained in the repository.
+- `docs/` — setup and implementation notes.
+
+For a concise explanation of the main design choices and the current verification checklist, see [Architecture](docs/ARCHITECTURE.md) and [Testing](docs/TESTING.md).
+
+## Data and configuration
+
+Guest progression is stored in the browser, so it is tied to that browser and origin. Clearing browser data or switching origins can remove or separate local progress. Do not assume local data is backed up to a server.
+
+The repository includes Firebase-related code and historical setup documentation. Do not deploy backend rules or functions just because setup instructions exist: first confirm that the feature is part of the current product scope, review the configuration, and test against a disposable Firebase emulator project.
+
+Never commit real credentials, private keys, production exports, or local environment files. The provided `.env.example` is a template; create local environment files that remain ignored by Git.
+
+## Project notes
+
+- [Architecture and design notes](docs/ARCHITECTURE.md)
+- [Testing and verification checklist](docs/TESTING.md)
+- [Firebase setup notes](docs/FIREBASE-SETUP.md) — historical; read the warning at the top before using
+- [Audit history](AUDIT.md)
+- [Repair reports](REPAIR-REPORT.md) and [upgrade notes](UPGRADE-1.3.md) — historical reports may refer to features no longer present in the current UI
+
+## Contributing / feedback
+
+Bug reports are most useful when they include the browser and operating system, steps to reproduce, expected behavior, actual behavior, and whether the issue happens in a fresh browser profile. Please avoid including personal data, tokens, or production database contents in an issue.
+
+VECTOR is developed iteratively. Feature descriptions and docs should be updated alongside code changes, and test results should only be reported after the corresponding command has actually been run.
