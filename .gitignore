@@ -1,22 +1,39 @@
+# Dependencies and build output
 node_modules/
+functions/node_modules/
 build/
 dist/
 coverage/
-.DS_Store
-*.log
-.env*
-!.env.example
-
 test-results/
 playwright-report/
 
-functions/node_modules/
-functions/.secret.local
+# Local environment and credentials
+.env*
+!.env.example
 functions/.env*
 !functions/.env.example
-firebase-debug.log
-firestore-debug.log
-ui-debug.log
-.vector-emulator-data/
+functions/.secret.local
+*.local
+*.secret
+.firebase/
 
+# Firebase emulator/export data
+.vector-emulator-data/
+firebase-debug.log*
+firestore-debug.log*
+ui-debug.log*
 firebase-export-*/
+
+# Private keys and service-account files
+*.pem
+*.key
+*.p12
+*.pfx
+serviceAccountKey.json
+service-account*.json
+*-service-account.json
+secrets/
+
+# OS/editor artifacts
+.DS_Store
+*.log
