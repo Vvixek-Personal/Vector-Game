@@ -11,8 +11,8 @@ const clientConfig = {
   storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET?.trim(),
   messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID?.trim(),
 };
-export const firebaseEnabled = Boolean(clientConfig.apiKey && clientConfig.authDomain && clientConfig.projectId && clientConfig.appId);
 export const useFirebaseEmulators = Boolean(env.DEV && env.VITE_VECTOR_EMULATORS === "true");
+export const firebaseEnabled = Boolean(useFirebaseEmulators || (clientConfig.apiKey && clientConfig.authDomain && clientConfig.projectId && clientConfig.appId));
 
 // Firebase web config is public client configuration, not a server secret.
 // VITE_* values are included in browser builds; never put Gemini/service-account secrets here.
