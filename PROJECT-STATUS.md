@@ -1,33 +1,20 @@
-# VECTOR 1.3 status
+# Historical project status — VECTOR 1.3
 
-Date: October 26, 2026; repaired October 27, 2026.
+> **Archived context, not the current feature specification.** This document describes an earlier version of VECTOR. The latest main-branch commit removed the Google sign-in/account UI and leaderboard UI. Do not use the feature claims below as proof that those flows are present or production-ready.
 
-See [`REPAIR-2026-10-27.md`](REPAIR-2026-10-27.md) for the current analysis. The October 27 repair fixes Developer persistence, normal-player gifting, live/global score saving, challenge buckets, master-key access, and sign-out progress isolation. It also makes deployed Cloud Functions the preferred path while retaining a durable client fallback. The older status notes below describe intended behavior from the previous repair; production deployment remains a separate owner action.
+Date of original notes: October 26–27, 2026.
 
-The Google/Gmail sign-in integration, account session lifecycle, offline resilience, and game run execution are completely repaired and verified.
+## What the earlier notes reported
 
-## Key Updates in Version 1.3 (October 26, 2026)
-1. **Google Account & Gmail Authentication:**
-   - Fixed the issue where signing in with Google triggered a false "Account services are unavailable. Reconnect when online; your saved progress is kept." notice even when the user was fully online.
-   - Identified root cause: `accounts.ts` attempted to call non-existent Cloud Functions (`bootstrapAccount`, `beginRun`, `gameAction`), failing with `functions/not-found` and forcing the session into an offline error state.
-   - Built a comprehensive client-side domain execution fallback in `src/firebase/accounts.ts` using verified domain logic (`domain.mjs`), ensuring accounts boot to `status: "ready"` instantly and sync directly with Firestore.
-   - Enhanced `src/firebase/auth.ts` with error classifications for blocked popups, cancelled requests, network failures, and unauthorized domains, plus automatic user profile synchronization.
+The previous 1.3 iteration included work on account-session handling, local/offline gameplay, store and inventory flows, reward claims, challenge scoring, and Firebase-backed developer tools. The original notes reported passing unit/type/build checks, but those results were not re-run as part of this documentation update and should not be treated as current verification.
 
-2. **Run Execution & Play Again Fix:**
-   - Decoupled `App.tsx` run startup from Cloud Function availability. Even if network latency or function errors occur, `start()` now safely issues a local run ticket and begins the 3-second countdown without aborting gameplay.
-   - Completed runs award XP, Sparks, streak progression, and submit real scores to the global leaderboard.
+The repository still contains some Firebase code, backend functions, tests, and setup notes from that earlier scope. Their presence does not establish that they are wired into the current UI, deployed, or supported.
 
-3. **Store, Spin & Inventory Operations:**
-   - Store purchases, item equips/unequips, lucky wheel spins, incubator egg hatching, and milestone claims now operate reliably in both online Firestore and client fallback modes.
+## How to verify the current state
 
-4. **Developer Tools & Live Game Publishing:**
-   - Fully analyzed and resolved the issue where Developer tab changes (catalog creation/editing, player wallets, inventory locks/grants, custom titles, moderator roles) were not saving or publishing to the live game.
-   - Wrote real Firestore handlers for `saveCatalogItem`, `adminWallet`, `adminInventory`, `adminTitle`, `adminRole`, `revokeDeveloper`, `listPlayers`, `initializePlayer`, `inspectData`, `sendModeratorFeedback`, `acknowledgeFeedback`, and `uploadDeveloperImage`.
-   - Wired `applyCatalogItem` to immediately inject changes into the live runtime catalog and local cache, broadcasting them to the Store, Vault, and gameplay.
-   - Updated and deployed `firestore.rules` giving verified developers (`personal.me.vivek@gmail.com`) write access to `/catalog/{id}`, `/accounts/{uid}`, `/feedback/{id}`, and `/ledger/{id}`.
+1. Read the current [README](README.md) and [architecture notes](docs/ARCHITECTURE.md).
+2. Inspect the current call sites and screens before relying on an old report.
+3. Run `npm ci`, `npm test`, `npm run lint`, and `npm run build` in the current checkout.
+4. Treat Firebase deployment as a separate release decision. Use a disposable emulator project for tests; do not deploy old instructions without reviewing the current code, rules, and product scope.
 
-5. **Validation:**
-   - 52 unit tests passed (`npm test`).
-   - TypeScript compilation and type-check passed (`npm run lint`).
-   - Production Vite applet build passed (`compile_applet`).
-
+Historical audit and repair documents are retained to preserve context. They are not a substitute for a fresh code review or reproducible test results.
