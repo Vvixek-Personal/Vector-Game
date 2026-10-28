@@ -6,7 +6,7 @@ import { loadScores, type Stats, type RunSnap } from '../../game/storage';
 import { compareSamples, formatDuration, metricValue, selectRuns, summarizeRuns, type AnalyticsMetric } from '../../game/analytics';
 import CurvedGraph, { type GraphPoint } from '../CurvedGraph';
 
-interface Props { stats: Stats; onLeaderboard?: () => void; reducedMotion?: boolean; }
+interface Props { stats: Stats; reducedMotion?: boolean; }
 const METRICS: { id: AnalyticsMetric; label: string; name: string; unit: string; color: string; max?: number; lower?: boolean }[] = [
   {id:'score',label:'Score',name:'Score',unit:' pts',color:'var(--brand)'},
   {id:'accuracy',label:'Accuracy',name:'Accuracy',unit:'%',color:'#10b981',max:100},
@@ -26,7 +26,7 @@ function useCount(to:number,reduced:boolean) {
   return value;
 }
 function dateFor(run:RunSnap) { return Number.isFinite(run.createdAt)?new Date(run.createdAt).toLocaleString(undefined,{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):run.date; }
-export default function StatsScreen({stats,onLeaderboard,reducedMotion=false}:Props) {
+export default function StatsScreen({stats,reducedMotion=false}:Props) {
   const systemReduced=useReducedMotion(); const reduced=reducedMotion||!!systemReduced;
   const [mode,setMode]=useState('all'),[limit,setLimit]=useState(10),[rules,setRules]=useState('all'),[metric,setMetric]=useState<AnalyticsMetric>('score');
   const history=stats.history??[];
@@ -48,7 +48,6 @@ export default function StatsScreen({stats,onLeaderboard,reducedMotion=false}:Pr
   return <div className="stats-page analytics-page">
     <header className="home-header analytics-heading">
       <div><span className="analytics-eyebrow">YOUR PERFORMANCE</span><h2 className="stats-title">Find your flow.</h2><p>Real results. Clear progress. Practice stays separate.</p></div>
-      {onLeaderboard&&<button className="text-button" onClick={onLeaderboard}><Trophy size={16}/>Rankings<ArrowUpRight size={15}/></button>}
     </header>
     <div className="stats-hero-grid">
       {[{label:'Scored runs',value:Math.round(animatedRuns).toLocaleString(),note:'Lifetime',icon:Activity,color:'var(--brand)'},

@@ -1,14 +1,9 @@
-import { beginCloudSync } from "./firebase/cloudSave";
-import { useAccount, startAccountSession, accountAction, isSignedAccount, beginAccountRun, settleAccountRun } from "./firebase/accounts";
 import { startCatalogSync, useCatalog } from "./firebase/catalog";
-import AccountStatus from "./components/AccountStatus";
-import { safeStorage as localStorage, getSaveScope } from "./game/persistence";
-
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence, MotionConfig, useReducedMotion } from "motion/react";
-import { DURATION, EASE, backdropVariants, panelVariants } from "./utils/motion";
+import { backdropVariants, panelVariants } from "./utils/motion";
 import PWAUpdateNotice from "./components/PWAUpdateNotice";
-import Dock from "./components/Dock";
+import Dock, { type DockTab } from "./components/Dock";
 import HUD from "./components/HUD";
 import WavyBackground from "./components/WavyBackground";
 import HomeScreen from "./components/screens/HomeScreen";
@@ -16,7 +11,6 @@ const StoreScreen = lazy(() => import("./components/screens/StoreScreen"));
 const StatsScreen = lazy(() => import("./components/screens/StatsScreen"));
 const SettingsScreen = lazy(() => import("./components/screens/SettingsScreen"));
 const ProfileScreen = lazy(() => import("./components/screens/ProfileScreen"));
-const LeaderboardScreen = lazy(() => import("./components/screens/LeaderboardScreen"));
 import { GameOverOverlay, PauseOverlay, TutorialOverlay, PrepOverlay } from "./components/overlays/Overlays";
 import { ModifiersModal } from "./components/ModifiersModal";
 import { type GameModifiers, loadModifiers, getModifierMultiplier } from "./game/modifiers";
@@ -33,24 +27,20 @@ import {
   recordRun,
   saveName,
   saveSettings,
-  scoreBucket,
   checkDailyLogin,
   type ScoreEntry,
   type Settings,
   type Stats,
 } from "./game/storage";
 import type { GameSummary } from "./game/types";
-import { TITLES, loadProfile, saveProfile, type Profile } from "./game/profile";
-import { submitScore } from "./firebase/leaderboard";
+import { loadProfile, saveProfile, type Profile } from "./game/profile";
 import { loadMissions, updateMissionsProgress } from "./game/missions";
 import { STORE_ITEMS } from "./game/catalog";
-import { getPlayerLevelProgress } from "./game/levels";
-import { useAuth } from "./firebase/auth";
 import "./collection.css";
 import "./playroom.css";
 import "./account-ui.css";
 
-type Screen = "home" | "leaderboard" | "store" | "stats" | "settings" | "profile" | "missions";
+type Screen = "home" | "store" | "stats" | "settings" | "profile" | "missions";
 
 const INITIAL_HUD: HudState = {
   score: 0,
@@ -86,7 +76,6 @@ export default function App() {
   const [name, setName] = useState(() => loadName());
   const nameRef = useRef(name);
   const [settings, setSettings] = useState<Settings>(() => loadSettings());
-  const settingsChangedByUser=useRef(false);
   const systemReducedMotion = useReducedMotion();
   const reduceMotion = settings.reducedMotion || !!systemReducedMotion;
   const [profile, setProfile] = useState<Profile>(() => loadProfile());
@@ -103,77 +92,46 @@ export default function App() {
   const [modifiers, setModifiers] = useState<GameModifiers>(() => loadModifiers());
   const [showModifiersModal, setShowModifiersModal] = useState(false);
   const modifiersRef = useRef(modifiers);
-  // Only persist React state into the save scope it was loaded from. This
-  // prevents a stale level-21 account snapshot from being written into the
-  // guest slot during the sign-out render.
-  const loadedScopeRef = useRef(getSaveScope());
+  const catalogRevision = useCatalog();
+  const [dailyReward, setDailyReward] = useState<{ sparks: number; diamonds: number; streak: number } | null>(null);
+
   useEffect(() => {
     modifiersRef.current = modifiers;
   }, [modifiers]);
 
-  const { user, loading: authLoading } = useAuth();
-  const [cloudLoaded, setCloudLoaded] = useState(false);
-  const accountSession = useAccount();
-  const expectedUid=user&&!user.isAnonymous?user.uid:null;
-  const restoringIdentity=authLoading||accountSession.uid!==expectedUid||accountSession.status==="loading";
-  const canPersistScope=getSaveScope()===loadedScopeRef.current;
-  const catalogRevision = useCatalog();
-  const serverRunRef = useRef<any>(null);
-  const launchToken = useRef(0);
-  const [launchPending, setLaunchPending] = useState(false);
-  const [gameNote, setGameNote] = useState("");
-  const [showNamePopup, setShowNamePopup] = useState(false);
-  const [tempName, setTempName] = useState("");
-  const [dailyReward, setDailyReward] = useState<{ sparks: number; diamonds: number; streak: number } | null>(null);
-
-  const statsRef = useRef(stats);
-
-  useEffect(() => startCatalogSync(), []);
   useEffect(() => {
-    if (authLoading) return;
-    launchToken.current++; serverRunRef.current=null; setLaunchPending(false);settingsChangedByUser.current=false;
-    setShowTutorial(false);setShowModifiersModal(false);setGameNote("");tutorialStarts.current=false;tutorialMode.current=null;
-    if(countdownTimer.current!==null)window.clearInterval(countdownTimer.current);countdownTimer.current=null;setCountdown(null);
-    engineRef.current?.toMenu(); setPhase("menu"); phaseRef.current="menu"; setPrepMode(null); setSummary(null); setDailyReward(null); setShowNamePopup(false);
-    return startAccountSession(user);
-  }, [user?.uid, authLoading]);
-  useEffect(() => {
-    const refresh = () => {
-      loadedScopeRef.current = getSaveScope();
-      setStats(loadStats()); setProfile(loadProfile()); setSettings(loadSettings()); setName(loadName()); setScores(loadScores(modeRef.current));
-    };
-    window.addEventListener("vector-account-updated",refresh);
-    refresh();
-    return () => window.removeEventListener("vector-account-updated",refresh);
+    startCatalogSync();
   }, []);
-  useEffect(() => { setCloudLoaded(!authLoading && accountSession.status!=="loading"); }, [authLoading,accountSession.status]);
+
+  // Daily check-in
   useEffect(() => {
-    if (!cloudLoaded || restoringIdentity) return;
-    if (user && !user.isAnonymous) {
-      if(accountSession.status!=="ready")return;
-      let cancelled=false;
-      void accountAction("claimDaily",{},"daily_"+new Date().toISOString().slice(0,10)).then(result=>{
-        if(!cancelled && result.reward && !result.alreadyClaimed)setDailyReward(result.reward);
-      }).catch(()=>{});
-      return()=>{cancelled=true;};
+    const reward = checkDailyLogin(loadStats());
+    if (reward) {
+      setStats(reward.nextStats);
+      setDailyReward({
+        sparks: reward.rewardSparks,
+        diamonds: reward.rewardDiamonds,
+        streak: reward.nextStats.loginStreak || 1,
+      });
     }
-    const reward=checkDailyLogin(loadStats());
-    if(reward){setStats(reward.nextStats);setDailyReward({sparks:reward.rewardSparks,diamonds:reward.rewardDiamonds,streak:reward.nextStats.loginStreak||1});}
-  }, [cloudLoaded,user?.uid,accountSession.status,restoringIdentity]);
+  }, []);
 
   useEffect(() => {
     phaseRef.current = phase;
   }, [phase]);
+
   useEffect(() => {
     nameRef.current = name;
-    if (cloudLoaded && !restoringIdentity && canPersistScope && ["guest","ready"].includes(accountSession.status)) saveName(name);
-  }, [name, cloudLoaded,restoringIdentity,canPersistScope,accountSession.status]);
+    saveName(name);
+  }, [name]);
+
   useEffect(() => {
     profileRef.current = profile;
-  }, [profile, cloudLoaded]);
-  useEffect(() => {
-    statsRef.current = stats;
-  }, [stats]);
+    saveProfile(profile);
+    engineRef.current?.setAudioPack(profile.audioPackId);
+    engineRef.current?.setArenaTheme(STORE_ITEMS.find((item) => item.id === profile.arenaThemeId)?.themeSwatch);
+  }, [profile, catalogRevision]);
+
   useEffect(() => {
     setScores(loadScores(mode));
   }, [mode]);
@@ -183,71 +141,55 @@ export default function App() {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const engine = new Engine(canvas, loadSettings(), {
-      onPhase: (next) => { phaseRef.current = next; setPhase(next); if (next !== "playing") setHeld([]); },
+      onPhase: (next) => {
+        phaseRef.current = next;
+        setPhase(next);
+        if (next !== "playing") setHeld([]);
+      },
       onHud: setHud,
       onOver: (sum) => {
         if (sum.mode === "practice") {
-          sum.xpGained = 0; setSummary(sum); setHeld([]); return;
-        }
-        const publishScore = (statsForLevel: Stats) => {
-          if (sum.score <= 0) return;
-          const currentProfile = profileRef.current;
-          const customTitle = currentProfile.customTitles?.find(title => title.id === currentProfile.titleId)?.name;
-          void submitScore({
-            mode: sum.mode,
-            challengeId: sum.challengeId,
-            score: sum.score,
-            streak: sum.bestStreak,
-            userName: nameRef.current.trim() || "Ace",
-            title: customTitle || TITLES.find(title => title.id === currentProfile.titleId)?.name || "Operative",
-            avatarId: currentProfile.avatarId,
-            frameId: currentProfile.frameId,
-            useGooglePfp: currentProfile.accessRole === "developer" && !!currentProfile.customPhotoURL,
-            userPhoto: currentProfile.customPhotoURL || undefined,
-            role: currentProfile.accessRole === "developer" || currentProfile.accessRole === "moderator" ? currentProfile.accessRole : "player",
-            level: getPlayerLevelProgress(statsForLevel, currentProfile).currentLevel,
-          }).catch((error) => console.warn("Score is saved locally; live publication will retry:", error));
-        };
-        if (isSignedAccount()) {
-          if (sum.score > 0) addScore(sum.mode, { score: sum.score, name: nameRef.current, date: new Date().toLocaleDateString() }, sum.challengeId);
-          setScores(loadScores(sum.mode, sum.challengeId));
-          publishScore(loadStats());
-          setHeld([]); sum.xpGained = 0;
-          const pendingSummary = { ...sum, rewardPending: true };
-          setSummary(pendingSummary);
-          const receipt = serverRunRef.current;
-          serverRunRef.current = null;
-          if (receipt) void settleAccountRun(receipt.id, sum).then(result => {
-            if (result) {
-              setSummary(current => current === pendingSummary ? { ...sum, xpGained: result.reward?.xp || 0, rewardPending: false } : current);
-              setStats(loadStats());
-              setProfile(loadProfile());
-              setScores(loadScores(sum.mode, sum.challengeId));
-              setGameNote(result.message);
-            }
-          }).catch((error: any) => setGameNote(["functions/failed-precondition", "functions/invalid-argument", "functions/permission-denied"].includes(error?.code) ? error.message : "Your run is saved on this device. Cloud rewards will retry when you reconnect."));
-          else setGameNote("No cloud run session was available. This score stays on your device.");
+          sum.xpGained = 0;
+          setSummary(sum);
+          setHeld([]);
           return;
         }
+
         if (sum.score > 0) {
-          addScore(sum.mode, {
-            score: sum.score,
-            name: nameRef.current.trim().toUpperCase() || "ACE",
-            date: new Date().toLocaleDateString(),
-          }, sum.challengeId);
+          addScore(
+            sum.mode,
+            {
+              score: sum.score,
+              name: nameRef.current.trim().toUpperCase() || "ACE",
+              date: new Date().toLocaleDateString(),
+            },
+            sum.challengeId
+          );
         }
+
         sum.xpGained = sum.score + 50 + Math.max(0, sum.bestStreak - loadStats().bestStreak) * 10;
         recordRun(sum.score, sum.bestStreak, sum.fastestMs, {
-          hits: sum.hits, misses: sum.misses, perfectHits: sum.perfectHits, modifierMultiplier: sum.modifierMultiplier, playSeconds: sum.playSeconds,
-          avgMs: sum.avgReactionMs, mode: sum.mode, acc: sum.accuracy,
+          hits: sum.hits,
+          misses: sum.misses,
+          perfectHits: sum.perfectHits,
+          modifierMultiplier: sum.modifierMultiplier,
+          playSeconds: sum.playSeconds,
+          avgMs: sum.avgReactionMs,
+          mode: sum.mode,
+          acc: sum.accuracy,
         });
+
         setScores(loadScores(sum.mode, sum.challengeId));
         const updatedStats = loadStats();
         setStats(updatedStats);
-        updateMissionsProgress(loadMissions(), { runs: 1, score: sum.score, streak: sum.bestStreak, perfectHits: sum.perfectHits });
+        updateMissionsProgress(loadMissions(), {
+          runs: 1,
+          score: sum.score,
+          streak: sum.bestStreak,
+          perfectHits: sum.perfectHits,
+        });
         setSummary(sum);
         setHeld([]);
-        publishScore(updatedStats);
       },
     });
     engineRef.current = engine;
@@ -259,7 +201,7 @@ export default function App() {
 
   // settings persistence + live engine config
   useEffect(() => {
-    if (cloudLoaded && !restoringIdentity && canPersistScope && (["guest","ready"].includes(accountSession.status)||settingsChangedByUser.current)){saveSettings(settings);settingsChangedByUser.current=false;}
+    saveSettings(settings);
     engineRef.current?.configure({ ...settings, reducedMotion: reduceMotion });
     document.documentElement.setAttribute("data-theme", settings.uiMode || "dark");
     document.documentElement.setAttribute("data-color", settings.colorway || "cobalt");
@@ -273,19 +215,12 @@ export default function App() {
     if (metaTheme) {
       metaTheme.setAttribute("content", settings.uiMode === "light" ? "#f6f6f8" : "#121418");
     }
-  }, [settings, cloudLoaded, reduceMotion,restoringIdentity,canPersistScope,accountSession.status]);
-
-  useEffect(() => {
-    profileRef.current = profile;
-    if (cloudLoaded && !restoringIdentity && canPersistScope && ["guest","ready"].includes(accountSession.status)) saveProfile(profile);
-    engineRef.current?.setAudioPack(profile.audioPackId);
-    engineRef.current?.setArenaTheme(STORE_ITEMS.find(item => item.id === profile.arenaThemeId)?.themeSwatch);
-  }, [profile, cloudLoaded, catalogRevision,restoringIdentity,canPersistScope,accountSession.status]);
+  }, [settings, reduceMotion]);
 
   const updateProfile = useCallback((p: Profile) => setProfile(p), []);
 
   const updateSetting = useCallback(<K extends keyof Settings>(key: K, value: Settings[K]) => {
-    settingsChangedByUser.current=true;setSettings((prev) => ({ ...prev, [key]: value }));
+    setSettings((prev) => ({ ...prev, [key]: value }));
   }, []);
 
   const best = scores[0]?.score ?? 0;
@@ -295,8 +230,10 @@ export default function App() {
       const doc = document as any;
       const docEl = document.documentElement as any;
 
-      const requestFullScreen = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullScreen || docEl.msRequestFullscreen;
-      const cancelFullScreen = doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen;
+      const requestFullScreen =
+        docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullScreen || docEl.msRequestFullscreen;
+      const cancelFullScreen =
+        doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen;
 
       if (!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
         if (requestFullScreen) await requestFullScreen.call(docEl);
@@ -310,55 +247,13 @@ export default function App() {
 
   const stopCountdown = useCallback(() => {
     if (countdownTimer.current !== null) window.clearInterval(countdownTimer.current);
-    countdownTimer.current = null; setCountdown(null);
+    countdownTimer.current = null;
+    setCountdown(null);
   }, []);
+
   useEffect(() => () => {
     if (countdownTimer.current !== null) window.clearInterval(countdownTimer.current);
   }, []);
-  const start = useCallback(async (m?: unknown) => {
-    const engine = engineRef.current;
-    if (!engine) return;
-    stopCountdown();
-    const isGameMode = (v: unknown): v is GameMode => typeof v === "string" && v in MODES;
-    const nextMode: GameMode = isGameMode(m) ? m : (isGameMode(modeRef.current) ? modeRef.current : "arcade");
-    modeRef.current = nextMode;
-    setMode(nextMode);
-    setSummary(null);
-    const nextModifiers = { ...modifiersRef.current };
-    const ticket=++launchToken.current;
-    serverRunRef.current=null;
-    if(isSignedAccount() && nextMode!=="practice"){
-      try {
-        const run=await beginAccountRun(nextMode,getModifierMultiplier(nextModifiers));
-        if(ticket!==launchToken.current)return;
-        serverRunRef.current=run;
-      } catch(error:any){
-        if(ticket===launchToken.current){
-          serverRunRef.current={ id: "local_run_" + Date.now(), mode: nextMode, bucket: scoreBucket(nextMode), multiplier: getModifierMultiplier(nextModifiers) };
-        }
-      }
-      if(ticket===launchToken.current) setLaunchPending(false);
-    }
-    engine.toMenu();
-    engine.sound.ensure();
-    engine.sound.click();
-    phaseRef.current = 'countdown';
-    setPhase('countdown');
-    setCountdown(3);
-    let remaining = 3;
-    countdownTimer.current = window.setInterval(() => {
-      remaining--;
-      if (remaining > 0) {
-        setCountdown(remaining);
-        engine.sound.click();
-      } else {
-        stopCountdown();
-        const session=serverRunRef.current;
-        const challenge=session&&(nextMode==="daily"||nextMode==="weekly")?session.bucket.slice(nextMode.length+1):undefined;
-        engine.startGame(nextMode, nextModifiers,challenge);
-      }
-    }, 1000);
-  }, [stopCountdown]);
 
   const modeRef = useRef(mode);
   const tutorialMode = useRef<GameMode | null>(null);
@@ -367,27 +262,59 @@ export default function App() {
     modeRef.current = mode;
   }, [mode]);
 
+  const start = useCallback(
+    async (m?: unknown) => {
+      const engine = engineRef.current;
+      if (!engine) return;
+      stopCountdown();
+      const isGameMode = (v: unknown): v is GameMode => typeof v === "string" && v in MODES;
+      const nextMode: GameMode = isGameMode(m) ? m : isGameMode(modeRef.current) ? modeRef.current : "arcade";
+      modeRef.current = nextMode;
+      setMode(nextMode);
+      setSummary(null);
+      const nextModifiers = { ...modifiersRef.current };
+      engine.toMenu();
+      engine.sound.ensure();
+      engine.sound.click();
+      phaseRef.current = "countdown";
+      setPhase("countdown");
+      setCountdown(3);
+      let remaining = 3;
+      countdownTimer.current = window.setInterval(() => {
+        remaining--;
+        if (remaining > 0) {
+          setCountdown(remaining);
+          engine.sound.click();
+        } else {
+          stopCountdown();
+          engine.startGame(nextMode, nextModifiers);
+        }
+      }, 1000);
+    },
+    [stopCountdown]
+  );
+
   const play = useCallback(
     (m?: GameMode) => {
-      const mode = m ?? modeRef.current;
-      modeRef.current = mode;
-      setPrepMode(mode);
+      const selected = m ?? modeRef.current;
+      modeRef.current = selected;
+      setPrepMode(selected);
     },
     []
   );
 
   const confirmPlay = useCallback(
     (m?: GameMode) => {
-      const mode = m ?? prepMode ?? modeRef.current;
+      const selected = m ?? prepMode ?? modeRef.current;
       setPrepMode(null);
       if (!hasSeenTutorial()) {
-        tutorialMode.current = mode;
+        tutorialMode.current = selected;
         tutorialStarts.current = true;
         setShowTutorial(true);
         return;
       }
-      if (settings.confirmPlay && !window.confirm(`Start ${MODES[mode].label}?`)) return;
-      start(mode);
+      if (settings.confirmPlay && !window.confirm(`Start ${MODES[selected].label}?`)) return;
+      start(selected);
     },
     [prepMode, start, settings.confirmPlay]
   );
@@ -409,7 +336,6 @@ export default function App() {
   }, []);
 
   const goHome = useCallback(() => {
-    launchToken.current++;setLaunchPending(false);serverRunRef.current=null;
     stopCountdown();
     engineRef.current?.toMenu();
     setScores(loadScores(modeRef.current));
@@ -419,11 +345,18 @@ export default function App() {
   }, [stopCountdown]);
 
   useEffect(() => {
-    const cancelIfHidden = () => { if (phaseRef.current === "countdown") goHome(); };
-    const onVisibility = () => { if (document.hidden) cancelIfHidden(); };
+    const cancelIfHidden = () => {
+      if (phaseRef.current === "countdown") goHome();
+    };
+    const onVisibility = () => {
+      if (document.hidden) cancelIfHidden();
+    };
     window.addEventListener("blur", cancelIfHidden);
     document.addEventListener("visibilitychange", onVisibility);
-    return () => { window.removeEventListener("blur", cancelIfHidden); document.removeEventListener("visibilitychange", onVisibility); };
+    return () => {
+      window.removeEventListener("blur", cancelIfHidden);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, [goHome]);
 
   const togglePause = useCallback(() => {
@@ -457,371 +390,339 @@ export default function App() {
     engineRef.current?.triggerFocus();
   }, []);
 
-  const onDir = useCallback((d: DirName) => {
-    engineRef.current?.pressDir(d);
-    setHeld((h) => (h.includes(d) ? h : [...h, d]));
+  const onDir = useCallback((dir: DirName) => {
+    setHeld((h) => (h.includes(dir) ? h : [...h, dir]));
+    engineRef.current?.pressDir(dir);
   }, []);
 
-  const onReleaseDir = useCallback((d: DirName) => {
-    engineRef.current?.releaseDir(d);
-    setHeld((h) => h.filter((x) => x !== d));
+  const onReleaseDir = useCallback((dir: DirName) => {
+    setHeld((h) => h.filter((d) => d !== dir));
+    engineRef.current?.releaseDir(dir);
   }, []);
 
   const share = useCallback(async () => {
     if (!summary) return;
-    const text = `I scored ${summary.score.toLocaleString()} in VECTOR (${MODES[summary.mode].label}) — ${summary.accuracy}% accuracy, ${summary.bestStreak} best streak. Can you beat it?`;
-    try {
-      if (navigator.share) await navigator.share({ title: "VECTOR", text });
-      else await navigator.clipboard.writeText(text);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1800);
-    } catch {
-      /* dismissed */
+    const text = `I scored ${summary.score.toLocaleString()} pts in Vector (${MODES[summary.mode].label})!`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: "Vector Score", text, url: window.location.href });
+        return;
+      } catch {
+        /* fallback to copy */
+      }
     }
+    await navigator.clipboard.writeText(`${text} ${window.location.href}`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   }, [summary]);
 
-  // keyboard shortcuts
+  // Global key bindings
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.defaultPrevented || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
-      const target = e.target as HTMLElement | null;
-      if (target?.closest("input, textarea, select, [contenteditable='true']")) return;
-      if (phaseRef.current === "countdown" && e.key === "Escape") { e.preventDefault(); goHome(); return; }
-      if (showTutorial || prepMode || dailyReward || showNamePopup || showModifiersModal) return;
-      const k = e.key;
-      if ((k === "p" || k === "P" || k === "Escape") && (phaseRef.current === "playing" || phaseRef.current === "paused")) {
-        togglePause();
-      } else if (k === "m" || k === "M") {
-        onMute();
-      } else if ((k === "Enter" || k === " ") && phaseRef.current === "menu" && screen === "home" && !target?.closest("button, summary, a")) {
+      if (e.repeat) return;
+      if ((e.target as HTMLElement | null)?.closest("input, textarea, select, [contenteditable='true']")) return;
+
+      if (e.key === "Escape" || e.key === "p" || e.key === "P") {
+        if (phaseRef.current === "playing" || phaseRef.current === "paused") {
+          e.preventDefault();
+          togglePause();
+        } else if (prepMode) {
+          e.preventDefault();
+          setPrepMode(null);
+        } else if (showTutorial) {
+          e.preventDefault();
+          finishTutorial();
+        } else if (dailyReward) {
+          e.preventDefault();
+          setDailyReward(null);
+        } else if (showModifiersModal) {
+          e.preventDefault();
+          setShowModifiersModal(false);
+        } else if (screen !== "home") {
+          e.preventDefault();
+          goHome();
+        }
+      } else if (e.key === "m" || e.key === "M") {
         e.preventDefault();
-        play();
-      } else if ((k === "Enter" || k === " ") && phaseRef.current === "over" && !target?.closest("button")) {
+        onMute();
+      } else if (e.key === " " && phaseRef.current === "menu" && screen === "home" && !prepMode && !showTutorial && !dailyReward && !showModifiersModal) {
         e.preventDefault();
         start();
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [start, play, togglePause, onMute, showTutorial, screen, prepMode, dailyReward, showNamePopup, showModifiersModal, goHome]);
+  }, [start, play, togglePause, onMute, showTutorial, screen, prepMode, dailyReward, showModifiersModal, goHome, finishTutorial]);
 
   return (
-    <MotionConfig reducedMotion={reduceMotion ? "always" : "never"} transition={{ duration: .2, ease: [.22, 1, .36, 1] }}>
-    <div
-      data-theme={settings.uiMode}
-      data-color={settings.colorway}
-      data-text-size={settings.textSize || "medium"}
-      className={`app-shell relative h-[100dvh] w-full select-none overflow-hidden ${
-        settings.largeUi ? "large-game-ui" : ""
-      } ${settings.highContrast ? "high-contrast-game" : ""} ${reduceMotion ? "reduce-game-motion" : ""} ${settings.compactHud ? "compact-hud" : ""} ${settings.colorBlind ? "color-blind" : ""}`}
-    >
-      <canvas ref={canvasRef} className={`game-canvas ${phase === "menu" ? "is-idle" : ""}`} />
+    <MotionConfig reducedMotion={reduceMotion ? "always" : "never"} transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}>
+      <div
+        data-theme={settings.uiMode}
+        data-color={settings.colorway}
+        data-text-size={settings.textSize || "medium"}
+        className={`app-shell relative h-[100dvh] w-full select-none overflow-hidden ${
+          settings.largeUi ? "large-game-ui" : ""
+        } ${settings.highContrast ? "high-contrast-game" : ""} ${reduceMotion ? "reduce-game-motion" : ""} ${
+          settings.compactHud ? "compact-hud" : ""
+        } ${settings.colorBlind ? "color-blind" : ""}`}
+      >
+        <canvas ref={canvasRef} className={`game-canvas ${phase === "menu" ? "is-idle" : ""}`} />
 
-      {phase === "menu" && <PWAUpdateNotice />}
-      {/* ---------- menu ---------- */}
-      {phase === "menu" && (
-        <>
-          <div className="absolute inset-0 z-[1] overflow-hidden">
-            <WavyBackground />
-          </div>
-          <div className="menu-shell">
-            <div className="menu-content">
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.div
-                  key={screen}
-                  initial={reduceMotion ? false : { opacity: 0, y: 10, scale: 0.995 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={reduceMotion ? undefined : { opacity: 0, y: -8, scale: 0.995 }}
-                  transition={reduceMotion ? { duration: 0.1 } : { type: "spring", stiffness: 360, damping: 30, mass: 0.8 }}
-                  className="w-full min-h-full"
-                >
-                  <Suspense key={expectedUid||"guest"} fallback={<p className="t-caption p-8" role="status">Opening…</p>}>
-                  {screen === "home" ? (
-                    <HomeScreen
-                      keyboardEnabled={!prepMode && !showTutorial && !dailyReward && !showNamePopup && !showModifiersModal}
-                      mode={mode}
-                      onMode={setMode}
-                      name={name}
-                      scores={scores}
-                      stats={stats}
-                      onUpdateStats={setStats}
-                      profile={profile}
-                      onPlay={play}
-                      onHowToPlay={howTo}
-                      reducedMotion={reduceMotion}
-                      showHints={settings.showHints}
-                      onFullscreen={toggleFullscreen}
-                      onProfile={() => setScreen("profile")}
-                      onLeaderboard={() => setScreen("leaderboard")}
-                      onStore={() => setScreen("store")}
-                      onStatsOpen={() => setScreen("stats")}
-                      onMissions={() => setScreen("missions")}
-                      onUpdateProfile={updateProfile}
-                      settings={settings}
-                      modifiers={modifiers}
-                      modifierMultiplier={mode === "practice" || mode === "daily" || mode === "weekly" ? 1 : getModifierMultiplier(modifiers)}
-                      onOpenModifiers={mode === "practice" || mode === "daily" || mode === "weekly" ? undefined : () => setShowModifiersModal(true)}
-                    />
-                  ) : screen === "leaderboard" ? (
-                    <LeaderboardScreen
-                      stats={stats}
-                      initialMode={mode}
-                      onSelectMode={(m) => {
-                        setMode(m);
-                        setScreen("home");
-                      }}
-                    />
-                  ) : screen === "missions" ? (
-                    <ProfileScreen
-                      key="missions"
-                      initialTab="tasks"
-                      profile={profile}
-                      onProfile={updateProfile}
-                      stats={stats}
-                      onStats={setStats}
-                      name={name}
-                      onNameChange={setName}
-                      onBack={() => setScreen("home")}
-                      onOpenStore={() => setScreen("store")}
-                    />
-                  ) : screen === "profile" ? (
-                    <ProfileScreen
-                      key="profile"
-                      initialTab="vault"
-                      profile={profile}
-                      onProfile={updateProfile}
-                      stats={stats}
-                      onStats={setStats}
-                      name={name}
-                      onNameChange={setName}
-                      onBack={() => setScreen("home")}
-                      onOpenStore={() => setScreen("store")}
-                    />
-                  ) : screen === "store" ? (
-                    <StoreScreen stats={stats} onStats={setStats} profile={profile} onProfile={updateProfile} />
-                  ) : screen === "stats" ? (
-                    <StatsScreen reducedMotion={reduceMotion} stats={stats} onLeaderboard={() => setScreen("leaderboard")} />
-                  ) : (
-                    <SettingsScreen settings={settings} onChange={updateSetting} onBack={() => setScreen("home")} />
-                  )}
-                  </Suspense>
-                </motion.div>
-              </AnimatePresence>
+        {phase === "menu" && <PWAUpdateNotice />}
+        {/* ---------- menu ---------- */}
+        {phase === "menu" && (
+          <>
+            <div className="absolute inset-0 z-[1] overflow-hidden">
+              <WavyBackground />
             </div>
-          </div>
-          <Dock active={screen === "missions" ? "profile" : screen} onChange={setScreen} />
-        </>
-      )}
+            <div className="menu-shell">
+              <div className="menu-content">
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.div
+                    key={screen}
+                    initial={reduceMotion ? false : { opacity: 0, y: 10, scale: 0.995 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={reduceMotion ? undefined : { opacity: 0, y: -8, scale: 0.995 }}
+                    transition={reduceMotion ? { duration: 0.1 } : { type: "spring", stiffness: 360, damping: 30, mass: 0.8 }}
+                    className="w-full min-h-full"
+                  >
+                    <Suspense fallback={<p className="t-caption p-8" role="status">Opening…</p>}>
+                      {screen === "home" ? (
+                        <HomeScreen
+                          keyboardEnabled={!prepMode && !showTutorial && !dailyReward && !showModifiersModal}
+                          mode={mode}
+                          onMode={setMode}
+                          name={name}
+                          scores={scores}
+                          stats={stats}
+                          onUpdateStats={setStats}
+                          profile={profile}
+                          onPlay={play}
+                          onHowToPlay={howTo}
+                          reducedMotion={reduceMotion}
+                          showHints={settings.showHints}
+                          onFullscreen={toggleFullscreen}
+                          onProfile={() => setScreen("profile")}
+                          onStore={() => setScreen("store")}
+                          onStatsOpen={() => setScreen("stats")}
+                          onMissions={() => setScreen("missions")}
+                          onUpdateProfile={updateProfile}
+                          settings={settings}
+                          modifiers={modifiers}
+                          modifierMultiplier={
+                            mode === "practice" || mode === "daily" || mode === "weekly" ? 1 : getModifierMultiplier(modifiers)
+                          }
+                          onOpenModifiers={
+                            mode === "practice" || mode === "daily" || mode === "weekly" ? undefined : () => setShowModifiersModal(true)
+                          }
+                        />
+                      ) : screen === "missions" ? (
+                        <ProfileScreen
+                          key="missions"
+                          initialTab="tasks"
+                          profile={profile}
+                          onProfile={updateProfile}
+                          stats={stats}
+                          onStats={setStats}
+                          name={name}
+                          onNameChange={setName}
+                          onBack={() => setScreen("home")}
+                          onOpenStore={() => setScreen("store")}
+                        />
+                      ) : screen === "profile" ? (
+                        <ProfileScreen
+                          key="profile"
+                          initialTab="vault"
+                          profile={profile}
+                          onProfile={updateProfile}
+                          stats={stats}
+                          onStats={setStats}
+                          name={name}
+                          onNameChange={setName}
+                          onBack={() => setScreen("home")}
+                          onOpenStore={() => setScreen("store")}
+                        />
+                      ) : screen === "store" ? (
+                        <StoreScreen stats={stats} onStats={setStats} profile={profile} onProfile={updateProfile} />
+                      ) : screen === "stats" ? (
+                        <StatsScreen reducedMotion={reduceMotion} stats={stats} />
+                      ) : (
+                        <SettingsScreen settings={settings} onChange={updateSetting} onBack={() => setScreen("home")} />
+                      )}
+                    </Suspense>
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+            </div>
+            <Dock
+              active={screen === "missions" || screen === "profile" ? "" : screen}
+              onChange={(tab) => setScreen(tab)}
+            />
+          </>
+        )}
 
-      {/* ---------- in-game HUD ---------- */}
-      {(phase === "playing" || phase === "paused") && (
-        <HUD
-          hud={hud}
-          mode={mode}
-          phase={phase}
-          best={best}
-          held={held}
-          settings={settings}
-          muted={muted}
-          musicMuted={musicMuted}
-          onFinishPractice={() => engineRef.current?.finishPractice()}
-          onPause={togglePause}
-          onMute={onMute}
-          onMusic={onMusic}
-          onFocus={onFocus}
-          onDir={onDir}
-          onReleaseDir={onReleaseDir}
-        />
-      )}
+        {/* ---------- in-game HUD ---------- */}
+        {(phase === "playing" || phase === "paused") && (
+          <HUD
+            hud={hud}
+            mode={mode}
+            phase={phase}
+            best={best}
+            held={held}
+            settings={settings}
+            muted={muted}
+            musicMuted={musicMuted}
+            onFinishPractice={() => engineRef.current?.finishPractice()}
+            onPause={togglePause}
+            onMute={onMute}
+            onMusic={onMusic}
+            onFocus={onFocus}
+            onDir={onDir}
+            onReleaseDir={onReleaseDir}
+          />
+        )}
 
-      {phase === "countdown" && countdown !== null && (
-        <div className="start-countdown fixed inset-0 z-40 flex flex-col items-center justify-center gap-5 bg-slate-950 text-white" role="dialog" aria-modal="true" aria-label="Get ready">
-          <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-white/55">
-            Get ready · {MODES[mode]?.label ?? "Arcade"}
-          </p>
-          <div key={countdown} className="countdown-number" role="status" aria-live="assertive" aria-atomic="true">{countdown}</div>
-          <p className="max-w-[34ch] text-center text-[13px] leading-relaxed text-white/60">
-            {mode === "coop"
-              ? "Player 1 uses WASD. Player 2 uses the arrow keys."
-              : mode === "practice"
+        {phase === "countdown" && countdown !== null && (
+          <div
+            className="start-countdown fixed inset-0 z-40 flex flex-col items-center justify-center gap-5 bg-slate-950 text-white"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Get ready"
+          >
+            <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-white/55">
+              Get ready · {MODES[mode]?.label ?? "Arcade"}
+            </p>
+            <div key={countdown} className="countdown-number" role="status" aria-live="assertive" aria-atomic="true">
+              {countdown}
+            </div>
+            <p className="max-w-[34ch] text-center text-[13px] leading-relaxed text-white/60">
+              {mode === "coop"
+                ? "Player 1 uses WASD. Player 2 uses the arrow keys."
+                : mode === "practice"
                 ? "No timer here. Learn the patterns at your own pace."
                 : "Arrow keys, WASD, tap or swipe."}
-          </p>
-          <button className="text-button text-white/70" onClick={goHome}>Cancel</button>
-        </div>
-      )}
-      {/* prep menu */}
-      <AnimatePresence>
-        {prepMode && phase === "menu" && (
-          <PrepOverlay
-            mode={prepMode}
-            profile={profile}
-            onUpdateProfile={updateProfile}
-            stats={stats}
-            onUpdateStats={setStats}
-            onStart={() => confirmPlay()}
-            onCancel={() => setPrepMode(null)}
-            settings={settings}
-            modifierMultiplier={mode === "practice" || mode === "daily" || mode === "weekly" ? 1 : getModifierMultiplier(modifiers)}
-            onOpenModifiers={mode === "practice" || mode === "daily" || mode === "weekly" ? undefined : () => setShowModifiersModal(true)}
-          />
+            </p>
+            <button className="text-button text-white/70" onClick={goHome}>
+              Cancel
+            </button>
+          </div>
         )}
-      </AnimatePresence>
+        {/* prep menu */}
+        <AnimatePresence>
+          {prepMode && phase === "menu" && (
+            <PrepOverlay
+              mode={prepMode}
+              profile={profile}
+              onUpdateProfile={updateProfile}
+              stats={stats}
+              onUpdateStats={setStats}
+              onStart={() => confirmPlay()}
+              onCancel={() => setPrepMode(null)}
+              settings={settings}
+              modifierMultiplier={
+                mode === "practice" || mode === "daily" || mode === "weekly" ? 1 : getModifierMultiplier(modifiers)
+              }
+              onOpenModifiers={
+                mode === "practice" || mode === "daily" || mode === "weekly" ? undefined : () => setShowModifiersModal(true)
+              }
+            />
+          )}
+        </AnimatePresence>
 
-      {launchPending && <div className="surface-backdrop fixed inset-0 z-[220] grid place-items-center" role="dialog" aria-modal="true" aria-label="Preparing run"><div className="surface-card p-6"><p>Preparing your cloud run…</p><button className="v-button mt-4" onClick={goHome}>Cancel</button></div></div>}
-      {phase==="menu" && <AccountStatus note={gameNote}/>}
-      {/* first-run tutorial */}
-      <AnimatePresence>
-        {showTutorial && <TutorialOverlay onDone={finishTutorial} />}
-      </AnimatePresence>
+        {/* first-run tutorial */}
+        <AnimatePresence>
+          {showTutorial && <TutorialOverlay onDone={finishTutorial} />}
+        </AnimatePresence>
 
-      {/* ---------- pause ---------- */}
-      <AnimatePresence>
-        {phase === "paused" && (
-          <PauseOverlay
-            score={hud.score}
-            mode={mode}
-            onFinishPractice={() => engineRef.current?.finishPractice()}
-            onResume={togglePause}
-            onRestart={() => start(mode)}
-            onHome={goHome}
-          />
-        )}
-      </AnimatePresence>
+        {/* ---------- pause ---------- */}
+        <AnimatePresence>
+          {phase === "paused" && (
+            <PauseOverlay
+              score={hud.score}
+              mode={mode}
+              onFinishPractice={() => engineRef.current?.finishPractice()}
+              onResume={togglePause}
+              onRestart={() => start(mode)}
+              onHome={goHome}
+            />
+          )}
+        </AnimatePresence>
 
-      {/* ---------- game over ---------- */}
-      <AnimatePresence>
-        {phase === "over" && summary && (
-          <GameOverOverlay
-            summary={summary}
-            stats={stats}
-            profile={profile}
-            onAgain={() => start(summary.mode)}
-            onHome={goHome}
-            onShare={share}
-            shared={copied}
-          />
-        )}
-      </AnimatePresence>
+        {/* ---------- game over ---------- */}
+        <AnimatePresence>
+          {phase === "over" && summary && (
+            <GameOverOverlay
+              summary={summary}
+              stats={stats}
+              profile={profile}
+              onAgain={() => start(summary.mode)}
+              onHome={goHome}
+              onShare={share}
+              shared={copied}
+            />
+          )}
+        </AnimatePresence>
 
-      {/* ---------- name popup ---------- */}
-      <AnimatePresence>
-        {showNamePopup && (
-          <motion.div
-            variants={backdropVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            className="surface-backdrop fixed inset-0 z-[200] flex items-center justify-center p-4"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="name-popup-title"
-          >
-            <motion.div variants={panelVariants} className="surface-card w-full max-w-[380px] p-6">
-              <p className="t-eyebrow">Global leaderboard</p>
-              <h2 id="name-popup-title" className="t-title mt-1">Choose a code name</h2>
-              <p className="t-body mt-2">
-                This is what appears on global rankings. You can change it later from your profile.
-              </p>
+        {/* ---------- daily reward popup ---------- */}
+        <AnimatePresence>
+          {dailyReward && (
+            <motion.div
+              variants={backdropVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              className="surface-backdrop fixed inset-0 z-[200] flex items-center justify-center p-4"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="daily-reward-title"
+            >
+              <motion.div variants={panelVariants} className="surface-card w-full max-w-[360px] p-6 text-center">
+                <p className="t-eyebrow">Daily check-in</p>
+                <h2 id="daily-reward-title" className="t-title mt-1">
+                  Day {dailyReward.streak} reward
+                </h2>
+                <p className="t-body mt-1.5">Keep the streak going for bigger drops.</p>
 
-              <label className="mt-5 block">
-                <span className="t-caption">Code name</span>
-                <input
-                  type="text"
-                  value={tempName}
-                  onChange={(e) => setTempName(e.target.value)}
-                  placeholder="Operative"
-                  maxLength={15}
-                  autoFocus
-                  className="mt-1.5 w-full rounded-xl border px-3.5 py-2.5 text-[14px] font-medium txt outline-none transition-colors focus:border-[var(--brand)]"
-                  style={{ background: "var(--pill)", borderColor: "var(--panel-border)" }}
-                />
-              </label>
-
-              <div className="dialog-actions mt-5">
-                <button
-                  className="dialog-btn dialog-btn-primary"
-                  onClick={() => {
-                    const finalName = tempName.trim() || "Operative";
-                    setName(finalName);
-                    localStorage.setItem("vector_name_set", "true");
-                    setShowNamePopup(false);
-                  }}
-                >
-                  Save name
-                </button>
-                <button
-                  className="dialog-btn dialog-btn-quiet"
-                  onClick={() => {
-                    localStorage.setItem("vector_name_set", "true");
-                    setShowNamePopup(false);
-                  }}
-                >
-                  Keep my Google name
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ---------- daily reward popup ---------- */}
-      <AnimatePresence>
-        {dailyReward && (
-          <motion.div
-            variants={backdropVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            className="surface-backdrop fixed inset-0 z-[200] flex items-center justify-center p-4"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="daily-reward-title"
-          >
-            <motion.div variants={panelVariants} className="surface-card w-full max-w-[360px] p-6 text-center">
-              <p className="t-eyebrow">Daily check-in</p>
-              <h2 id="daily-reward-title" className="t-title mt-1">Day {dailyReward.streak} reward</h2>
-              <p className="t-body mt-1.5">Keep the streak going for bigger drops.</p>
-
-              <div className="mt-5 flex items-center justify-center gap-3">
-                {dailyReward.sparks > 0 && (
-                  <div className="min-w-[96px] rounded-2xl border px-4 py-3" style={{ borderColor: "var(--panel-border)", background: "var(--pill)" }}>
-                    <div className="num text-[22px] font-semibold" style={{ color: "var(--brand)" }}>
-                      +{dailyReward.sparks}
+                <div className="mt-5 flex items-center justify-center gap-3">
+                  {dailyReward.sparks > 0 && (
+                    <div
+                      className="min-w-[96px] rounded-2xl border px-4 py-3"
+                      style={{ borderColor: "var(--panel-border)", background: "var(--pill)" }}
+                    >
+                      <div className="num text-[22px] font-semibold" style={{ color: "var(--brand)" }}>
+                        +{dailyReward.sparks}
+                      </div>
+                      <div className="t-caption mt-0.5">Sparks</div>
                     </div>
-                    <div className="t-caption mt-0.5">Sparks</div>
-                  </div>
-                )}
-                {dailyReward.diamonds > 0 && (
-                  <div className="min-w-[96px] rounded-2xl border px-4 py-3" style={{ borderColor: "var(--panel-border)", background: "var(--pill)" }}>
-                    <div className="num text-[22px] font-semibold txt">+{dailyReward.diamonds}</div>
-                    <div className="t-caption mt-0.5">Diamonds</div>
-                  </div>
-                )}
-              </div>
+                  )}
+                  {dailyReward.diamonds > 0 && (
+                    <div
+                      className="min-w-[96px] rounded-2xl border px-4 py-3"
+                      style={{ borderColor: "var(--panel-border)", background: "var(--pill)" }}
+                    >
+                      <div className="num text-[22px] font-semibold txt">+{dailyReward.diamonds}</div>
+                      <div className="t-caption mt-0.5">Diamonds</div>
+                    </div>
+                  )}
+                </div>
 
-              <div className="dialog-actions mt-6">
-                <button className="dialog-btn dialog-btn-primary" onClick={() => setDailyReward(null)}>
-                  Claim reward
-                </button>
-              </div>
+                <div className="dialog-actions mt-6">
+                  <button className="dialog-btn dialog-btn-primary" onClick={() => setDailyReward(null)}>
+                    Claim reward
+                  </button>
+                </div>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>
 
-      {restoringIdentity && phase === "menu" && (
-        <div role="status" className="surface-backdrop fixed inset-0 z-[250] grid place-items-center">
-          <p className="t-body">Restoring your progress…</p>
-        </div>
-      )}
-      <ModifiersModal
-        isOpen={showModifiersModal}
-        onClose={() => setShowModifiersModal(false)}
-        modifiers={modifiers}
-        onChange={setModifiers}
-      />
-    </div>
+        <ModifiersModal
+          isOpen={showModifiersModal}
+          onClose={() => setShowModifiersModal(false)}
+          modifiers={modifiers}
+          onChange={setModifiers}
+        />
+      </div>
     </MotionConfig>
   );
 }

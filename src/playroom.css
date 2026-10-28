@@ -83,11 +83,11 @@
 .v-explore-stack .hero-avatar { flex-shrink:0; }
 .v-hero-discovery { background:radial-gradient(ellipse at 8% 80%,#e32e3b12,transparent 70%),var(--surface)!important; }
 .v-home-footer { border-top:1px solid var(--panel-border); margin-top:30px; padding-top:21px; display:flex; align-items:center; justify-content:space-between; gap:15px; font-size:10px; color:var(--text-faint); }
-.v-dock-nav { position:fixed; z-index:40; bottom:max(16px,env(safe-area-inset-bottom)); left:50%; transform:translateX(-50%); width:min(470px,calc(100% - 28px)); }
-.v-dock { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:4px; padding:6px; border:1px solid var(--glass-edge); background:var(--glass-bg); backdrop-filter:blur(24px); border-radius:19px; box-shadow:0 8px 40px #00000024; }
-.v-dock button { position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; min-height:53px; padding:8px 5px; background:none; border:0; border-radius:13px; color:var(--text-faint); font-size:9px; font-weight:550; }
+.v-dock-nav { position:fixed; z-index:40; bottom:max(16px,env(safe-area-inset-bottom)); left:50%; transform:translateX(-50%); width:min(420px,calc(100% - 24px)); }
+.v-dock { display:grid; grid-auto-flow:column; grid-auto-columns:1fr; gap:4px; padding:6px; border:1px solid var(--glass-edge); background:var(--glass-bg); backdrop-filter:blur(24px); border-radius:19px; box-shadow:0 8px 40px #00000024; }
+.v-dock button { position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; min-height:53px; padding:8px 5px; background:none; border:0; border-radius:13px; color:var(--text-faint); font-size:10px; font-weight:550; cursor:pointer; }
 .v-dock button>svg,.v-dock button>span { position:relative; z-index:1; }
-.v-dock button[aria-current="page"] { color:var(--brand); }
+.v-dock button[aria-current="page"],.v-dock button.active { color:var(--brand); }
 .v-dock button:hover { color:var(--text); }
 .v-dock-highlight { position:absolute; inset:0; border-radius:13px; background:var(--brand-soft); border:1px solid var(--selected-border); }
 .v-dock button:focus-visible { outline-offset:-3px; }

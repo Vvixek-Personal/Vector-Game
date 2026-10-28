@@ -1,7 +1,6 @@
 import React from "react";
 import { Sparkles, Gem, ArrowLeft } from "lucide-react";
 import Icon from "./Icon";
-import GoogleAuthButton from "./GoogleAuthButton";
 import { PWAInstallButton } from "./PWAInstallButton";
 
 interface AppHeaderProps {
@@ -13,7 +12,6 @@ interface AppHeaderProps {
   onBack?: () => void;
   actions?: React.ReactNode;
   showWordmark?: boolean;
-  compactAuth?: boolean;
 }
 
 export default function AppHeader({
@@ -25,7 +23,6 @@ export default function AppHeader({
   onBack,
   actions,
   showWordmark = true,
-  compactAuth = true,
 }: AppHeaderProps) {
   const hasCurrencies = typeof sparks === "number" || typeof diamonds === "number";
 
@@ -96,7 +93,6 @@ export default function AppHeader({
         )}
 
         <PWAInstallButton />
-        <GoogleAuthButton compact={compactAuth} />
         {actions}
       </div>
     </header>

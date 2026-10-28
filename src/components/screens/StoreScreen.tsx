@@ -8,8 +8,6 @@ import { uiTap, uiUnlock } from "../../game/haptics";
 import AppHeader from "../AppHeader";
 import { requestStoreAction } from "../../game/economy";
 import { useCatalog } from "../../firebase/catalog";
-import GiftsPanel from "../GiftsPanel";
-import { Gift } from "lucide-react";
 import Modal from "../shared/Modal";
 import SegmentedTabs from "../shared/SegmentedTabs";
 import { ItemArt, LoadoutPreview } from "../store/ItemPreview";
@@ -18,7 +16,7 @@ import { IncubatorView } from "../store/IncubatorView";
 import "../../collection.css";
 
 interface Props { stats: Stats; onStats: (stats: Stats) => void; profile: Profile; onProfile: (profile: Profile) => void }
-type Section = "browse" | "collection" | "wishlist" | "activities" | "exchange" | "gifts";
+type Section = "browse" | "collection" | "wishlist" | "activities" | "exchange";
 const categories = [
   { id: "all", label: "All items" }, { id: "avatars", label: "Avatars" }, { id: "banners", label: "Banners" },
   { id: "frames", label: "Frames" }, { id: "themes", label: "Arena themes" }, { id: "styles", label: "Patterns" },
@@ -80,24 +78,22 @@ export default function StoreScreen({ stats, onStats, profile, onProfile }: Prop
   const shortage = peek ? Math.max(0, peek.cost - (peek.currency === "diamonds" ? stats.diamonds : stats.sparks)) : 0;
 
   return <div className="collection-page">
-    <AppHeader title="Store" subtitle="Looks, rewards and gifts" sparks={stats.sparks} diamonds={stats.diamonds}/>
+    <AppHeader title="Store" subtitle="Looks and cosmetics" sparks={stats.sparks} diamonds={stats.diamonds}/>
     <section className="store-overview">
-      <div><p className="v-eyebrow">THE COLLECTION</p><h1>Make it yours.</h1><p>Preview a new look, find your favorites, or share something with a friend.</p><small>{ownedCount} / {collectibles.length} items available in your collection</small></div>
+      <div><p className="v-eyebrow">THE COLLECTION</p><h1>Make it yours.</h1><p>Preview a new look and customize your arcade experience.</p><small>{ownedCount} / {collectibles.length} items available in your collection</small></div>
       <div className="store-shortcuts"><button onClick={()=>openActivity("spin")}><Disc size={18}/><span>Lucky Spin<small>Daily wheel & rewards</small></span><ArrowUpRight size={14}/></button><button onClick={()=>openActivity("incubator")}><Egg size={18}/><span>Incubator<small>Hatch your next find</small></span><ArrowUpRight size={14}/></button></div>
     </section>
-
 
     <SegmentedTabs label="Store sections" value={section} onChange={changeSection} panelId="store-content" className="v-primary-tabs" options={[
       { id: "browse", label: "Discover", icon: <ShoppingBag size={16}/> },
       { id: "collection", label: "My collection", icon: <Layers size={16}/>, count: ownedCount },
       { id: "wishlist", label: "Wishlist", icon: <Heart size={16}/>, count: wishCount },
-      { id: "gifts", label: "Gifts", icon: <Gift size={16}/> },
       { id: "activities", label: "Activities", icon: <Disc size={16}/> },
       { id: "exchange", label: "Exchange", icon: <Gem size={16}/> },
     ]}/>
     <div className="v-notice" role="status" aria-live="polite">{note || "Cosmetics change your look and sound. Your scores stay skill based."}</div>
 
-    <section id="store-content" role="tabpanel" aria-label={section === "browse" ? "Discover items" : section === "collection" ? "My collection" : section === "wishlist" ? "Wishlist" : section === "activities" ? "Store activities" : section === "gifts" ? "Gifts" : "Currency exchange"}>
+    <section id="store-content" role="tabpanel" aria-label={section === "browse" ? "Discover items" : section === "collection" ? "My collection" : section === "wishlist" ? "Wishlist" : section === "activities" ? "Store activities" : "Currency exchange"}>
       {isCatalog && <>
         <SegmentedTabs label="Item categories" value={filters.tab} onChange={value => patch({ tab: value })} panelId="store-grid-panel" className="v-category-tabs" options={categories}/>
         <div className="v-store-toolbar">
@@ -125,8 +121,6 @@ export default function StoreScreen({ stats, onStats, profile, onProfile }: Prop
           })}</div> : <div className="v-empty"><Heart size={30}/><h3>{section === "wishlist" && !wishCount ? "Keep your favorites close." : "No items match just yet."}</h3><p>{section === "wishlist" && !wishCount ? "Tap the heart on any item to save it here for later." : "Try another category, clear your search, or reset the filters."}</p><button className="v-button" onClick={() => { setFilters(initialFilters); if (section === "wishlist") setSection("browse"); }}>Explore items</button></div>}
         </div>
       </>}
-
-      {section === "gifts" && <GiftsPanel/>}
       {section === "activities" && <div className="v-activity-panel">
         <div className="v-section-heading"><div><p className="v-eyebrow">A LITTLE DISCOVERY</p><h2>Something good is waiting.</h2><p>Visit the wheel or check on your incubating eggs.</p></div></div>
         <SegmentedTabs<"spin" | "incubator"> label="Store activities" value={activity} onChange={setActivity} panelId="activity-content" options={[{ id: "spin", label: "Lucky Spin", icon: <Disc size={16}/> }, { id: "incubator", label: "Incubator", icon: <Egg size={16}/> }]}/>

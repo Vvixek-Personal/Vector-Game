@@ -7,9 +7,7 @@ import { uiConfirm, uiTap, uiSlide } from "../../game/haptics";
 import DepthCarousel from "../DepthCarousel";
 import ModeArtwork from "../ModeArtwork";
 import Avatar from "../Avatar";
-import RoleBadge from "../RoleBadge";
 import Icon from "../Icon";
-import GoogleAuthButton from "../GoogleAuthButton";
 import { PWAInstallButton } from "../PWAInstallButton";
 import { getPlayerLevelProgress } from "../../game/levels";
 import type { GameModifiers } from "../../game/modifiers";
@@ -41,7 +39,6 @@ interface Props {
   onHowToPlay: () => void;
   onFullscreen: () => void;
   onProfile: () => void;
-  onLeaderboard?: () => void;
   onMissions?: () => void;
   onStore?: () => void;
   onStatsOpen?: () => void;
@@ -67,7 +64,6 @@ export default function HomeScreen({
   onHowToPlay,
   onFullscreen,
   onProfile,
-  onLeaderboard,
   onMissions,
   onUpdateProfile,
   settings,
@@ -134,9 +130,6 @@ export default function HomeScreen({
           {/* PWA Install Button */}
           <PWAInstallButton />
 
-          {/* Google Sign-in / Account Status */}
-          <GoogleAuthButton compact />
-
           {onMissions && (
             <motion.button
               whileTap={{ scale: 0.97 }}
@@ -146,18 +139,6 @@ export default function HomeScreen({
             >
               <Icon name="award" size={15} />
               <span className="hidden sm:inline">Missions</span>
-            </motion.button>
-          )}
-
-          {onLeaderboard && (
-            <motion.button
-              whileTap={{ scale: 0.97 }}
-              className="text-button header-chip"
-              onClick={() => { uiTap(); onLeaderboard(); }}
-              title="Open the global leaderboard"
-            >
-              <Icon name="trophy" size={15} />
-              <span className="hidden sm:inline">Leaderboard</span>
             </motion.button>
           )}
 
@@ -185,7 +166,7 @@ export default function HomeScreen({
           >
             <Avatar profile={profile} name={name} size={34} />
             <div className="flex flex-col text-left leading-tight">
-              <span className="player-chip-name">{name.trim() || "Ace"}</span><RoleBadge/>
+              <span className="player-chip-name">{name.trim() || "Ace"}</span>
               <span className="num text-[10px] font-semibold" style={{ color: "var(--brand)" }}>
                 Level {levelInfo.currentLevel}
               </span>
