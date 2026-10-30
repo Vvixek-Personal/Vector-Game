@@ -1,7 +1,7 @@
 import { useCallback, useEffect, type CSSProperties } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { MODES, MODE_ORDER, type GameMode } from "../../game/types";
-import type { ScoreEntry, Stats, Settings } from "../../game/storage";
+import type { ScoreEntry, Stats, Settings, SurvivalProgress } from "../../game/storage";
 import type { Profile } from "../../game/profile";
 import { uiConfirm, uiTap, uiSlide } from "../../game/haptics";
 import DepthCarousel from "../DepthCarousel";
@@ -10,6 +10,7 @@ import Avatar from "../Avatar";
 import Icon from "../Icon";
 import { PWAInstallButton } from "../PWAInstallButton";
 import { getPlayerLevelProgress } from "../../game/levels";
+import { getSurvivalLevel } from "../../game/survival";
 import type { GameModifiers } from "../../game/modifiers";
 
 interface ModeItem {
@@ -48,6 +49,7 @@ interface Props {
   modifiers?: GameModifiers;
   modifierMultiplier?: number;
   onOpenModifiers?: () => void;
+  survivalProgress?: SurvivalProgress;
 }
 
 export default function HomeScreen({
@@ -72,11 +74,15 @@ export default function HomeScreen({
   modifiers,
   modifierMultiplier = 1.0,
   onOpenModifiers,
+  survivalProgress,
 }: Props) {
   const def = MODES[mode];
   const activeIndex = Math.max(0, MODE_ORDER.indexOf(mode));
   const selectMode = useCallback((index: number) => onMode(ITEMS[index].id), [onMode]);
   const levelInfo = getPlayerLevelProgress(stats, profile);
+  const currentSurvivalLevel = survivalProgress
+    ? getSurvivalLevel(survivalProgress.unlockedLevel || 1)
+    : null;
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -212,9 +218,21 @@ export default function HomeScreen({
               exit={{ opacity: 0, y: -6 }}
               transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
             >
-              <h2 id="selected-mode-heading">{def.label}</h2>
-              <p className="mode-description">{def.desc}</p>
-              <p className="mode-rule">{def.tag}</p>
+              <h2 id="selected-mode-heading">
+                {mode === "survival" && currentSurvivalLevel
+                  ? `Survival · Sector ${currentSurvivalLevel.id}`
+                  : def.label}
+              </h2>
+              <p className="mode-description">
+                {mode === "survival" && currentSurvivalLevel
+                  ? `${currentSurvivalLevel.title}: ${currentSurvivalLevel.taskDescription}`
+                  : def.desc}
+              </p>
+              <p className="mode-rule">
+                {mode === "survival" && currentSurvivalLevel
+                  ? `${currentSurvivalLevel.badge} · ${currentSurvivalLevel.lives >= 999 ? "Clock Lives" : `${currentSurvivalLevel.lives} Heart${currentSurvivalLevel.lives > 1 ? "s" : ""}`}`
+                  : def.tag}
+              </p>
             </motion.div>
           </AnimatePresence>
           <motion.button
@@ -229,7 +247,11 @@ export default function HomeScreen({
               }
             }}
           >
-            <Icon name="play" size={19} />Play {def.label}<Icon name="right" size={17} />
+            <Icon name="play" size={19} />
+            {mode === "survival" && currentSurvivalLevel
+              ? `Deploy Sector ${currentSurvivalLevel.id}`
+              : `Play ${def.label}`}
+            <Icon name="right" size={17} />
           </motion.button>
 
           {onOpenModifiers && (

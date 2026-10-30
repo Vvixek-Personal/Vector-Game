@@ -562,6 +562,7 @@ export default function App() {
                           onOpenModifiers={
                             mode === "practice" || mode === "daily" || mode === "weekly" ? undefined : () => setShowModifiersModal(true)
                           }
+                          survivalProgress={survivalProgress}
                         />
                       ) : screen === "survival" ? (
                         <SurvivalScreen
