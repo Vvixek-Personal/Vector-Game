@@ -104,6 +104,7 @@
 .v-empty p { font-size:13px; color:var(--text-dim); line-height:1.6; max-width:48ch; }
 .v-empty .v-button { margin-top:7px; }
 .v-button { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:43px; padding:11px 17px; color:var(--text); font-size:12px; font-weight:650; border:1px solid var(--panel-border); background:var(--surface-raised); border-radius:10px; transition:background 150ms,transform 150ms; }
+.v-button-sm { min-height:35px; padding:7px 13px; font-size:11px; }
 .v-button:hover { background:var(--pill-hover); }
 .v-button:active { transform:scale(.98); }
 .v-button-primary { background:var(--brand); color:var(--brand-on); border-color:transparent; }

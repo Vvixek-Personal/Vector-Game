@@ -82,8 +82,13 @@ export default function App() {
   const profileRef = useRef(profile);
   const [hud, setHud] = useState<HudState>(INITIAL_HUD);
   const [held, setHeld] = useState<DirName[]>([]);
-  const [muted, setMuted] = useState(false);
-  const [musicMuted, setMusicMuted] = useState(false);
+  const [muted, setMuted] = useState(() => settings.sfxEnabled === false);
+  const [musicMuted, setMusicMuted] = useState(() => settings.musicEnabled === false);
+
+  useEffect(() => {
+    setMuted(settings.sfxEnabled === false);
+    setMusicMuted(settings.musicEnabled === false);
+  }, [settings.sfxEnabled, settings.musicEnabled]);
   const [scores, setScores] = useState<ScoreEntry[]>(() => loadScores("arcade"));
   const [stats, setStats] = useState<Stats>(() => loadStats());
   const [summary, setSummary] = useState<GameSummary | null>(null);
@@ -373,16 +378,18 @@ export default function App() {
   }, []);
 
   const onMute = useCallback(() => {
-    setMuted((v) => {
-      engineRef.current?.sound.setMuted(!v);
-      return !v;
+    setSettings((prev) => {
+      const nextSfx = prev.sfxEnabled === false;
+      engineRef.current?.sound.setMuted(!nextSfx);
+      return { ...prev, sfxEnabled: nextSfx };
     });
   }, []);
 
   const onMusic = useCallback(() => {
-    setMusicMuted((v) => {
-      engineRef.current?.sound.setMusicMuted(!v);
-      return !v;
+    setSettings((prev) => {
+      const nextMusic = prev.musicEnabled === false;
+      engineRef.current?.sound.setMusicMuted(!nextMusic);
+      return { ...prev, musicEnabled: nextMusic };
     });
   }, []);
 

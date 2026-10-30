@@ -295,6 +295,8 @@ export class Engine {
     this.keyMap = resolveKeyMap(settings);
     this.sound.setMusicStyle(settings.musicStyle);
     this.sound.setGlobalMuted(settings.soundEnabled === false);
+    this.sound.setMuted(settings.sfxEnabled === false);
+    this.sound.setMusicMuted(settings.musicEnabled === false);
     this.sound.setVolumes(settings.sfxVolume ?? 100, settings.musicVolume ?? 80);
     this.sound.setAudioPack(settings.audioPack || "default");
     const c = this.themeColors(settings);

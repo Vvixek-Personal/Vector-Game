@@ -71,6 +71,8 @@ export interface Settings {
   autoPauseBlur: boolean;
   musicStyle: MusicStyle;
   soundEnabled: boolean;
+  sfxEnabled: boolean;
+  musicEnabled: boolean;
   sfxVolume: number;
   musicVolume: number;
   audioPack: AudioPack;
@@ -104,6 +106,8 @@ const DEFAULT_SETTINGS: Settings = {
   autoPauseBlur: true,
   musicStyle: "drive",
   soundEnabled: true,
+  sfxEnabled: true,
+  musicEnabled: true,
   sfxVolume: 100,
   musicVolume: 80,
   audioPack: "default",
