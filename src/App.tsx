@@ -11,6 +11,7 @@ const StoreScreen = lazy(() => import("./components/screens/StoreScreen"));
 const StatsScreen = lazy(() => import("./components/screens/StatsScreen"));
 const SettingsScreen = lazy(() => import("./components/screens/SettingsScreen"));
 const ProfileScreen = lazy(() => import("./components/screens/ProfileScreen"));
+const SurvivalScreen = lazy(() => import("./components/screens/SurvivalScreen"));
 import { GameOverOverlay, PauseOverlay, TutorialOverlay, PrepOverlay } from "./components/overlays/Overlays";
 import { ModifiersModal } from "./components/ModifiersModal";
 import { type GameModifiers, loadModifiers, getModifierMultiplier } from "./game/modifiers";
@@ -23,6 +24,7 @@ import {
   loadScores,
   loadSettings,
   loadStats,
+  loadSurvivalProgress,
   markTutorialSeen,
   recordRun,
   saveName,
@@ -31,7 +33,9 @@ import {
   type ScoreEntry,
   type Settings,
   type Stats,
+  type SurvivalProgress,
 } from "./game/storage";
+import { type SurvivalLevel, getSurvivalLevel } from "./game/survival";
 import type { GameSummary } from "./game/types";
 import { loadProfile, saveProfile, type Profile } from "./game/profile";
 import { loadMissions, updateMissionsProgress } from "./game/missions";
@@ -40,7 +44,7 @@ import "./collection.css";
 import "./playroom.css";
 import "./account-ui.css";
 
-type Screen = "home" | "store" | "stats" | "settings" | "profile" | "missions";
+type Screen = "home" | "store" | "stats" | "settings" | "profile" | "missions" | "survival";
 
 const INITIAL_HUD: HudState = {
   score: 0,
@@ -99,6 +103,13 @@ export default function App() {
   const modifiersRef = useRef(modifiers);
   const catalogRevision = useCatalog();
   const [dailyReward, setDailyReward] = useState<{ sparks: number; diamonds: number; streak: number } | null>(null);
+  const [survivalProgress, setSurvivalProgress] = useState<SurvivalProgress>(() => loadSurvivalProgress());
+  const [activeSurvivalLevel, setActiveSurvivalLevel] = useState<SurvivalLevel>(() => getSurvivalLevel(1));
+  const survivalLevelRef = useRef<SurvivalLevel>(activeSurvivalLevel);
+
+  useEffect(() => {
+    survivalLevelRef.current = activeSurvivalLevel;
+  }, [activeSurvivalLevel]);
 
   useEffect(() => {
     modifiersRef.current = modifiers;
@@ -193,6 +204,10 @@ export default function App() {
           streak: sum.bestStreak,
           perfectHits: sum.perfectHits,
         });
+        if (sum.mode === "survival") {
+          setSurvivalProgress(loadSurvivalProgress());
+        }
+
         setSummary(sum);
         setHeld([]);
       },
@@ -292,17 +307,41 @@ export default function App() {
           engine.sound.click();
         } else {
           stopCountdown();
-          engine.startGame(nextMode, nextModifiers);
+          engine.startGame(
+            nextMode,
+            nextModifiers,
+            undefined,
+            nextMode === "survival" ? survivalLevelRef.current : undefined
+          );
         }
       }, 1000);
     },
     [stopCountdown]
   );
 
+  const startSurvivalSector = useCallback((level: SurvivalLevel) => {
+    setActiveSurvivalLevel(level);
+    survivalLevelRef.current = level;
+    setPrepMode(null);
+    start("survival");
+  }, [start]);
+
+  const handleNextSurvivalSector = useCallback(() => {
+    const nextLevelId = (summary?.survivalLevel ?? 1) + 1;
+    if (nextLevelId <= 10) {
+      const nextLevel = getSurvivalLevel(nextLevelId);
+      startSurvivalSector(nextLevel);
+    }
+  }, [summary, startSurvivalSector]);
+
   const play = useCallback(
     (m?: GameMode) => {
       const selected = m ?? modeRef.current;
       modeRef.current = selected;
+      if (selected === "survival") {
+        setScreen("survival");
+        return;
+      }
       setPrepMode(selected);
     },
     []
@@ -513,6 +552,7 @@ export default function App() {
                           onStore={() => setScreen("store")}
                           onStatsOpen={() => setScreen("stats")}
                           onMissions={() => setScreen("missions")}
+                          onOpenSurvival={() => setScreen("survival")}
                           onUpdateProfile={updateProfile}
                           settings={settings}
                           modifiers={modifiers}
@@ -522,6 +562,12 @@ export default function App() {
                           onOpenModifiers={
                             mode === "practice" || mode === "daily" || mode === "weekly" ? undefined : () => setShowModifiersModal(true)
                           }
+                        />
+                      ) : screen === "survival" ? (
+                        <SurvivalScreen
+                          survivalProgress={survivalProgress}
+                          onSelectLevel={startSurvivalSector}
+                          onBack={() => setScreen("home")}
                         />
                       ) : screen === "missions" ? (
                         <ProfileScreen
@@ -562,7 +608,7 @@ export default function App() {
               </div>
             </div>
             <Dock
-              active={screen === "missions" || screen === "profile" ? "" : screen}
+              active={screen === "missions" || screen === "profile" || screen === "survival" ? "" : screen}
               onChange={(tab) => setScreen(tab)}
             />
           </>
@@ -662,10 +708,22 @@ export default function App() {
               summary={summary}
               stats={stats}
               profile={profile}
-              onAgain={() => start(summary.mode)}
+              onAgain={() => {
+                if (summary.mode === "survival") {
+                  startSurvivalSector(activeSurvivalLevel);
+                } else {
+                  start(summary.mode);
+                }
+              }}
               onHome={goHome}
               onShare={share}
               shared={copied}
+              onNextSurvival={handleNextSurvivalSector}
+              onSurvivalMenu={() => {
+                setSummary(null);
+                setPhase("menu");
+                setScreen("survival");
+              }}
             />
           )}
         </AnimatePresence>

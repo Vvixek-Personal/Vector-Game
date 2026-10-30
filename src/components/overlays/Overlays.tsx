@@ -1,7 +1,7 @@
 import { requestStoreAction } from "../../game/economy";
 import { ownsStoreItem } from "../../game/store";
 import React, { useState } from "react";
-import { Sparkles, X } from "lucide-react";
+import { Sparkles, X, Star } from "lucide-react";
 import { motion } from "motion/react";
 import type { GameSummary, GameMode } from "../../game/types";
 import { MODES } from "../../game/types";
@@ -11,6 +11,7 @@ import { getPlayerLevelProgress } from "../../game/levels";
 import { AVATARS, isUnlocked } from "../../game/profile";
 import { STORE_ITEMS } from "../../game/catalog";
 import { uiConfirm, uiTap } from "../../game/haptics";
+import { getSurvivalLevel } from "../../game/survival";
 import Avatar from "../Avatar";
 import { backdropVariants, panelVariants, rowVariants } from "../../utils/motion";
 
@@ -193,6 +194,8 @@ export function GameOverOverlay({
   onHome,
   onShare,
   shared,
+  onNextSurvival,
+  onSurvivalMenu,
 }: {
   summary: GameSummary;
   stats?: Stats;
@@ -201,6 +204,8 @@ export function GameOverOverlay({
   onHome: () => void;
   onShare: () => void;
   shared: boolean;
+  onNextSurvival?: () => void;
+  onSurvivalMenu?: () => void;
 }) {
   const def = MODES[summary.mode];
   const versus = summary.versus;
@@ -226,7 +231,7 @@ export function GameOverOverlay({
     ["Acc", `${summary.accuracy}%`, "accuracy"],
     ["Avg", summary.avgReactionMs ? `${summary.avgReactionMs} ms` : "—", "reaction"],
     ["Streak", String(summary.bestStreak), "streak"],
-    ["Sparks", summary.rewardPending ? "Saving…" : `+${summary.mode === "practice" ? 0 : sparksForRun(summary.score, summary.bestStreak)}`, "sparks"],
+    ["Sparks", summary.rewardPending ? "Saving…" : `+${summary.mode === "practice" ? 0 : (summary.survivalSparksAwarded ?? sparksForRun(summary.score, summary.bestStreak))}`, "sparks"],
   ];
 
   return (
@@ -240,6 +245,63 @@ export function GameOverOverlay({
           <p className="t-body num mt-2">
             P1 {versus[0]} <span className="faint">·</span> P2 {versus[1]}
           </p>
+        </div>
+      ) : summary.mode === "survival" ? (
+        <div className="text-center">
+          <p className="t-eyebrow">
+            Sector {summary.survivalLevel} · {summary.survivalCleared ? "Sector Cleared!" : "Sector Failed"}
+          </p>
+
+          <div className="mt-3 flex items-center justify-center gap-2">
+            {[1, 2, 3].map((starIdx) => {
+              const earned = (summary.survivalStars ?? 0) >= starIdx;
+              return (
+                <motion.div
+                  key={starIdx}
+                  initial={{ scale: 0.6, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.08 * starIdx, type: "spring", stiffness: 320, damping: 20 }}
+                >
+                  <Star
+                    size={28}
+                    className={
+                      earned
+                        ? "fill-amber-400 text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]"
+                        : "text-zinc-600 fill-zinc-800/40"
+                    }
+                  />
+                </motion.div>
+              );
+            })}
+          </div>
+
+          <div className="num mt-2 text-[44px] font-semibold leading-none tracking-[-.05em] txt">
+            {summary.score.toLocaleString()}
+          </div>
+
+          {summary.survivalCleared ? (
+            <div className="mt-2.5 flex items-center justify-center gap-2 flex-wrap">
+              {(summary.survivalSparksAwarded ?? 0) > 0 && (
+                <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 text-[11px] font-bold text-amber-300">
+                  +{summary.survivalSparksAwarded} Sparks
+                </span>
+              )}
+              {(summary.survivalDiamondsAwarded ?? 0) > 0 && (
+                <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-0.5 text-[11px] font-bold text-cyan-300">
+                  +{summary.survivalDiamondsAwarded} Diamonds
+                </span>
+              )}
+              {summary.survivalNewBestStars && (
+                <span className="rounded-full border border-purple-500/30 bg-purple-500/10 px-2.5 py-0.5 text-[11px] font-bold text-purple-300">
+                  ★ New Star Best
+                </span>
+              )}
+            </div>
+          ) : (
+            <p className="t-caption mt-2 text-rose-300 font-medium">
+              Sector objective not completed. Re-arm and try again!
+            </p>
+          )}
         </div>
       ) : (
         <div className="text-center">
@@ -318,13 +380,25 @@ export function GameOverOverlay({
       {reactionNote && !versus && <p className="t-caption mt-3 text-center">{reactionNote}</p>}
 
       <div className="dialog-actions mt-5">
-        <motion.button whileTap={{ scale: 0.985 }} onClick={() => onAgain()} className="dialog-btn dialog-btn-primary">
-          Play again
-        </motion.button>
-        <div className="grid grid-cols-2 gap-2">
-          <motion.button whileTap={{ scale: 0.985 }} onClick={onShare} className="dialog-btn">
-            {shared ? "Copied" : "Share"}
+        {summary.mode === "survival" && summary.survivalCleared && onNextSurvival && (summary.survivalLevel ?? 1) < 10 ? (
+          <motion.button whileTap={{ scale: 0.985 }} onClick={onNextSurvival} className="dialog-btn dialog-btn-primary">
+            Next Sector (Level {(summary.survivalLevel ?? 1) + 1})
           </motion.button>
+        ) : (
+          <motion.button whileTap={{ scale: 0.985 }} onClick={() => onAgain()} className="dialog-btn dialog-btn-primary">
+            {summary.mode === "survival" ? (summary.survivalCleared ? "Replay Sector" : "Retry Sector") : "Play again"}
+          </motion.button>
+        )}
+        <div className="grid grid-cols-2 gap-2">
+          {onSurvivalMenu && summary.mode === "survival" ? (
+            <motion.button whileTap={{ scale: 0.985 }} onClick={onSurvivalMenu} className="dialog-btn">
+              All Sectors
+            </motion.button>
+          ) : (
+            <motion.button whileTap={{ scale: 0.985 }} onClick={onShare} className="dialog-btn">
+              {shared ? "Copied" : "Share"}
+            </motion.button>
+          )}
           <motion.button whileTap={{ scale: 0.985 }} onClick={() => onHome()} className="dialog-btn">
             Home
           </motion.button>

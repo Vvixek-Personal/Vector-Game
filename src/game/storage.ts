@@ -465,6 +465,144 @@ export function checkDailyLogin(stats: Stats): { nextStats: Stats; rewardSparks:
   return { nextStats, rewardSparks: sparks, rewardDiamonds: diamonds };
 }
 
+// ---------------------------------------------------------------- survival
+
+const SURVIVAL_KEY = "vector_survival_v1";
+
+export interface SurvivalLevelScore {
+  completed: boolean;
+  stars: number;
+  bestScore: number;
+  bestTime?: number;
+  bestAccuracy?: number;
+  clearedAt?: string;
+}
+
+export interface SurvivalProgress {
+  unlockedLevel: number;
+  levels: Record<number, SurvivalLevelScore>;
+  totalStars: number;
+}
+
+const DEFAULT_SURVIVAL_PROGRESS: SurvivalProgress = {
+  unlockedLevel: 1,
+  levels: {},
+  totalStars: 0,
+};
+
+export function loadSurvivalProgress(): SurvivalProgress {
+  try {
+    const raw = localStorage.getItem(SURVIVAL_KEY);
+    if (!raw) return { ...DEFAULT_SURVIVAL_PROGRESS, levels: {} };
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") return { ...DEFAULT_SURVIVAL_PROGRESS, levels: {} };
+    const unlockedLevel = Number.isSafeInteger(parsed.unlockedLevel)
+      ? Math.max(1, Math.min(10, parsed.unlockedLevel))
+      : 1;
+    const levels: Record<number, SurvivalLevelScore> = {};
+    let totalStars = 0;
+    if (parsed.levels && typeof parsed.levels === "object") {
+      for (const [key, val] of Object.entries(parsed.levels)) {
+        const id = Number(key);
+        if (Number.isSafeInteger(id) && id >= 1 && id <= 10 && val && typeof val === "object") {
+          const item = val as Partial<SurvivalLevelScore>;
+          const stars = Number.isSafeInteger(item.stars) ? Math.max(0, Math.min(3, item.stars!)) : 0;
+          levels[id] = {
+            completed: Boolean(item.completed),
+            stars,
+            bestScore: Number.isSafeInteger(item.bestScore) ? Math.max(0, item.bestScore!) : 0,
+            bestTime: typeof item.bestTime === "number" ? Math.max(0, item.bestTime) : undefined,
+            bestAccuracy: typeof item.bestAccuracy === "number" ? Math.max(0, Math.min(100, item.bestAccuracy)) : undefined,
+            clearedAt: typeof item.clearedAt === "string" ? item.clearedAt : undefined,
+          };
+          totalStars += stars;
+        }
+      }
+    }
+    return { unlockedLevel, levels, totalStars };
+  } catch {
+    return { ...DEFAULT_SURVIVAL_PROGRESS, levels: {} };
+  }
+}
+
+export function saveSurvivalProgress(p: SurvivalProgress) {
+  try {
+    persistSave("survivalProgress", p);
+    localStorage.setItem(SURVIVAL_KEY, JSON.stringify(p));
+  } catch {
+    /* ignore */
+  }
+}
+
+export function recordSurvivalClear(
+  levelId: number,
+  stars: number,
+  score: number,
+  accuracy: number,
+  timeTaken: number,
+  baseRewardSparks: number,
+  baseRewardDiamonds: number,
+): { progress: SurvivalProgress; sparksAwarded: number; diamondsAwarded: number; isNewBestStars: boolean } {
+  const current = loadSurvivalProgress();
+  const existing = current.levels[levelId];
+  const oldStars = existing?.stars ?? 0;
+  const isNewBestStars = stars > oldStars;
+  const wasAlreadyCompleted = Boolean(existing?.completed);
+
+  let sparksAwarded = 0;
+  let diamondsAwarded = 0;
+
+  if (!wasAlreadyCompleted) {
+    sparksAwarded = baseRewardSparks + (stars > 1 ? (stars - 1) * 20 : 0);
+    diamondsAwarded = baseRewardDiamonds;
+  } else if (isNewBestStars) {
+    sparksAwarded = (stars - oldStars) * 25;
+    if (stars === 3 && oldStars < 3) diamondsAwarded += 1;
+  }
+
+  const updatedStars = Math.max(oldStars, stars);
+  const updatedLevelScore: SurvivalLevelScore = {
+    completed: true,
+    stars: updatedStars,
+    bestScore: Math.max(existing?.bestScore ?? 0, score),
+    bestTime: existing?.bestTime ? Math.min(existing.bestTime, timeTaken) : timeTaken,
+    bestAccuracy: Math.max(existing?.bestAccuracy ?? 0, accuracy),
+    clearedAt: new Date().toISOString(),
+  };
+
+  const nextLevels = { ...current.levels, [levelId]: updatedLevelScore };
+  const nextUnlocked = Math.max(current.unlockedLevel, Math.min(10, levelId + 1));
+  let nextTotalStars = 0;
+  for (const l of Object.values(nextLevels)) {
+    nextTotalStars += l.stars;
+  }
+
+  const nextProgress: SurvivalProgress = {
+    unlockedLevel: nextUnlocked,
+    levels: nextLevels,
+    totalStars: nextTotalStars,
+  };
+
+  saveSurvivalProgress(nextProgress);
+
+  if (sparksAwarded > 0 || diamondsAwarded > 0) {
+    const s = loadStats();
+    saveStats({
+      ...s,
+      sparks: (s.sparks ?? 0) + sparksAwarded,
+      sparksEarned: (s.sparksEarned ?? 0) + sparksAwarded,
+      diamonds: (s.diamonds ?? 0) + diamondsAwarded,
+    });
+  }
+
+  return {
+    progress: nextProgress,
+    sparksAwarded,
+    diamondsAwarded,
+    isNewBestStars,
+  };
+}
+
 // ---------------------------------------------------------------- misc
 
 export function sanitizeName(raw: unknown): string {

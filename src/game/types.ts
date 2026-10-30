@@ -7,6 +7,7 @@ export type DirName = "N" | "E" | "S" | "W";
 export type GameMode =
   | "practice"
   | "arcade"
+  | "survival"
   | "coop"
   | "waves"
   | "memory"
@@ -136,6 +137,11 @@ export const MODES: Record<GameMode, ModeDef> = {
     desc: "Match the glowing arrow and climb a high score.",
     lives: 3, roundTime: 2.4, players: 1,
   },
+  survival: {
+    label: "Survival", icon: "⚔", tag: "10 trial sectors", color: "#f43f5e",
+    desc: "Pass unique levels with shifting rules: 1 heart, rush clock, time trial, no-wrong precision, and more.",
+    lives: 3, roundTime: 2.2, players: 1,
+  },
   coop: {
     label: "Co-op", icon: "✦✦", tag: "2 players · 1 team", color: "#a78bfa",
     desc: "You on WASD, a friend on arrows. Both must hit every arrow.",
@@ -190,6 +196,7 @@ export const MODES: Record<GameMode, ModeDef> = {
 
 export const MODE_ORDER: GameMode[] = [
   "arcade",
+  "survival",
   "practice",
   "coop",
   "waves",
@@ -232,6 +239,17 @@ export interface HudState {
   focusAvailable: boolean;
   modifiers?: GameModifiers;
   modifierMultiplier?: number;
+  survival?: {
+    level: number;
+    title: string;
+    badge: string;
+    taskType: string;
+    progress: number;
+    target: number;
+    timeRemaining?: number;
+    noWrong?: boolean;
+    duration?: number;
+  } | null;
 }
 
 export interface GameSummary {
@@ -255,6 +273,12 @@ export interface GameSummary {
   rank?: "SSS" | "S" | "A" | "B" | "C";
   modifierMultiplier?: number;
   xpGained?: number;
+  survivalLevel?: number;
+  survivalCleared?: boolean;
+  survivalStars?: number;
+  survivalNewBestStars?: boolean;
+  survivalSparksAwarded?: number;
+  survivalDiamondsAwarded?: number;
 }
 
 export interface EngineEvents {

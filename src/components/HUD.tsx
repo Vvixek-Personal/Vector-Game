@@ -116,7 +116,34 @@ export default function HUD({
 
       {/* center: mode-specific status */}
       <div className="pointer-events-none absolute left-1/2 top-3 z-20 flex -translate-x-1/2 flex-col items-center gap-1 sm:top-5">
-        {mode === "practice" ? (
+        {mode === "survival" && hud.survival ? (
+          <div className="flex flex-col items-center gap-1">
+            <div className="glass flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-center">
+              <span className="rounded-md px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-rose-400 border border-rose-500/30 bg-rose-500/10">
+                S{hud.survival.level}
+              </span>
+              <span className="text-[11px] font-semibold tracking-wide txt">
+                {hud.survival.title}
+              </span>
+              <span className="faint">·</span>
+              <span className="num text-[11px] font-bold text-amber-400">
+                {hud.survival.taskType === "survive_time"
+                  ? `${hud.survival.timeRemaining ?? 0}s left`
+                  : `${hud.survival.progress}/${hud.survival.target} hits`}
+              </span>
+              {hud.survival.noWrong && (
+                <span className="rounded-full bg-rose-500/20 px-1.5 py-0.5 text-[9px] font-bold text-rose-300">
+                  NO WRONG
+                </span>
+              )}
+            </div>
+            {hud.survival.badge && (
+              <span className="text-[9.5px] font-semibold uppercase tracking-widest faint">
+                {hud.survival.badge}
+              </span>
+            )}
+          </div>
+        ) : mode === "practice" ? (
           <div className="glass rounded-xl px-3 py-2 text-center txt"><p className="text-[10px] font-semibold uppercase tracking-[.16em] faint">Practice · untimed</p><p className="mt-1 text-[12px] dim" data-practice-direction={hud.need.join(",")}>Try {hud.need.map(d => DIR_GLYPH[d]).join(" + ")}</p>{phase === "playing" && <button className="pointer-events-auto mt-1 text-xs underline underline-offset-4" onClick={onFinishPractice}>Finish practice</button>}</div>
         ) : mode === "versus" && hud.versus ? (
           <>

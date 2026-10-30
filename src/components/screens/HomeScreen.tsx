@@ -40,6 +40,7 @@ interface Props {
   onFullscreen: () => void;
   onProfile: () => void;
   onMissions?: () => void;
+  onOpenSurvival?: () => void;
   onStore?: () => void;
   onStatsOpen?: () => void;
   onUpdateProfile: (p: Profile) => void;
@@ -65,6 +66,7 @@ export default function HomeScreen({
   onFullscreen,
   onProfile,
   onMissions,
+  onOpenSurvival,
   onUpdateProfile,
   settings,
   modifiers,
@@ -116,8 +118,12 @@ export default function HomeScreen({
 
   const startMode = useCallback((_index: number, item: ModeItem) => {
     uiConfirm();
-    onPlay(item.id);
-  }, [onPlay]);
+    if (item.id === "survival" && onOpenSurvival) {
+      onOpenSurvival();
+    } else {
+      onPlay(item.id);
+    }
+  }, [onPlay, onOpenSurvival]);
 
   return (
     <div className="home-page">
@@ -129,6 +135,18 @@ export default function HomeScreen({
         <div className="home-header-actions">
           {/* PWA Install Button */}
           <PWAInstallButton />
+
+          {onOpenSurvival && (
+            <motion.button
+              whileTap={{ scale: 0.97 }}
+              className="text-button header-chip text-rose-300 border-rose-500/30 hover:border-rose-400"
+              onClick={() => { uiTap(); onOpenSurvival(); }}
+              title="Open Survival Campaign"
+            >
+              <span className="text-rose-400 font-bold">⚔</span>
+              <span className="hidden sm:inline font-semibold">Survival</span>
+            </motion.button>
+          )}
 
           {onMissions && (
             <motion.button
@@ -202,7 +220,14 @@ export default function HomeScreen({
           <motion.button
             whileTap={{ scale: 0.985 }}
             className="primary-action cursor-pointer"
-            onClick={() => { uiConfirm(); onPlay(mode); }}
+            onClick={() => {
+              uiConfirm();
+              if (mode === "survival" && onOpenSurvival) {
+                onOpenSurvival();
+              } else {
+                onPlay(mode);
+              }
+            }}
           >
             <Icon name="play" size={19} />Play {def.label}<Icon name="right" size={17} />
           </motion.button>

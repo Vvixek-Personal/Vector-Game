@@ -5,8 +5,9 @@
 import { SoundManager } from "./audio";
 import { Fx } from "./fx";
 import { playHaptic } from "./haptics";
-import { getDailyId, getWeeklyId, dailySeed, weeklySeed, bestScore, resolveKeyMap, type Settings, type ThemeId } from "./storage";
+import { getDailyId, getWeeklyId, dailySeed, weeklySeed, bestScore, resolveKeyMap, recordSurvivalClear, type Settings, type ThemeId } from "./storage";
 import { type GameModifiers, getModifierMultiplier } from "./modifiers";
+import { type SurvivalLevel, getSurvivalLevel, evaluateSurvivalStars } from "./survival";
 import {
   ALL_DIRS,
   BASE_SCORE,
@@ -233,6 +234,15 @@ export class Engine {
   private challengeId: string | undefined;
   private shopTheme: { bg: [string, string, string]; accent: string; decoy: string } | null = null;
 
+  // survival mode
+  private survivalConfig: SurvivalLevel | null = null;
+  private survivalHitsDone = 0;
+  private survivalTimeElapsed = 0;
+  private survivalLowestClock = 9999;
+  private survivalOppositeMisses = 0;
+  private survivalCleared = false;
+  private maxComboReached = 1;
+
   constructor(canvas: HTMLCanvasElement, settings: Settings, events: EngineEvents) {
     this.canvas = canvas;
     this.events = events;
@@ -311,13 +321,33 @@ export class Engine {
     if (this.phase === "paused" || this.phase === "over") this.render();
   }
 
-  startGame(mode: GameMode, modifiers?: GameModifiers, sessionChallengeId?: string) {
+  startGame(mode: GameMode, modifiers?: GameModifiers, sessionChallengeId?: string, survivalLevel?: SurvivalLevel) {
     if (this.destroyed) return;
     this.stopRendering();
     this.pausedAt = 0;
     this.mode = mode;
     this.def = MODES[mode];
-    this.modifiers = mode === "practice" || mode === "daily" || mode === "weekly" ? {} : modifiers ? { ...modifiers } : {};
+
+    if (mode === "survival") {
+      this.survivalConfig = survivalLevel || getSurvivalLevel(1);
+      const sc = this.survivalConfig;
+      this.def = {
+        ...MODES.survival,
+        lives: sc.lives,
+        roundTime: sc.roundTime,
+        total: sc.taskType === "rush" ? (sc.duration ?? 40) : (sc.taskType === "quota" && sc.duration ? sc.duration : sc.duration),
+        reveal: sc.memoryReveal,
+        onHit: sc.onHitAddTime,
+        onMiss: sc.onMissSubTime,
+      };
+      this.modifiers = {
+        ...(sc.modifiers ?? {}),
+        ...(modifiers ?? {}),
+      };
+    } else {
+      this.survivalConfig = null;
+      this.modifiers = mode === "practice" || mode === "daily" || mode === "weekly" ? {} : modifiers ? { ...modifiers } : {};
+    }
     
     const suppliedDaily=mode==="daily"&&/^\d{4}-\d{2}-\d{2}$/.test(sessionChallengeId||"");
     const suppliedWeekly=mode==="weekly"&&/^\d{4}_W\d{1,2}$/.test(sessionChallengeId||"");
@@ -356,6 +386,15 @@ export class Engine {
     this.focusActive = false;
     this.focusLeft = 0;
     this.runClock = 0;
+
+    // survival reset
+    this.survivalHitsDone = 0;
+    this.survivalTimeElapsed = 0;
+    this.survivalLowestClock = (this.def.total ?? 0) > 0 ? this.def.total! : 9999;
+    this.survivalOppositeMisses = 0;
+    this.survivalCleared = false;
+    this.maxComboReached = 1;
+
     this.clearSoloInput();
     this.phase = "playing";
     this.sound.start();
@@ -523,10 +562,11 @@ export class Engine {
     }
 
     // memory: reveal -> recall
-    if (this.mode === "memory") {
+    if (this.mode === "memory" || (this.mode === "survival" && Boolean(this.survivalConfig?.memoryReveal))) {
       if (this.memoryPhase === "reveal") {
         this.revealT += dt;
-        if (this.revealT >= (this.def.reveal ?? 0.9)) {
+        const revTime = this.survivalConfig?.memoryReveal ?? this.def.reveal ?? 0.9;
+        if (this.revealT >= revTime) {
           this.memoryPhase = "recall";
           this.timeLeft = this.roundDuration();
           this.clearSoloInput();
@@ -534,6 +574,20 @@ export class Engine {
           this.emitHud();
         }
         return;
+      }
+    }
+
+    // survival progress tracking & time-based victory
+    if (this.mode === "survival" && this.survivalConfig) {
+      this.survivalTimeElapsed += dt;
+      if (this.def.total && this.total > 0) {
+        this.survivalLowestClock = Math.min(this.survivalLowestClock, this.total);
+      }
+      if (this.survivalConfig.taskType === "survive_time" && this.survivalConfig.duration) {
+        if (this.survivalTimeElapsed >= this.survivalConfig.duration) {
+          this.survivalWin();
+          return;
+        }
       }
     }
 
@@ -584,7 +638,11 @@ export class Engine {
     this.visualDir = dir;
 
     const r = this.rand();
-    this.mark = r < 0.08 ? "bonus" : r < 0.23 ? "opposite" : "none";
+    if (this.mode === "survival" && this.survivalConfig?.oppositeChance !== undefined) {
+      this.mark = r < this.survivalConfig.oppositeChance ? "opposite" : r < this.survivalConfig.oppositeChance + 0.05 ? "bonus" : "none";
+    } else {
+      this.mark = r < 0.08 ? "bonus" : r < 0.23 ? "opposite" : "none";
+    }
     let req = this.mark === "opposite" ? oppositeAngle(this.visualDir) : this.visualDir;
     if (this.modifiers.mirrorRealm) {
       req = oppositeAngle(req);
@@ -597,7 +655,7 @@ export class Engine {
     this.revealT = 0;
     this.warned = false;
     this.roundStart = performance.now();
-    this.memoryPhase = this.mode === "memory" ? "reveal" : "";
+    this.memoryPhase = (this.mode === "memory" || (this.mode === "survival" && Boolean(this.survivalConfig?.memoryReveal))) ? "reveal" : "";
     this.buildDecoys();
     this.emitHud();
   }
@@ -764,6 +822,15 @@ export class Engine {
       this.fx.shakeBy(Math.min(2 + this.streak / 6, 8));
     }
 
+    this.maxComboReached = Math.max(this.maxComboReached, this.combo);
+    if (this.mode === "survival" && this.survivalConfig) {
+      this.survivalHitsDone++;
+      if (this.survivalConfig.targetHits && this.survivalHitsDone >= this.survivalConfig.targetHits) {
+        this.survivalWin();
+        return;
+      }
+    }
+
     // mode hooks
     if (this.def.onHit) {
       this.total = Math.min((this.def.total ?? 0) + 10, this.total + this.def.onHit);
@@ -786,6 +853,14 @@ export class Engine {
     this.emitHud();
   }
 
+  private survivalWin() {
+    this.survivalCleared = true;
+    this.fx.confettiBurst(this.cx, this.cy, this.arrowSize());
+    this.sound.levelUp();
+    this.sound.announce("Sector cleared!", this.settings.announcer);
+    this.over();
+  }
+
   private miss(kind: "wrong" | "timeout") {
     this.showFeedback(kind === "wrong" ? "miss" : "timeout", kind === "wrong" ? "Try again" : "Time ran out");
     this.waveStep = 0;
@@ -799,6 +874,17 @@ export class Engine {
       this.haptic("error");
     } else {
       this.sound.timeout();
+    }
+
+    if (this.mode === "survival" && this.survivalConfig) {
+      if (this.mark === "opposite") {
+        this.survivalOppositeMisses++;
+      }
+      if (this.survivalConfig.noWrong) {
+        this.livesLeft = 0;
+        this.over();
+        return;
+      }
     }
 
     if (this.modifiers.suddenRisk) {
@@ -1100,6 +1186,46 @@ export class Engine {
     else if (accuracy >= 80) rank = "A";
     else if (accuracy >= 65) rank = "B";
 
+    let survivalStars = 0;
+    let survivalSparksAwarded = 0;
+    let survivalDiamondsAwarded = 0;
+    let survivalNewBestStars = false;
+
+    if (this.mode === "survival" && this.survivalConfig) {
+      if (this.survivalCleared) {
+        survivalStars = evaluateSurvivalStars(this.survivalConfig, {
+          cleared: true,
+          livesLeft: this.livesLeft,
+          hits: this.correctCount,
+          accuracy,
+          avgReactionMs: this.reactions.length
+            ? Math.round(this.reactions.reduce((x, y) => x + y, 0) / this.reactions.length)
+            : 0,
+          fastestMs: this.fastest === 9999 ? 0 : this.fastest,
+          bestStreak: this.bestStreak,
+          timeLeft: this.survivalConfig.duration
+            ? Math.max(0, this.survivalConfig.duration - this.survivalTimeElapsed)
+            : undefined,
+          lowestClock: this.survivalLowestClock === 9999 ? undefined : this.survivalLowestClock,
+          maxComboReached: this.maxComboReached,
+          oppositeMisses: this.survivalOppositeMisses,
+        });
+
+        const rewardResult = recordSurvivalClear(
+          this.survivalConfig.id,
+          survivalStars,
+          this.score,
+          accuracy,
+          Math.round(this.runClock),
+          this.survivalConfig.rewardSparks,
+          this.survivalConfig.rewardDiamonds,
+        );
+        survivalSparksAwarded = rewardResult.sparksAwarded;
+        survivalDiamondsAwarded = rewardResult.diamondsAwarded;
+        survivalNewBestStars = rewardResult.isNewBestStars;
+      }
+    }
+
     const summary: GameSummary = {
       challengeId: this.challengeId,
       mode: this.mode,
@@ -1128,6 +1254,12 @@ export class Engine {
       playSeconds: Math.round(this.runClock),
       rank,
       modifierMultiplier: getModifierMultiplier(this.modifiers),
+      survivalLevel: this.survivalConfig?.id,
+      survivalCleared: this.survivalCleared,
+      survivalStars,
+      survivalNewBestStars,
+      survivalSparksAwarded,
+      survivalDiamondsAwarded,
     };
     this.events.onPhase("over");
     this.events.onOver(summary);
@@ -1165,6 +1297,25 @@ export class Engine {
       focusAvailable: this.focusAvailable(),
       modifiers: this.modifiers,
       modifierMultiplier: getModifierMultiplier(this.modifiers),
+      survival: this.mode === "survival" && this.survivalConfig
+        ? {
+            level: this.survivalConfig.id,
+            title: this.survivalConfig.title,
+            badge: this.survivalConfig.badge,
+            taskType: this.survivalConfig.taskType,
+            progress: this.survivalConfig.taskType === "survive_time"
+              ? Math.min(this.survivalConfig.duration ?? 30, Math.floor(this.survivalTimeElapsed))
+              : this.survivalHitsDone,
+            target: this.survivalConfig.taskType === "survive_time"
+              ? (this.survivalConfig.duration ?? 30)
+              : (this.survivalConfig.targetHits ?? 25),
+            timeRemaining: this.survivalConfig.duration
+              ? Math.max(0, Math.ceil(this.survivalConfig.duration - this.survivalTimeElapsed))
+              : undefined,
+            noWrong: Boolean(this.survivalConfig.noWrong),
+            duration: this.survivalConfig.duration,
+          }
+        : null,
     };
     this.events.onHud(hud);
   }

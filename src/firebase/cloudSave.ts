@@ -19,7 +19,7 @@ export function queueCloudSave(patch:Record<string,any>){
   if(patch.profile){pending.preferences={wishlist:patch.profile.wishlist||[],favoriteModes:patch.profile.favoriteModes||[]};pending.preferencesUpdatedAt=patch.profileUpdatedAt||Date.now();}
   clearTimeout(timer);timer=setTimeout(()=>{void flushCloudSave().catch(()=>console.warn("Preferences are saved on this device; cloud sync will retry."));},200);
 }
-export const SAVE_KEYS={stats:"vector_stats_v5",profile:"vector_profile_v5",settings:"vector_settings_v5",missions:"vector_missions_v1",operativeName:"vector_player_name"} as const;
+export const SAVE_KEYS={stats:"vector_stats_v5",profile:"vector_profile_v5",settings:"vector_settings_v5",missions:"vector_missions_v1",operativeName:"vector_player_name",survivalProgress:"vector_survival_v1"} as const;
 export function persistSave(field:keyof typeof SAVE_KEYS,value:unknown){
   const key=SAVE_KEYS[field],raw=field==="operativeName"?String(value):JSON.stringify(value);
   if(safeStorage.getItem(key)===raw)return;
